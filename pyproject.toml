@@ -1,0 +1,57 @@
+[project]
+name = "lydian-discord-bot"
+version = "0.1.0"
+description = "A Discord music bot."
+authors = [
+    { name = "Seth 'Violet' Gibbs" },
+]
+license = "MIT"
+license-files = ["LICENSE"]
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "discord-py>=2.7.1",
+    "loguru>=0.7.3",
+    "py-maybetype>=0.11.0",
+    "python-benedict>=0.36.0",
+    "python-dotenv>=1.2.2",
+    "rich>=15.0.0",
+    "tomlkit>=0.14.0",
+    "typer>=0.24.1",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ipython>=9.12.0",
+    "pytest>=9.0.3",
+    "ruff>=0.15.10",
+    "ty>=0.0.30",
+]
+docs = [
+    "furo>=2025.12.19",
+    "myst-parser>=5.0.0",
+    "sphinx>=6.0,<9.0",
+    "sphinx-autobuild>=2025.8.25",
+]
+
+[project.urls]
+Homepage = "https://github.com/svioletg/lydian-discord-bot"
+Repository = "https://github.com/svioletg/lydian-discord-bot"
+Documentation = "https://lydian-discord-bot.readthedocs.io/en/latest/"
+Changelog = "https://github.com/svioletg/lydian-discord-bot/blob/main/CHANGELOG.md"
+Issues = "https://github.com/svioletg/lydian-discord-bot/issues"
+
+[project.scripts]
+lydian-start = "lydian.bot:main"
+lydian-cli = "lydian.cli:cli"
+
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["lydian"]

@@ -1,0 +1,16 @@
+# discord-vc-bot configuration
+
+prefix = "-"
+# All files with these extensions in the bot's "dl" directory will be removed upon bot startup.
+auto-remove = [".m4a", ".mp3", ".mp4", ".ogg", ".opus", ".wav", ".webm"]
+
+[vote-skipping]
+enabled = true
+threshold-type = "percentage"
+percentage = 50
+exact = 3
+
+[logging]
+log-level = "INFO"
+# Whether to show log timestamps in UTC. If false, they are shown in your system's local time.
+utc = true

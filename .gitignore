@@ -1,0 +1,21 @@
+# Python-generated files
+__pycache__/
+.pytest_cache/
+*.py[oc]
+build/
+_build/
+dist/
+wheels/
+*.egg-info
+.venv
+
+# Project files
+.env
+dl/
+logs/
+config.toml
+lydian/data/
+lydina/logs/
+
+# Other
+testenv/

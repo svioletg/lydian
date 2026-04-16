@@ -1,0 +1,110 @@
+"""Constant or singleton values for use across the rest of the package."""
+import sys
+from importlib.metadata import metadata
+from pathlib import Path
+
+import loguru
+from loguru import logger
+from rich.console import Console
+from rich.highlighter import RegexHighlighter
+from rich.theme import Theme
+
+VERSION: str = metadata('lydian-discord-bot')['version']
+
+# Paths
+PACKAGE_DIR      : Path = Path(__file__).resolve().parent
+TESTS_DIR        : Path = PACKAGE_DIR.parent / 'tests'
+DEFAULT_DATA_DIR : Path = PACKAGE_DIR / 'data'
+DEFAULT_TMP_DIR  : Path = DEFAULT_DATA_DIR.parent / 'tmp'
+DEFAULT_LOGS_DIR : Path = DEFAULT_DATA_DIR / 'logs'
+CONFIG_PATH      : Path = Path.cwd() / 'lydian-config.toml'
+"""Points to a ``lydian-config.toml`` file under the current working directory."""
+DATA_DIR         : Path = (CONFIG_PATH.parent / 'data') if CONFIG_PATH.parent.exists() else DEFAULT_DATA_DIR
+TMP_DIR          : Path = DATA_DIR.parent / 'tmp'
+LOGS_DIR         : Path = DATA_DIR / 'logs'
+TOKEN_PATH       : Path = CONFIG_PATH.parent / 'token.txt'
+
+LOG_MSG_FORMAT: str = '<level>[{time:YYYY-MM-DD HH:mm:ss} {level}] {message}</level>'
+LOG_FILE_FORMAT: str = '{time:YYYY-MM-DD_HH-mm-ss}.log'
+
+def clear_tmp_dir() -> None:
+    """Removes all contents of ``TMP_DIR``."""
+    logger.info(f'Clearing tmp directory contents from {TMP_DIR}')
+
+    dirs: list[Path] = []
+    delcount_f: int = 0
+    for fp in TMP_DIR.rglob('*'):
+        if fp.is_dir():
+            dirs.append(fp)
+        else:
+            fp.unlink()
+            delcount_f += 1
+
+    for fp in dirs:
+        fp.rmdir()
+
+    logger.info(f'Removed {delcount_f} files and {len(dirs)} directories')
+
+def setup_logger(
+        stdout_level: str = 'INFO',
+        file_level: str = 'DEBUG',
+        logs_dir: Path = DEFAULT_LOGS_DIR,
+    ) -> 'loguru.Logger':  # noqa: UP037
+    """Prepare the global ``logger`` with the given options and return a reference to it.
+
+    All existing handlers are removed, then new ones are added based on the given arguments.
+
+    :param stdout_level: Minimum level to use for the stdout handler.
+    :param file_level: Minimum level to use for the file handler.
+    :param logs_dir: Directory to save log files to and to check for ``'latest.log'``.
+    """
+    logger.remove()
+
+    logger.level('WARNING', color='<yellow>')
+    logger.level('ERROR', color='<red>')
+
+    logger.add(sys.stdout, level=stdout_level, format=LOG_MSG_FORMAT, diagnose=False)
+    logger.add(
+        logs_dir / '{time:YYYY-MM-DDTHHmmssZ}.log',
+        level=file_level,
+        format=LOG_MSG_FORMAT,
+        diagnose=False,
+        rotation='100 MB',
+        retention=5,
+        delay=True,
+        mode='w',
+    )
+
+    return logger
+
+DEFAULT_DATA_DIR.mkdir(exist_ok=True)
+
+def setup_rich_console() -> Console:
+    """Prepares a ``rich`` console and returns it."""
+    class Highlighter(RegexHighlighter):
+        base_style = 'autohl.'
+        highlights = (
+            r'\b(?P<true>True)\b',
+            r'\b(?P<false>False)\b',
+        )
+
+    theme = Theme({
+        'info': 'cyan',
+        'info2': 'bright_cyan',
+        'ok': 'bright_green',
+        'warn': 'yellow',
+        'err': 'red',
+        'dim': 'grey70',
+        'path': 'magenta',
+        'path2': 'bright_magenta',
+
+        'autohl.true': 'green',
+        'autohl.false': 'red',
+    })
+
+    return Console(
+        highlighter=Highlighter(),
+        theme=theme,
+    )
+
+console: Console = setup_rich_console()

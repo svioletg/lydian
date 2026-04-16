@@ -1,0 +1,55 @@
+from pathlib import Path
+from typing import Any
+
+import tomlkit as tm
+
+from lydian.config import Config, LogLevel
+from lydian.const import TESTS_DIR
+
+
+def test_init() -> None:
+    assert Config()
+
+def test_update() -> None:
+    inst = Config()
+    new_vote_percentage: int = 70
+    inst.vote_skipping.percentage = new_vote_percentage
+
+    inst.update({'prefix': '$', 'logging': {'log_level': 'ERROR'}, 'vote_skipping': {'enabled': False}})
+    assert inst.prefix == '$'
+    assert inst.logging.log_level == 'ERROR'
+    assert inst.vote_skipping.enabled is False
+    # Assert only the given fields were updated
+    assert inst.vote_skipping.percentage == new_vote_percentage
+
+def test_dump(tmpdir: Path) -> None:
+    inst = Config()
+    toml_dest: Path = tmpdir / 'config.toml'
+
+    assert (dumped := inst.to_toml(toml_dest)) == inst.to_toml()
+    assert toml_dest.read_text('utf-8') == dumped
+
+    # Check that it can be parsed back into valid TOML to begin with before trying the specialized stuff
+    assert (parsed := tm.parse(dumped))
+    assert inst.prefix == parsed['prefix']
+    assert inst.vote_skipping.enabled == parsed['vote-skipping']['enabled']  # ty:ignore[not-subscriptable]
+    assert inst.logging.log_level == parsed['logging']['log-level']  # ty:ignore[not-subscriptable]
+    assert inst.auto_remove == parsed['auto-remove']
+
+def test_update_from_toml() -> None:
+    inst = Config()
+
+    inst.update_from_toml(TESTS_DIR / 'config-modified.toml')
+    assert inst.prefix == '$'
+    assert inst.vote_skipping.threshold_type == 'exact'
+    assert inst.vote_skipping.exact == 2  # noqa: PLR2004
+    assert inst.logging.log_level == 'WARNING'
+
+def test_update_from_environment() -> None:
+    inst = Config()
+
+    env: dict[str, Any] = {'LYDIAN_LOG_LEVEL': 'WARNING'}
+
+    inst.update_from_environment(env)
+    assert isinstance(inst.logging.log_level, LogLevel)
+    assert inst.logging.log_level == 'WARNING'
