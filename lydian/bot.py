@@ -1,6 +1,7 @@
 """Handles bot setup and execution."""
 import asyncio
 import os
+import sys
 
 import discord
 from discord.ext import commands
@@ -10,7 +11,7 @@ from rich.prompt import Confirm
 
 from lydian.cogs.general import GeneralCog
 from lydian.config import config
-from lydian.const import CONFIG_PATH, DATA_DIR, LOGS_DIR, TMP_DIR, TOKEN_PATH, console, setup_logger
+from lydian.const import CONFIG_PATH, DATA_DIR, LOGS_DIR, TOKEN_PATH, clear_tmp_dir, console, setup_logger
 
 load_dotenv('.env')
 
@@ -52,9 +53,10 @@ async def async_main() -> int:
     """Initializes the logger and starts the bot."""
     if not CONFIG_PATH.exists():
         console.print('lydian-config.toml must be present in the current directory to run the bot.')
-        if Confirm.ask('Create this file here?'):
+        console.print('If this file is found, a "lydian-data" directory will be created here if it does not exist.')
+        if Confirm.ask('Create this file now?'):
             CONFIG_PATH.touch()
-            console.print(f'Created empty file {CONFIG_PATH}')
+            console.print(f'Created empty file at: {CONFIG_PATH}')
         return 0
 
     setup_logger(stdout_level=config.logging.log_level, logs_dir=LOGS_DIR)
@@ -62,17 +64,14 @@ async def async_main() -> int:
     logger.info('Starting...')
 
     if not DATA_DIR.is_dir():
-        logger.info('Creating data directory...')
+        logger.info(f'Making data directory: {DATA_DIR}')
         DATA_DIR.mkdir()
 
-    if not TMP_DIR.is_dir():
-        logger.info('Creating tmp directory...')
-        TMP_DIR.mkdir()
+    clear_tmp_dir()
 
     await asyncio.gather(asyncio.create_task(thread_bot()))
 
     return 0
 
 def main() -> int:  # noqa: D103
-    asyncio.run(async_main())
-    return 0
+    sys.exit(asyncio.run(async_main()))

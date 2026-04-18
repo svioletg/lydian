@@ -11,11 +11,10 @@ wheels/
 
 # Project files
 .env
-dl/
-logs/
+**/lydian-data/
 config.toml
-lydian/data/
-lydina/logs/
+lydian-config.toml
+token.txt
 
 # Other
 testenv/

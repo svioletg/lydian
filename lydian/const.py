@@ -14,13 +14,13 @@ VERSION: str = metadata('lydian-discord-bot')['version']
 # Paths
 PACKAGE_DIR      : Path = Path(__file__).resolve().parent
 TESTS_DIR        : Path = PACKAGE_DIR.parent / 'tests'
-DEFAULT_DATA_DIR : Path = PACKAGE_DIR / 'data'
+DEFAULT_DATA_DIR : Path = PACKAGE_DIR / 'lydian-data'
 DEFAULT_TMP_DIR  : Path = DEFAULT_DATA_DIR.parent / 'tmp'
 DEFAULT_LOGS_DIR : Path = DEFAULT_DATA_DIR / 'logs'
 CONFIG_PATH      : Path = Path.cwd() / 'lydian-config.toml'
 """Points to a ``lydian-config.toml`` file under the current working directory."""
-DATA_DIR         : Path = (CONFIG_PATH.parent / 'data') if CONFIG_PATH.parent.exists() else DEFAULT_DATA_DIR
-TMP_DIR          : Path = DATA_DIR.parent / 'tmp'
+DATA_DIR         : Path = (CONFIG_PATH.parent / 'lydian-data') if CONFIG_PATH.parent.exists() else DEFAULT_DATA_DIR
+TMP_DIR          : Path = DATA_DIR / 'tmp'
 LOGS_DIR         : Path = DATA_DIR / 'logs'
 TOKEN_PATH       : Path = CONFIG_PATH.parent / 'token.txt'
 
@@ -29,7 +29,7 @@ LOG_FILE_FORMAT: str = '{time:YYYY-MM-DD_HH-mm-ss}.log'
 
 def clear_tmp_dir() -> None:
     """Removes all contents of ``TMP_DIR``."""
-    logger.info(f'Clearing tmp directory contents from {TMP_DIR}')
+    logger.debug(f'Clearing tmp directory contents from {TMP_DIR}')
 
     dirs: list[Path] = []
     delcount_f: int = 0
@@ -43,7 +43,7 @@ def clear_tmp_dir() -> None:
     for fp in dirs:
         fp.rmdir()
 
-    logger.info(f'Removed {delcount_f} files and {len(dirs)} directories')
+    logger.debug(f'Removed {delcount_f} files and {len(dirs)} directories')
 
 def setup_logger(
         stdout_level: str = 'INFO',
