@@ -3,6 +3,7 @@ import asyncio
 import os
 import sys
 
+import aioconsole
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -49,6 +50,18 @@ async def thread_bot() -> None:
             raise SystemExit(1)
         await bot.start(token)
 
+async def thread_console() -> None:
+    """Returns the ``Coroutine`` thread for the interactive console."""
+    logger.info('Console is active')
+    while True:
+        user_input: str = await aioconsole.ainput()
+        user_input = user_input.lower().strip()
+        if not user_input:
+            continue
+        if user_input == 'stop':
+            sys.exit()
+        logger.info(f'Unrecognized console input: {user_input}')
+
 async def async_main() -> int:
     """Initializes the logger and starts the bot."""
     if not CONFIG_PATH.exists():
@@ -69,7 +82,10 @@ async def async_main() -> int:
 
     clear_tmp_dir()
 
-    await asyncio.gather(asyncio.create_task(thread_bot()))
+    await asyncio.gather(
+        asyncio.create_task(thread_bot()),
+        asyncio.create_task(thread_console()),
+    )
 
     return 0
 

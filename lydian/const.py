@@ -1,4 +1,5 @@
 """Constant or singleton values for use across the rest of the package."""
+import re
 import sys
 from importlib.metadata import metadata
 from pathlib import Path
@@ -6,7 +7,8 @@ from pathlib import Path
 import loguru
 from loguru import logger
 from rich.console import Console
-from rich.highlighter import RegexHighlighter
+from rich.highlighter import Highlighter
+from rich.text import Text
 from rich.theme import Theme
 
 VERSION: str = metadata('lydian-discord-bot')['version']
@@ -27,8 +29,15 @@ TOKEN_PATH       : Path = CONFIG_PATH.parent / 'token.txt'
 LOG_MSG_FORMAT: str = '<level>[{time:YYYY-MM-DD HH:mm:ss} {level}] {message}</level>'
 LOG_FILE_FORMAT: str = '{time:YYYY-MM-DD_HH-mm-ss}.log'
 
+class ConsoleHighlighter(Highlighter):
+    """Custom highlighter class for the ``rich`` console."""
+
+    def highlight(self, text: Text) -> None:  # noqa: D102
+        if m := re.search(fr'{Path.cwd()}', str(text)):
+            text.stylize('cwd', m.start(0), m.end(0))
+
 def clear_tmp_dir() -> None:
-    """Removes all contents of ``TMP_DIR``."""
+    """Removes all contents of the directory defined by ``const.TMP_DIR``."""
     logger.debug(f'Clearing tmp directory contents from {TMP_DIR}')
 
     dirs: list[Path] = []
@@ -77,17 +86,8 @@ def setup_logger(
 
     return logger
 
-DEFAULT_DATA_DIR.mkdir(exist_ok=True)
-
 def setup_rich_console() -> Console:
     """Prepares a ``rich`` console and returns it."""
-    class Highlighter(RegexHighlighter):
-        base_style = 'autohl.'
-        highlights = (
-            r'\b(?P<true>True)\b',
-            r'\b(?P<false>False)\b',
-        )
-
     theme = Theme({
         'info': 'cyan',
         'info2': 'bright_cyan',
@@ -97,14 +97,14 @@ def setup_rich_console() -> Console:
         'dim': 'grey70',
         'path': 'magenta',
         'path2': 'bright_magenta',
-
-        'autohl.true': 'green',
-        'autohl.false': 'red',
+        'cwd': 'grey50',
     })
 
     return Console(
-        highlighter=Highlighter(),
+        highlighter=ConsoleHighlighter(),
         theme=theme,
     )
 
 console: Console = setup_rich_console()
+
+DEFAULT_DATA_DIR.mkdir(exist_ok=True)

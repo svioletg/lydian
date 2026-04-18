@@ -29,3 +29,14 @@ see this file, it will begin to use that directory for storing data related to t
 and downloaded media. You should make a folder somewhere on your PC, for example named `lydian`,
 make a new file called `lydian-config.toml` (ensure the file extension really *is* `.toml`), then
 run `lydian-start` in that folder.
+
+The bot can be stopped either by using the `stop` command, or hitting Ctrl+C while focused on the
+window.
+
+## Usage: Console
+
+Lydian implements a basic console that can accept some limited commands while the bot is running:
+
+|Command |Description                           |
+|--------|--------------------------------------|
+|`stop`  |Attempts to shut down the bot cleanly.|
