@@ -105,7 +105,10 @@ class LogLevel(StrEnum):  # noqa: D101
 class LoggingConfig(DataClassUpdateMixin):
     """Configuration for logging."""
 
-    log_level: LogLevel = field(default=LogLevel.INFO, metadata={'env': 'LOG_LEVEL', 'envconv': LogLevel})
+    log_level: LogLevel = field(default=LogLevel.INFO, metadata={
+        'env': 'LOG_LEVEL',
+        'envconv': lambda s: LogLevel(s.upper()),
+    })
     utc: bool = field(default=True,
         doc="Whether to show log timestamps in UTC. If false, they are shown in your system's local time.")
 
