@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from loguru import logger
 from rich.prompt import Confirm
 
+from lydian.cogs.debug import DebugCog
 from lydian.cogs.general import GeneralCog
 from lydian.config import config
 from lydian.const import CONFIG_PATH, DATA_DIR, LOGS_DIR, TOKEN_PATH, clear_tmp_dir, console, setup_logger
@@ -42,7 +43,11 @@ async def thread_bot() -> None:
     """Returns the ``Coroutine`` thread for the bot."""
     logger.debug('Starting bot thread...')
     async with bot:
+        # Add cogs
         await bot.add_cog(GeneralCog(bot))
+        if config.debug:
+            await bot.add_cog(DebugCog(bot))
+        # Start
         logger.info('Logging in; wait for "Ready!" before running commands')
         if not (token := get_token()):
             logger.error(
@@ -77,6 +82,9 @@ async def async_main() -> int:
     setup_logger(stdout_level=config.logging.log_level, logs_dir=LOGS_DIR)
 
     logger.info('Starting...')
+
+    if config.debug:
+        logger.warning('Debug mode is enabled')
 
     if not DATA_DIR.is_dir():
         logger.info(f'Making data directory: {DATA_DIR}')

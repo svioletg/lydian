@@ -126,8 +126,8 @@ class Config(DataClassUpdateMixin):
     """
 
     prefix: str = '-'
-    auto_remove: list[str] = field(default_factory=_default_auto_remove_list,
-        doc='All files with these extensions in the bot\'s "dl" directory will be removed upon bot startup.')
+    debug: bool = field(default=False, doc='Enables various commands and features inteded for developers.',
+        metadata={'env': 'DEBUG'})
     vote_skipping: VoteSkippingConfig = field(default_factory=VoteSkippingConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
 
@@ -184,7 +184,9 @@ class Config(DataClassUpdateMixin):
             if not (env_val := env.get(f'LYDIAN_{fld.metadata['env']}')):
                 continue
 
-            val = env_val if not (converter := fld.metadata.get('envconv')) else converter(env_val)
+            # Fall back on the field type as a constructor if no converter is specified, but don't convert if envconv
+            # has been explicitly set to None
+            val = env_val if not (converter := fld.metadata.get('envconv', fld.type)) else converter(env_val)
 
             if not isinstance(val, cast('type', fld.type)):
                 raise TypeError(f'Invalid type for field "{name}": {val!r}')

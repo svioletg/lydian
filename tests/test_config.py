@@ -34,7 +34,7 @@ def test_dump(tmpdir: Path) -> None:
     assert inst.prefix == parsed['prefix']
     assert inst.vote_skipping.enabled == parsed['vote-skipping']['enabled']  # ty:ignore[not-subscriptable]
     assert inst.logging.log_level == parsed['logging']['log-level']  # ty:ignore[not-subscriptable]
-    assert inst.auto_remove == parsed['auto-remove']
+    assert inst.debug == parsed['debug']
 
 def test_update_from_toml() -> None:
     inst = Config()

@@ -1,8 +1,8 @@
 # discord-vc-bot configuration
 
 prefix = "-"
-# All files with these extensions in the bot's "dl" directory will be removed upon bot startup.
-auto-remove = [".m4a", ".mp3", ".mp4", ".ogg", ".opus", ".wav", ".webm"]
+# Enables various commands and features inteded for developers.
+debug = false
 
 [vote-skipping]
 enabled = true
