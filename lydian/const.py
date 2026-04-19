@@ -29,6 +29,11 @@ TOKEN_PATH       : Path = CONFIG_PATH.parent / 'token.txt'
 LOG_MSG_FORMAT: str = '<level>[{time:YYYY-MM-DD HH:mm:ss} {level}] {message}</level>'
 LOG_FILE_FORMAT: str = '{time:YYYY-MM-DD_HH-mm-ss}.log'
 
+COLOR_INFO: int = 0x00aaff
+COLOR_OK: int = 0x00ff00
+COLOR_WARN: int = 0xffcc00
+COLOR_ERR: int = 0xff0000
+
 class ConsoleHighlighter(Highlighter):
     """Custom highlighter class for the ``rich`` console."""
 
