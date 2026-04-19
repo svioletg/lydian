@@ -154,10 +154,13 @@ class Config(DataClassUpdateMixin):
         doc.add(tm.comment('discord-vc-bot configuration'))
         doc.add(tm.nl())
 
-        comments: dict[str, str] = {
-            name.replace('_', '-'):f.doc
-            for name, f in get_dataclass_fields(self).items() if f.doc
-        }
+        comments: dict[str, str] = {}
+        for name, f in get_dataclass_fields(self).items():
+            comment: str = f.doc or ''
+            if env_var := f.metadata.get('env'):
+                comment = f'[Environment variable: LYDIAN_{env_var}] ' + comment
+            if comment:
+                comments[name] = comment
 
         for fld in fields(self):
             toml_key: str = fld.name.replace('_', '-')

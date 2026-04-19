@@ -1,7 +1,8 @@
 # discord-vc-bot configuration
 
 prefix = "-"
-# Enables various commands and features inteded for developers.
+# [Environment variable: LYDIAN_DEBUG] Enables various commands and features intended for
+# developers. Will also override the log level to "DEBUG".
 debug = false
 
 [vote-skipping]
@@ -12,5 +13,6 @@ exact = 3
 
 [logging]
 log-level = "INFO"
-# Whether to show log timestamps in UTC. If false, they are shown in your system's local time.
+# [Environment variable: LYDIAN_LOG_UTC] Whether to show log timestamps in UTC. If false, they are
+# shown in your system's local time.
 utc = true
