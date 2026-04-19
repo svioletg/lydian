@@ -135,7 +135,7 @@ class Config(DataClassUpdateMixin):
     def from_toml(cls, fp: str | Path) -> Self:
         """Creates a config object from a TOML file.
 
-        Shortcut for creating the instance then using ``update_from_toml``.
+        Shortcut for creating the instance then using :py:meth:`update_from_toml`.
         """
         inst = cls()
         inst.update_from_toml(fp)

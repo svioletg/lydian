@@ -1,8 +1,8 @@
 """Handles bot setup and execution."""
 import asyncio
+import logging
 import os
 import sys
-import logging
 
 import aioconsole
 import discord

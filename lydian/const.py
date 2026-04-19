@@ -20,7 +20,10 @@ DEFAULT_DATA_DIR : Path = PACKAGE_DIR / 'lydian-data'
 DEFAULT_TMP_DIR  : Path = DEFAULT_DATA_DIR.parent / 'tmp'
 DEFAULT_LOGS_DIR : Path = DEFAULT_DATA_DIR / 'logs'
 CONFIG_PATH      : Path = Path.cwd() / 'lydian-config.toml'
-"""Points to a ``lydian-config.toml`` file under the current working directory."""
+"""Points to a ``lydian-config.toml`` file under the current working directory.
+
+:meta hide-value:
+"""
 DATA_DIR         : Path = (CONFIG_PATH.parent / 'lydian-data') if CONFIG_PATH.parent.exists() else DEFAULT_DATA_DIR
 TMP_DIR          : Path = DATA_DIR / 'tmp'
 LOGS_DIR         : Path = DATA_DIR / 'logs'
@@ -70,7 +73,7 @@ def setup_logger(
 
     :param stdout_level: Minimum level to use for the stdout handler.
     :param file_level: Minimum level to use for the file handler.
-    :param logs_dir: Directory to save log files to and to check for ``'latest.log'``.
+    :param logs_dir: Directory to save log files to.
     """
     logger.remove()
 

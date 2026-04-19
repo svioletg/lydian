@@ -17,10 +17,10 @@ class Stopwatch:
     """Tracks time over a period, by default from when the instance is created."""
 
     def __init__(self, *, paused: bool = False) -> None:
-        """Returns a new ``Stopwatch``.
+        """Returns a new Stopwatch.
 
         :param paused: If ``True``, the Stopwatch is paused to begin with, meaning :py:meth:`elapsed_ns` will return 0
-            until :py:meth:`resume` is called. Otherwise, the start time is set to immediately after ``__init__``
+            until :py:meth:`unpause` is called. Otherwise, the start time is set to immediately after ``__init__``
             finishes.
         """
         self.start: int = 0
@@ -40,14 +40,17 @@ class Stopwatch:
         return self._paused
 
     def pause(self) -> None:
-        """Pauses the Stopwatch.
+        """Pauses the Stopwatch, does nothing if already paused.
 
-        The elapsed time will not increase until :py:meth:`resume` is called.
-        Does nothing if already paused.
+        The elapsed time will not increase until :py:meth:`unpause` is called.
         """
         if not self.is_paused:
             self._paused = True
             self._paused_at = perf_counter_ns()
+
+    def elapsed(self) -> float:
+        """Seconds that have elapsed."""
+        return self.elapsed_ns() / 1e9
 
     def elapsed_ns(self) -> int:
         """Nanoseconds that have elapsed."""
@@ -57,15 +60,8 @@ class Stopwatch:
             return self._paused_at - self.start
         return (perf_counter_ns() - self.start) - self._pause_offset
 
-    def elapsed(self) -> float:
-        """Seconds that have elapsed."""
-        return self.elapsed_ns() / 1e9
-
     def unpause(self) -> None:
-        """Unpauses the Stopwatch.
-
-        Does nothing if not paused.
-        """
+        """Unpauses the Stopwatch, does nothing if not paused."""
         if self.is_paused:
             self._paused = False
             if not self.start:

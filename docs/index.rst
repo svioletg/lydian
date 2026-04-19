@@ -2,12 +2,19 @@ lydian-discord-bot documentation
 ================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
-   readme.rst
-   changelog.rst
-   reference/index.rst
+   readme
+   changelog
+   reference/bot
+   reference/cli
+   reference/config
+   reference/const
+   reference/util
+   cogs.debug module <reference/cogs/debug>
+   cogs.general module <reference/cogs/general>
+   cogs.util module <reference/cogs/util>
 
 Indices and tables
 ==================
