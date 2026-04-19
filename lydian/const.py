@@ -77,6 +77,7 @@ def setup_logger(
     """
     logger.remove()
 
+    logger.level('DEBUG', color='<cyan>')
     logger.level('INFO', color='<normal>')
     logger.level('WARNING', color='<yellow>')
     logger.level('ERROR', color='<red>')

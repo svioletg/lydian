@@ -1,5 +1,6 @@
 """Debugging or testing commands for development purposes."""
 from discord.ext import commands
+from loguru import logger
 
 from lydian.cogs.util import embed_error, embed_info, embed_ok, embed_warn
 from lydian.config import config
@@ -35,3 +36,11 @@ class DebugCog(commands.Cog):
     async def senderror(self, ctx: commands.Context) -> None:
         """Send a test message using :py:func:`lydian.cogs.util.embed_error` to make the embed."""
         await ctx.send(embed=embed_error('Error', 'Something failed.'))
+
+    @commands.command()
+    @commands.check(debug_enabled)
+    async def fail(self, _ctx: commands.Context) -> None:
+        """Raises a ``ValueError``."""
+        logger.debug('About to raise ValueError...')
+        raise ValueError('Testing, testing!')
+        logger.debug('Raised ValueError; this message should not be visible')

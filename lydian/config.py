@@ -126,7 +126,9 @@ class Config(DataClassUpdateMixin):
     """
 
     prefix: str = '-'
-    debug: bool = field(default=False, doc='Enables various commands and features inteded for developers.',
+    debug: bool = field(default=False,
+        doc='Enables various commands and features intended for developers.'
+            + ' Will also override the log level to "DEBUG".',
         metadata={'env': 'DEBUG'})
     vote_skipping: VoteSkippingConfig = field(default_factory=VoteSkippingConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
