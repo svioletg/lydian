@@ -2,6 +2,7 @@
 import asyncio
 import os
 import sys
+import logging
 
 import aioconsole
 import discord
@@ -22,6 +23,7 @@ intents.message_content = True
 bot = commands.Bot(
     intents=intents,
     command_prefix=config.prefix,
+    log_handler=logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w'),
 )
 
 def get_token() -> str | None:
@@ -60,7 +62,7 @@ async def thread_console() -> None:
             continue
         if user_input == 'stop':
             sys.exit()
-        logger.info(f'Unrecognized console input: {user_input}')
+        logger.warning(f'Unrecognized console input: {user_input}')
 
 async def async_main() -> int:
     """Initializes the logger and starts the bot."""

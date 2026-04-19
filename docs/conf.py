@@ -1,4 +1,4 @@
-from maybetype.const import PROJECT_VERSION
+from lydian.const import PROJECT_VERSION
 
 # Configuration file for the Sphinx documentation builder.
 #
@@ -8,7 +8,7 @@ from maybetype.const import PROJECT_VERSION
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'py-maybetype'
+project = 'lydian-discord-bot'
 author = 'Seth "Violet" Gibbs'
 release = PROJECT_VERSION
 

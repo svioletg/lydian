@@ -11,7 +11,7 @@ from rich.highlighter import Highlighter
 from rich.text import Text
 from rich.theme import Theme
 
-VERSION: str = metadata('lydian-discord-bot')['version']
+PROJECT_VERSION: str = metadata('lydian-discord-bot')['version']
 
 # Paths
 PACKAGE_DIR      : Path = Path(__file__).resolve().parent

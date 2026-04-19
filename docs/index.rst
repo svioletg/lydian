@@ -1,5 +1,5 @@
-py-maybetype documentation
-===============================
+lydian-discord-bot documentation
+================================
 
 .. toctree::
    :maxdepth: 2

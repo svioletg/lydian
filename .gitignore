@@ -18,3 +18,4 @@ token.txt
 
 # Other
 testenv/
+*.log
