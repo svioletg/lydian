@@ -81,7 +81,16 @@ async def async_main() -> int:
             console.print(f'Created empty file at: {CONFIG_PATH}')
         return 0
 
-    setup_logger(stdout_level='DEBUG' if config.debug else config.logging.log_level, logs_dir=LOGS_DIR)
+    setup_logger(
+        stdout_level='DEBUG' if config.debug else config.logging.log_level,
+        logs_dir=LOGS_DIR,
+        log_in_utc=config.logging.utc,
+    )
+
+    if config.logging.utc:
+        logger.info('Log times are set to UTC')
+    else:
+        logger.info("Log times are set to the system's local time")
 
     logger.info('Starting...')
 

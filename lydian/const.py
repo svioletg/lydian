@@ -30,6 +30,7 @@ LOGS_DIR         : Path = DATA_DIR / 'logs'
 TOKEN_PATH       : Path = CONFIG_PATH.parent / 'token.txt'
 
 LOG_MSG_FORMAT: str = '<level>[{time:YYYY-MM-DD HH:mm:ss} {level}] {message}</level>'
+LOG_MSG_FORMAT_UTC: str = '<level>[{time:YYYY-MM-DD HH:mm:ss!UTC} {level}] {message}</level>'
 LOG_FILE_FORMAT: str = '{time:YYYY-MM-DDTHHmmssZZ}.log'
 
 COLOR_INFO: int = 0x00aaff
@@ -66,6 +67,8 @@ def setup_logger(
         stdout_level: str = 'INFO',
         file_level: str = 'DEBUG',
         logs_dir: Path = DEFAULT_LOGS_DIR,
+        *,
+        log_in_utc: bool = False,
     ) -> 'loguru.Logger':  # noqa: UP037
     """Prepare the global ``logger`` with the given options and return a reference to it.
 
@@ -82,11 +85,13 @@ def setup_logger(
     logger.level('WARNING', color='<yellow>')
     logger.level('ERROR', color='<red>')
 
-    logger.add(sys.stdout, level=stdout_level, format=LOG_MSG_FORMAT, diagnose=False)
+    msg_format: str = LOG_MSG_FORMAT_UTC if log_in_utc else LOG_MSG_FORMAT
+
+    logger.add(sys.stdout, level=stdout_level, format=msg_format, diagnose=False)
     logger.add(
         logs_dir / LOG_FILE_FORMAT,
         level=file_level,
-        format=LOG_MSG_FORMAT,
+        format=msg_format,
         diagnose=False,
         rotation='100 MB',
         delay=True,

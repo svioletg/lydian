@@ -110,7 +110,9 @@ class LoggingConfig(DataClassUpdateMixin):
         'envconv': lambda s: LogLevel(s.upper()),
     })
     utc: bool = field(default=True,
-        doc="Whether to show log timestamps in UTC. If false, they are shown in your system's local time.")
+        doc="Whether to show log timestamps in UTC. If false, they are shown in your system's local time.",
+        metadata={'env': 'LOG_UTC'},
+    )
 
 @dataclass(kw_only=True)
 class Config(DataClassUpdateMixin):
