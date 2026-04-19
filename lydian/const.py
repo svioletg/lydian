@@ -30,7 +30,7 @@ LOGS_DIR         : Path = DATA_DIR / 'logs'
 TOKEN_PATH       : Path = CONFIG_PATH.parent / 'token.txt'
 
 LOG_MSG_FORMAT: str = '<level>[{time:YYYY-MM-DD HH:mm:ss} {level}] {message}</level>'
-LOG_FILE_FORMAT: str = '{time:YYYY-MM-DD_HH-mm-ss}.log'
+LOG_FILE_FORMAT: str = '{time:YYYY-MM-DDTHHmmssZZ}.log'
 
 COLOR_INFO: int = 0x00aaff
 COLOR_OK: int = 0x00ff00
@@ -83,12 +83,11 @@ def setup_logger(
 
     logger.add(sys.stdout, level=stdout_level, format=LOG_MSG_FORMAT, diagnose=False)
     logger.add(
-        logs_dir / '{time:YYYY-MM-DDTHHmmssZ}.log',
+        logs_dir / LOG_FILE_FORMAT,
         level=file_level,
         format=LOG_MSG_FORMAT,
         diagnose=False,
         rotation='100 MB',
-        retention=5,
         delay=True,
         mode='w',
     )
