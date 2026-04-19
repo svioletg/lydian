@@ -24,7 +24,7 @@ intents.message_content = True
 bot = commands.Bot(
     intents=intents,
     command_prefix=config.prefix,
-    log_handler=logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w'),
+    log_handler=logging.FileHandler(filename=LOGS_DIR / 'discord.log', encoding='utf-8', mode='w'),
 )
 
 def get_token() -> str | None:
@@ -66,7 +66,9 @@ async def thread_console() -> None:
         if not user_input:
             continue
         if user_input == 'stop':
-            sys.exit()
+            await bot.close()
+            logger.info('Bot connection closed')
+            return
         logger.warning(f'Unrecognized console input: {user_input}')
 
 async def async_main() -> int:
