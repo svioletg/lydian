@@ -41,7 +41,7 @@ async def thread_bot() -> None:
     logger.debug('Starting bot thread...')
     async with bot:
         await bot.add_cog(GeneralCog(bot))
-        logger.info('Logging in...')
+        logger.info('Logging in; wait for "Ready!" before running commands')
         if not (token := get_token()):
             logger.error(
                 'Failed to find a bot token; no token.txt file present and the LYDIAN_TOKEN environment variable has'
