@@ -34,6 +34,11 @@ TOKEN_PATH       : Path = CONFIG_PATH.parent / 'token.txt'
 LOG_MSG_FORMAT: str = '<level>[{time:YYYY-MM-DD HH:mm:ss} {level}] {message}</level>'
 LOG_MSG_FORMAT_UTC: str = '<level>[{time:YYYY-MM-DD HH:mm:ss!UTC} {level}] {message}</level>'
 LOG_FILE_FORMAT: str = '{time:YYYY-MM-DDTHHmmssZZ}.log'
+LOG_FILE_PATTERN: re.Pattern[str] = re.compile(
+    r'^(?P<timestamp>(?P<year>\d{4})-(?P<month>\d\d)-(?P<day>\d\d)'
+    + r'T(?P<hour>\d\d)(?P<minute>\d\d)(?P<second>\d\d)(?P<tz>[+-]\d+))\.log',
+    flags=re.MULTILINE,
+)
 
 COLOR_INFO: int = 0x00aaff
 COLOR_OK: int = 0x00ff00
