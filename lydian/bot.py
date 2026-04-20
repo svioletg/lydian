@@ -3,6 +3,7 @@ import asyncio
 import logging
 import os
 import sys
+import traceback
 
 import aioconsole
 import discord
@@ -13,6 +14,7 @@ from rich.prompt import Confirm
 
 from lydian.cogs.debug import DebugCog
 from lydian.cogs.general import GeneralCog
+from lydian.cogs.util import embed_error
 from lydian.config import config
 from lydian.const import CONFIG_PATH, DATA_DIR, LOGS_DIR, TOKEN_PATH, clear_tmp_dir, console, setup_logger
 
@@ -33,6 +35,12 @@ def get_token() -> str | None:
     If the environment variable ``LYDIAN_TOKEN`` is set, its value takes precedence over ``token.txt``.
     """
     return os.environ.get('LYDIAN_TOKEN') or (TOKEN_PATH.read_text('utf-8').strip() if TOKEN_PATH.exists() else None)
+
+@bot.event
+async def on_command_error(ctx: commands.Context, exc: Exception) -> None:
+    """Handles exceptions raised while the bot is running."""
+    await ctx.send(embed=embed_error('An unexpected error occurred.', 'Check logs for details.'))
+    logger.error(f'{exc}\n{''.join(traceback.format_exception(exc)).strip()}')
 
 @bot.event
 async def on_ready() -> None:  # noqa: D103

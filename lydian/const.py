@@ -1,7 +1,7 @@
 """Constant or singleton values for use across the rest of the package."""
-from enum import StrEnum
 import re
 import sys
+from enum import StrEnum
 from importlib.metadata import metadata
 from pathlib import Path
 
