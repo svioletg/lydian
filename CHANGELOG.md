@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the beginning of each key's associated comments
 - Log message timestamps are now shown in UTC if config key `logging.utc` is `true`, otherwise they
   are shown in the system's local time
+- Reduced log rotation size limit from 100 MB to 10 MB
 
 ### Removed
 

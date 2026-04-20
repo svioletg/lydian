@@ -108,7 +108,7 @@ def setup_logger(
         level=file_level,
         format=msg_format,
         diagnose=False,
-        rotation='100 MB',
+        rotation='10 MB',
         delay=True,
         mode='w',
     )
