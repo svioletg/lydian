@@ -1,10 +1,12 @@
 """Constant or singleton values for use across the rest of the package."""
+from enum import StrEnum
 import re
 import sys
 from importlib.metadata import metadata
 from pathlib import Path
 
 import loguru
+from emoji import emojize
 from loguru import logger
 from rich.console import Console
 from rich.highlighter import Highlighter
@@ -36,7 +38,7 @@ LOG_FILE_FORMAT: str = '{time:YYYY-MM-DDTHHmmssZZ}.log'
 COLOR_INFO: int = 0x00aaff
 COLOR_OK: int = 0x00ff00
 COLOR_WARN: int = 0xffcc00
-COLOR_ERR: int = 0xff0000
+COLOR_ERROR: int = 0xff0000
 
 class ConsoleHighlighter(Highlighter):
     """Custom highlighter class for the ``rich`` console."""
@@ -44,6 +46,14 @@ class ConsoleHighlighter(Highlighter):
     def highlight(self, text: Text) -> None:  # noqa: D102
         if m := re.search(fr'{Path.cwd()}', str(text)):
             text.stylize('cwd', m.start(0), m.end(0))
+
+class EmojiStr(StrEnum):
+    """Strings for emoji commonly used by the bot."""
+
+    INFO = emojize(':information:', language='alias')
+    OK = emojize(':white_check_mark:', language='alias')
+    WARN = emojize(':warning:', language='alias')
+    ERROR = emojize(':x:', language='alias')
 
 def clear_tmp_dir() -> None:
     """Removes all contents of the directory defined by ``const.TMP_DIR``."""

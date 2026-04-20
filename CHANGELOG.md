@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added config key `debug`
 - Added module `cogs.debug`
+- Added enum class `const.EmojiStr`
 
 ### Changed
 
