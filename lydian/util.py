@@ -114,5 +114,5 @@ def strftimestamp(
         tz: tzinfo | str = 'UTC',
     ) -> str:
     """Format a Unix timestamp to the given format string, converting its timezone to ``tz`` if given a value."""
-    tz = ZoneInfo(tz) if isinstance(tz, str) else tz
+    tz: tzinfo = ZoneInfo(tz) if isinstance(tz, str) else tz
     return datetime.fromtimestamp(timestamp, tz=UTC).astimezone(tz).strftime(format_str)
