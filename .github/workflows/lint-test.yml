@@ -36,5 +36,5 @@ jobs:
         ruff check .
     - name: Test
       run: |
-        python -m doctest lydian/*.py
         pytest -v
+        python -m doctest lydian/*.py
