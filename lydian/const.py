@@ -31,8 +31,8 @@ TMP_DIR          : Path = DATA_DIR / 'tmp'
 LOGS_DIR         : Path = DATA_DIR / 'logs'
 TOKEN_PATH       : Path = CONFIG_PATH.parent / 'token.txt'
 
-LOG_MSG_FORMAT: str = '<level>[{time:YYYY-MM-DD HH:mm:ss} {level}] {message}</level>'
-LOG_MSG_FORMAT_UTC: str = '<level>[{time:YYYY-MM-DD HH:mm:ss!UTC} {level}] {message}</level>'
+LOG_MSG_FORMAT_UTC: str = '<level>[{time:YYYY-MM-DD HH:mm:ss!UTC} {module}/{level}] {message}</level>'
+LOG_MSG_FORMAT: str = LOG_MSG_FORMAT_UTC.replace('!UTC', '')
 LOG_FILE_FORMAT: str = '{time:YYYY-MM-DDTHHmmssZZ}.log'
 LOG_FILE_PATTERN: re.Pattern[str] = re.compile(
     r'^(?P<timestamp>(?P<year>\d{4})-(?P<month>\d\d)-(?P<day>\d\d)'
@@ -108,7 +108,7 @@ def setup_logger(
         level=file_level,
         format=msg_format,
         diagnose=False,
-        rotation='10 MB',
+        retention=10,
         delay=True,
         mode='w',
     )

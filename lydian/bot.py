@@ -95,6 +95,8 @@ async def async_main() -> int:
         log_in_utc=config.logging.utc,
     )
 
+    logger.debug('Logging started')
+
     if config.logging.utc:
         logger.info('Log times are set to UTC')
     else:
@@ -103,7 +105,7 @@ async def async_main() -> int:
     logger.info('Starting...')
 
     if config.debug:
-        logger.warning('Debug mode is enabled')
+        logger.warning('Debug mode is enabled!')
 
     if not DATA_DIR.is_dir():
         logger.info(f'Making data directory: {DATA_DIR}')
