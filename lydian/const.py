@@ -78,6 +78,13 @@ def clear_tmp_dir() -> None:
 
     logger.debug(f'Removed {delcount_f} files and {len(dirs)} directories')
 
+def create_directories() -> None:
+    """Creates all directories needed by the bot if they do not exist."""
+    for dp in (DATA_DIR, TMP_DIR, LOGS_DIR):
+        if not dp.exists():
+            logger.info(f'Making directory: {dp}')
+            dp.mkdir()
+
 def setup_logger(
         stdout_level: str = 'INFO',
         file_level: str = 'DEBUG',

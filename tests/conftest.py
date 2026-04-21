@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from lydian.const import TESTS_DIR
+from lydian.const import TESTS_DIR, create_directories
 
 
 @pytest.fixture
@@ -12,6 +12,7 @@ def tmpdir() -> Path:
     return TESTS_DIR / 'tmp'
 
 def pytest_sessionstart(session: pytest.Session) -> None:  # noqa: ARG001
+    create_directories()
     (TESTS_DIR / 'tmp').mkdir(exist_ok=True)
 
 def pytest_sessionfinish(session: pytest.Session) -> None:  # noqa: ARG001
