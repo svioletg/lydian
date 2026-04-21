@@ -16,7 +16,7 @@ from lydian.cogs.debug import DebugCog
 from lydian.cogs.general import GeneralCog
 from lydian.cogs.util import embed_error
 from lydian.config import config
-from lydian.const import CONFIG_PATH, DATA_DIR, LOGS_DIR, TOKEN_PATH, clear_tmp_dir, console, setup_logger
+from lydian.const import CONFIG_PATH, DATA_DIR, LOGS_DIR, TMP_DIR, TOKEN_PATH, clear_tmp_dir, console, setup_logger
 
 load_dotenv('.env')
 
@@ -107,9 +107,10 @@ async def async_main() -> int:
     if config.debug:
         logger.warning('Debug mode is enabled!')
 
-    if not DATA_DIR.is_dir():
-        logger.info(f'Making data directory: {DATA_DIR}')
-        DATA_DIR.mkdir()
+    for dp in (DATA_DIR, TMP_DIR, LOGS_DIR):
+        if not dp.exists():
+            logger.info(f'Making directory: {dp}')
+            dp.mkdir()
 
     clear_tmp_dir()
 
