@@ -4,6 +4,7 @@ prefix = "-"
 # [Environment variable: LYDIAN_DEBUG] Enables various commands and features intended for
 # developers. Will also override the log level to "DEBUG".
 debug = false
+max-filesize = 20_000_000
 
 [vote-skipping]
 enabled = true

@@ -85,6 +85,8 @@ class Config(DataclassUpdateMixin):
         doc='Enables various commands and features intended for developers.'
             + ' Will also override the log level to "DEBUG".',
         metadata={'env': 'DEBUG'})
+    max_filesize: int = field(default=20_000_000,
+        doc='Maximum filesize in bytes for media that can be downloaded by the bot.')
     vote_skipping: VoteSkippingConfig = field(default_factory=VoteSkippingConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
 
