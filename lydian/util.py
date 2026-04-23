@@ -7,11 +7,47 @@ from dataclasses import Field, fields, is_dataclass
 from datetime import UTC, datetime, tzinfo
 from pathlib import Path
 from time import perf_counter_ns
-from typing import Literal
+from typing import Any, Literal, cast, get_args, get_origin
 from zoneinfo import ZoneInfo
 
 from maybetype import Maybe, maybe
 
+
+class DataclassUpdateMixin:
+    """Adds an ``update`` method to a dataclass which can update its contents similar to ``dict.update``."""
+
+    def update(self, d: dict[str, Any], *, missing_ok: bool = False) -> None:
+        """Updates field values as per ``d``, attempting to convert values to the correct type.
+
+        :param missing_ok: Whether to ignore keys present in ``d`` which have no field in this dataclass.
+            If ``False``, ``KeyError`` is raised.
+        """
+        if not hasattr(self, '__dataclass_fields__'):
+            raise AttributeError(
+                f'{self.__class__.__name__} must be mixed into a class that has __dataclass_fields__: {self!r}',
+            )
+        for k, v in d.items():
+            k = k.replace('-', '_')  # noqa: PLW2901
+            if not (fld := cast('dict[str, Any]', self.__dataclass_fields__).get(k)):
+                if missing_ok:
+                    continue
+                raise KeyError(k)
+            fld = cast('Field[Any]', fld)
+
+            typ: type = cast('type', fld.type)
+            if get_origin(typ) is Literal:
+                # Making an assumption that a Literal type only consists of the same type
+                typ = type(get_args(typ)[0])
+            typ = (get_args(typ) or (typ,))[0]
+
+            if isinstance(v, typ):
+                setattr(self, k, v)
+            elif converter := fld.metadata.get('converter'):
+                setattr(self, k, converter(v))
+            elif hasattr(typ, 'update'):
+                getattr(self, k).update(v, missing_ok=missing_ok)
+            else:
+                setattr(self, k, typ(v))
 
 class Stopwatch:
     """Tracks time over a period, by default from when the instance is created."""

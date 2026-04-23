@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added enum class `const.EmojiStr`
 - Added `lydian-cli` command `logs`
   - `logs latest`: Returns the most recently modified log file
+- Added test to `test_util` for `util.get_dataclass_fields`
 
 ### Changed
 
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Log message timestamps are now shown in UTC if config key `logging.utc` is `true`, otherwise they
   are shown in the system's local time
 - Reduced log rotation size limit from 100 MB to 10 MB
+- Moved and renamed `config.DataClassUpdateMixin` to `util.DataclassUpdateMixin`
 
 ### Removed
 

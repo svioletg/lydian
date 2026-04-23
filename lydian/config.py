@@ -8,7 +8,7 @@ from collections.abc import Mapping
 from dataclasses import Field, asdict, dataclass, field, fields, is_dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Literal, Self, cast, get_args, get_origin
+from typing import Any, Literal, Self, cast
 from zoneinfo import ZoneInfo
 
 import tomlkit as tm
@@ -20,7 +20,7 @@ from tomlkit.items import Item as TOMLItem
 from tomlkit.toml_document import TOMLDocument
 
 from lydian.const import CONFIG_PATH
-from lydian.util import get_dataclass_fields
+from lydian.util import DataclassUpdateMixin, get_dataclass_fields
 
 TOML_KEY_REGEX: re.Pattern[str] = re.compile(r'^\[?([\w.-]+)\]?', flags=re.MULTILINE)
 TOML_TABLE_KEY_REGEX: re.Pattern[str] = re.compile(r'\[([\w.-]+)\]', flags=re.MULTILINE)
@@ -49,44 +49,8 @@ def _toml_encoder(obj: object) -> TOMLItem:
 
 tm.register_encoder(_toml_encoder)  # ty:ignore[invalid-argument-type]
 
-class DataClassUpdateMixin:
-    """Adds an ``update`` method to a dataclass which can update its contents similar to ``dict.update``."""
-
-    def update(self, d: dict[str, Any], *, missing_ok: bool = False) -> None:
-        """Updates field values as per ``d``, attempting to convert values to the correct type.
-
-        :param missing_ok: Whether to ignore keys present in ``d`` which have no field in this dataclass.
-            If ``False``, ``KeyError`` is raised.
-        """
-        if not hasattr(self, '__dataclass_fields__'):
-            raise AttributeError(
-                f'{self.__class__.__name__} must be mixed into a class that has __dataclass_fields__: {self!r}',
-            )
-        for k, v in d.items():
-            k = k.replace('-', '_')  # noqa: PLW2901
-            if not (fld := cast('dict[str, Any]', self.__dataclass_fields__).get(k)):
-                if missing_ok:
-                    continue
-                raise KeyError(k)
-            fld = cast('Field[Any]', fld)
-
-            typ: type = cast('type', fld.type)
-            if get_origin(typ) is Literal:
-                # Making an assumption that a Literal type only consists of the same type
-                typ = type(get_args(typ)[0])
-            typ = (get_args(typ) or (typ,))[0]
-
-            if isinstance(v, typ):
-                setattr(self, k, v)
-            elif converter := fld.metadata.get('converter'):
-                setattr(self, k, converter(v))
-            elif hasattr(typ, 'update'):
-                getattr(self, k).update(v, missing_ok=missing_ok)
-            else:
-                setattr(self, k, typ(v))
-
 @dataclass(kw_only=True)
-class VoteSkippingConfig(DataClassUpdateMixin):
+class VoteSkippingConfig(DataclassUpdateMixin):
     """Configuration for track vote-skipping."""
 
     enabled: bool = True
@@ -102,7 +66,7 @@ class LogLevel(StrEnum):  # noqa: D101
     ERROR = 'ERROR'
 
 @dataclass(kw_only=True)
-class LoggingConfig(DataClassUpdateMixin):
+class LoggingConfig(DataclassUpdateMixin):
     """Configuration for logging."""
 
     log_level: LogLevel = field(default=LogLevel.INFO, metadata={
@@ -115,7 +79,7 @@ class LoggingConfig(DataClassUpdateMixin):
     )
 
 @dataclass(kw_only=True)
-class Config(DataClassUpdateMixin):
+class Config(DataclassUpdateMixin):
     """Dataclass which handles project-wide configuration and can save or load values via TOML.
 
     The ``doc`` value of a field, if not empty, will be used as a TOML comment preceding the key.
