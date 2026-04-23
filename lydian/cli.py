@@ -1,5 +1,4 @@
 """Command-line tools for managing Lydian."""
-
 import typer
 
 from lydian.config import config
