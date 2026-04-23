@@ -4,6 +4,7 @@ from datetime import tzinfo
 from typing import Any
 
 import pytest
+from maybetype import Nothing, Some
 
 from lydian import util
 from tests import ReadOnlyDict
@@ -39,6 +40,10 @@ def test_get_dataclass_fields() -> None:
     assert dc_fields['c'].default == dc.c
     assert dc_fields['d.x'].default == dc.d.x
     assert dc_fields['d.y'].default_factory() == dc.d.y  # ty:ignore[call-non-callable]
+
+def test_maybepath() -> None:
+    assert util.maybepath('qwertyuiop') is Nothing
+    assert isinstance(util.maybepath('pyproject.toml'), Some)
 
 @pytest.mark.parametrize(('timestamp', 'format_str', 'tz', 'expected'),
     [
