@@ -27,17 +27,6 @@ TOML_TABLE_KEY_REGEX: re.Pattern[str] = re.compile(r'\[([\w.-]+)\]', flags=re.MU
 
 load_dotenv()
 
-def _default_auto_remove_list() -> list[str]:
-    return [
-        '.m4a',
-        '.mp3',
-        '.mp4',
-        '.ogg',
-        '.opus',
-        '.wav',
-        '.webm',
-    ]
-
 def _toml_encoder(obj: object) -> TOMLItem:
     if isinstance(obj, ZoneInfo):
         return tm.string(maybe(obj.tzname(None)).unwrap(f'Failed to get tzname from ZoneInfo: {obj!r}'))
