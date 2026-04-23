@@ -29,6 +29,7 @@ CONFIG_PATH      : Path = Path.cwd() / 'lydian-config.toml'
 DATA_DIR         : Path = (CONFIG_PATH.parent / 'lydian-data') if CONFIG_PATH.parent.exists() else DEFAULT_DATA_DIR
 TMP_DIR          : Path = DATA_DIR / 'tmp'
 LOGS_DIR         : Path = DATA_DIR / 'logs'
+DL_DIR           : Path = DATA_DIR / 'dl'
 TOKEN_PATH       : Path = CONFIG_PATH.parent / 'token.txt'
 
 LOG_MSG_FORMAT_UTC: str = '<level>[{time:YYYY-MM-DD HH:mm:ss!UTC} {module}/{level}] {message}</level>'

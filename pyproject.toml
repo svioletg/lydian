@@ -20,6 +20,7 @@ dependencies = [
     "rich>=15.0.0",
     "tomlkit>=0.14.0",
     "typer>=0.24.1",
+    "yt-dlp>=2026.3.17",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
