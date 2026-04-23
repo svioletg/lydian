@@ -38,6 +38,19 @@ def _toml_encoder(obj: object) -> TOMLItem:
 
 tm.register_encoder(_toml_encoder)  # ty:ignore[invalid-argument-type]
 
+def env_to_bool(s: str) -> bool:
+    """Returns an environment variable value parsed to a ``bool``.
+
+    - False: ``0``, ``'false'`` (any case)
+    - True: ``1``, ``'true'`` (any case)
+    """
+    s = s.strip().lower()
+    if s in ['0', 'false']:
+        return False
+    if s in ['1', 'true']:
+        return True
+    raise ValueError(f"Expected 0, 1, 'false', or 'true' for boolean environment variable: {s!r}")
+
 @dataclass(kw_only=True)
 class VoteSkippingConfig(DataclassUpdateMixin):
     """Configuration for track vote-skipping."""
@@ -81,10 +94,12 @@ class Config(DataclassUpdateMixin):
     """
 
     prefix: str = '-'
-    debug: bool = field(default=False,
+    debug: bool = field(
+        default=False,
         doc='Enables various commands and features intended for developers.'
             + ' Will also override the log level to "DEBUG".',
-        metadata={'env': 'DEBUG'})
+        metadata={'env': 'DEBUG', 'envconv': env_to_bool},
+    )
     max_filesize: int = field(default=20_000_000,
         doc='Maximum filesize in bytes for media that can be downloaded by the bot.')
     vote_skipping: VoteSkippingConfig = field(default_factory=VoteSkippingConfig)
@@ -109,13 +124,13 @@ class Config(DataclassUpdateMixin):
         doc.add(tm.comment('discord-vc-bot configuration'))
         doc.add(tm.nl())
 
-        comments: dict[str, str] = {}
+        comments: dict[str, dict[str, str]] = {}
         for name, f in get_dataclass_fields(self).items():
-            comment: str = f.doc or ''
+            comments[name] = {}
             if env_var := f.metadata.get('env'):
-                comment = f'[Environment variable: LYDIAN_{env_var}] ' + comment
-            if comment:
-                comments[name] = comment
+                comments[name]['inline'] = f'env: LYDIAN_{env_var}'
+            if f.doc:
+                comments[name]['pre'] = f'{name.split('.')[-1]}: {f.doc}'
 
         for fld in fields(self):
             toml_key: str = fld.name.replace('_', '-')
@@ -167,8 +182,15 @@ class Config(DataclassUpdateMixin):
             loaded: TOMLDocument = tm.load(f)
         self.update(loaded.unwrap(), missing_ok=missing_ok)
 
-def add_comments_to_toml(toml: str, comment_map: dict[str, str]) -> str:
-    """Returns a TOML string with comments added to the lines preceding every key in ``comment_map``."""
+def add_comments_to_toml(toml: str, comment_map: dict[str, dict[str, str]], comment_width: int = 80) -> str:
+    """Returns a TOML string with comments added to every key in ``comment_map``.
+
+    :param comment_map: A dictionary which can contain any of these three keys: ``pre``, ``inline``, ``post``.
+        ``pre`` will be placed before the key. ``inline`` is placed on the same line of the key, at the end of the line
+        preceded by a space. ``post`` will be placed after the key.
+    :param comment_width: How long any individual line of a non-inline comment can be before wrapping it to the next
+        line. Inline comments are never wrapped. This width will include the leading ``# `` on each line.
+    """
     toml_lines: list[str] = toml.splitlines()
 
     last_line: str = ''
@@ -187,9 +209,26 @@ def add_comments_to_toml(toml: str, comment_map: dict[str, str]) -> str:
 
     line_offset: int = 0
     for key, lineno in key_line_map.items():
-        comment: list[str] = textwrap.wrap(comment_map[key], width=100, initial_indent='# ', subsequent_indent='# ')
-        toml_lines = toml_lines[:lineno + line_offset] + comment + toml_lines[lineno + line_offset:]
-        line_offset += len(comment)
+        if comment_inline := comment_map[key].get('inline'):
+            toml_lines[lineno + line_offset] = toml_lines[lineno + line_offset] + f' # {comment_inline}'
+        if comment_pre := comment_map[key].get('pre'):
+            comment: list[str] = textwrap.wrap(
+                comment_pre,
+                width=comment_width,
+                initial_indent='# ',
+                subsequent_indent='# ',
+            )
+            toml_lines = toml_lines[:lineno + line_offset] + comment + toml_lines[lineno + line_offset:]
+            line_offset += len(comment)
+        if comment_post := comment_map[key].get('post'):
+            comment: list[str] = textwrap.wrap(
+                comment_post,
+                width=comment_width,
+                initial_indent='# ',
+                subsequent_indent='# ',
+            )
+            toml_lines = toml_lines[:1 + lineno + line_offset] + comment + toml_lines[1 + lineno + line_offset:]
+            line_offset += len(comment)
 
     return '\n'.join(toml_lines)
 

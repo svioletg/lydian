@@ -3,7 +3,7 @@ from typing import Any
 
 import tomlkit as tm
 
-from lydian.config import Config, LogLevel
+from lydian.config import Config, LogLevel, env_to_bool
 from lydian.const import TESTS_DIR
 
 
@@ -35,6 +35,10 @@ def test_dump(tmpdir: Path) -> None:
     assert inst.vote_skipping.enabled == parsed['vote-skipping']['enabled']  # ty:ignore[not-subscriptable]
     assert inst.logging.log_level == parsed['logging']['log-level']  # ty:ignore[not-subscriptable]
     assert inst.debug == parsed['debug']
+
+def test_env_to_bool() -> None:
+    assert env_to_bool('0') is env_to_bool('false') is env_to_bool('faLSE') is False
+    assert env_to_bool('1') is env_to_bool('true') is env_to_bool('trUE') is True
 
 def test_update_from_toml() -> None:
     inst = Config()

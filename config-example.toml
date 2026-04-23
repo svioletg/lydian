@@ -1,10 +1,10 @@
 # discord-vc-bot configuration
 
 prefix = "-"
-# [Environment variable: LYDIAN_DEBUG] Enables various commands and features intended for
-# developers. Will also override the log level to "DEBUG".
-debug = false
-max-filesize = 20_000_000
+# debug: Enables various commands and features intended for developers. Will
+# also override the log level to "DEBUG".
+debug = false # env: LYDIAN_DEBUG
+max-filesize = 20000000
 
 [vote-skipping]
 enabled = true
@@ -14,6 +14,6 @@ exact = 3
 
 [logging]
 log-level = "INFO"
-# [Environment variable: LYDIAN_LOG_UTC] Whether to show log timestamps in UTC. If false, they are
-# shown in your system's local time.
-utc = true
+# utc: Whether to show log timestamps in UTC. If false, they are shown in your
+# system's local time.
+utc = true # env: LYDIAN_LOG_UTC
