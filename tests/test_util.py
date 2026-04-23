@@ -1,4 +1,5 @@
 from collections.abc import Callable, Iterable
+from dataclasses import Field, dataclass, field
 from datetime import tzinfo
 from typing import Any
 
@@ -9,6 +10,18 @@ from tests import ReadOnlyDict
 
 NESTED_DICT_RO: ReadOnlyDict[str, Any] = ReadOnlyDict({'a': 1, 'b': {'a': 2, 'b': {'a': 3}}, 'c': 4})
 
+@dataclass
+class SubDataclass:  # noqa: D101
+    x: float = 1.5
+    y: list[int] = field(default_factory=list)
+
+@dataclass
+class Dataclass:  # noqa: D101
+    a: int = 1
+    b: str = 'two'
+    c: bool = True
+    d: SubDataclass = field(default_factory=SubDataclass)
+
 @pytest.mark.parametrize(('it', 'predicate', 'expected'),
     [
         (range(10), lambda n: n > 5, 6),  # noqa: PLR2004
@@ -17,6 +30,15 @@ NESTED_DICT_RO: ReadOnlyDict[str, Any] = ReadOnlyDict({'a': 1, 'b': {'a': 2, 'b'
 )
 def test_first_where[T](it: Iterable[T], predicate: Callable[[T], bool], expected: T | None) -> None:
     assert util.first_where(it, predicate) == expected
+
+def test_get_dataclass_fields() -> None:
+    dc = Dataclass()
+    dc_fields: dict[str, Field] = util.get_dataclass_fields(dc)
+    assert dc_fields['a'].default == dc.a
+    assert dc_fields['b'].default == dc.b
+    assert dc_fields['c'].default == dc.c
+    assert dc_fields['d.x'].default == dc.d.x
+    assert dc_fields['d.y'].default_factory() == dc.d.y  # ty:ignore[call-non-callable]
 
 @pytest.mark.parametrize(('timestamp', 'format_str', 'tz', 'expected'),
     [
