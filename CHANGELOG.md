@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added config table `command_aliases`
+  - Takes lists of strings to use as aliases for each command given, e.g. `join = ["j"]`
 - Added config key `debug` (boolean)
 - Added config key `max_filesize` (integer)
 - Added module `cogs.debug`

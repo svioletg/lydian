@@ -38,6 +38,12 @@ def _toml_encoder(obj: object) -> TOMLItem:
 
 tm.register_encoder(_toml_encoder)  # ty:ignore[invalid-argument-type]
 
+def _default_command_aliases() -> dict[str, list[str]]:
+    return {
+        'join': ['j'],
+        'leave': ['l'],
+    }
+
 def env_to_bool(s: str) -> bool:
     """Returns an environment variable value parsed to a ``bool``.
 
@@ -100,6 +106,7 @@ class Config(DataclassUpdateMixin):
             + ' Will also override the log level to "DEBUG".',
         metadata={'env': 'DEBUG', 'envconv': env_to_bool},
     )
+    command_aliases: dict[str, list[str]] = field(default_factory=_default_command_aliases)
     max_filesize: int = field(default=20_000_000,
         doc='Maximum filesize in bytes for media that can be downloaded by the bot.')
     vote_skipping: VoteSkippingConfig = field(default_factory=VoteSkippingConfig)
@@ -239,11 +246,12 @@ config.update_from_environment(os.environ)
 
 def main() -> int:
     """Write the default configuration as TOML to a given file path."""
+    toml: str = Config().to_toml()
     if len(sys.argv) < 2:  # noqa: PLR2004
-        print('Error: Provide a filename to write the default configuration to.')  # noqa: T201
-        return 1
-    fp: str = sys.argv[1]
-    Config().to_toml(fp)
+        print(toml)  # noqa: T201
+        return 0
+    fp: Path = Path(sys.argv[1])
+    fp.write_text(toml, 'utf-8')
     print(f'Default configuration written to: {fp}')  # noqa: T201
     return 0
 
