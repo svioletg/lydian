@@ -7,6 +7,7 @@ import pytest
 from maybetype import Nothing, Some
 
 from lydian import util
+from lydian.errors import AssuranceError
 from tests import ReadOnlyDict
 
 NESTED_DICT_RO: ReadOnlyDict[str, Any] = ReadOnlyDict({'a': 1, 'b': {'a': 2, 'b': {'a': 3}}, 'c': 4})
@@ -22,6 +23,11 @@ class Dataclass:  # noqa: D101
     b: str = 'two'
     c: bool = True
     d: SubDataclass = field(default_factory=SubDataclass)
+
+def test_assure() -> None:
+    util.assure(True)  # noqa: FBT003
+    with pytest.raises(AssuranceError):
+        util.assure(False)  # noqa: FBT003
 
 @pytest.mark.parametrize(('it', 'predicate', 'expected'),
     [

@@ -12,6 +12,8 @@ from zoneinfo import ZoneInfo
 
 from maybetype import Maybe, maybe
 
+from lydian.errors import AssuranceError
+
 
 class DataclassUpdateMixin:
     """Adds an ``update`` method to a dataclass which can update its contents similar to ``dict.update``."""
@@ -104,6 +106,11 @@ class Stopwatch:
                 self.start = perf_counter_ns()
             else:
                 self._pause_offset += perf_counter_ns() - self._paused_at
+
+def assure(condition: bool) -> None:  # noqa: FBT001
+    """Raises :py:class:`lydian.errors.AssuranceError` if ``condition`` is ``False``, otherwise does nothing."""
+    if not condition:
+        raise AssuranceError
 
 def get_dataclass_fields(dc: object, parents: list[str] | None = None) -> dict[str, Field]:
     """Returns a dictionary of field names (dotted if the field is a dataclass) to field objects for a dataclass.
