@@ -1,11 +1,13 @@
 """Voice-related commands."""
 import asyncio
-from typing import Self
+from typing import Self, cast
 
 import discord
 import yt_dlp
 from discord.ext import commands
+from loguru import logger
 
+from lydian.cogs.util import embed_info
 from lydian.config import config
 from lydian.const import DL_DIR
 
@@ -50,3 +52,43 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
 class VoiceCog(commands.Cog):
     """Voice-related commands."""
+
+    def __init__(self, bot: discord.client.Bot) -> None:
+        self.bot: discord.client.Bot = bot
+
+    @commands.command()
+    async def join(self, ctx: commands.Context) -> None:
+        """Joins the current voice channel."""
+        if not isinstance(ctx.author, discord.Member):
+            return
+
+        if (not ctx.author.voice) or (not ctx.author.voice.channel):
+            await ctx.send(embed=embed_info('You must be connected to a voice channel.'))
+            return
+
+        channel = ctx.author.voice.channel
+
+        if ctx.voice_client is not None:
+            logger.info(f'Moving from voice channel "{ctx.voice_client.channel}" to "{channel}"')
+            await cast('discord.VoiceClient', ctx.voice_client).move_to(channel)
+            return
+
+        logger.info(f'Joining voice channel: {channel}')
+        await channel.connect()
+
+    @commands.command()
+    async def leave(self, ctx: commands.Context) -> None:
+        """Leaves the current voice channel."""
+        if not isinstance(ctx.author, discord.Member):
+            return
+
+        if (ctx.voice_client is None) or (ctx.voice_client.channel is None):
+            await ctx.send(embed=embed_info('Not connected to a voice channel.'))
+            return
+
+        if (not ctx.author.voice) or (ctx.author.voice.channel != ctx.voice_client.channel):
+            await ctx.send(embed=embed_info('You must be connected to the same voice channel as the bot.'))
+            return
+
+        logger.info(f'Leaving voice channel: {ctx.voice_client.channel}')
+        await cast('discord.VoiceClient', ctx.voice_client).disconnect()

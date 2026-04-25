@@ -15,6 +15,7 @@ from rich.prompt import Confirm
 from lydian.cogs.debug import DebugCog
 from lydian.cogs.general import GeneralCog
 from lydian.cogs.util import embed_error
+from lydian.cogs.voice import VoiceCog
 from lydian.config import config
 from lydian.const import (
     CONFIG_PATH,
@@ -47,6 +48,9 @@ def get_token() -> str | None:
 @bot.event
 async def on_command_error(ctx: commands.Context, exc: Exception) -> None:
     """Handles exceptions raised while the bot is running."""
+    if isinstance(exc, commands.errors.CommandNotFound):
+        return
+
     await ctx.send(embed=embed_error('An unexpected error occurred.', 'Check logs for details.'))
     logger.error(f'{exc}\n{''.join(traceback.format_exception(exc)).strip()}')
 
@@ -61,8 +65,10 @@ async def thread_bot() -> None:
     async with bot:
         # Add cogs
         await bot.add_cog(GeneralCog(bot))
+        await bot.add_cog(VoiceCog(bot))
         if config.debug:
             await bot.add_cog(DebugCog(bot))
+
         # Start
         logger.info('Logging in; wait for "Ready!" before running commands')
         if not (token := get_token()):
@@ -82,6 +88,7 @@ async def thread_console() -> None:
         if not user_input:
             continue
         if user_input == 'stop':
+            logger.info('Stopping...')
             await bot.close()
             logger.info('Bot connection closed')
             return

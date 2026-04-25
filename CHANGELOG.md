@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added config key `debug` (boolean)
 - Added config key `max_filesize` (integer)
 - Added module `cogs.debug`
+- Added module `cogs.voice`
 - Added enum class `const.EmojiStr`
 - Added `lydian-cli` command `logs`
   - `logs latest`: Returns the most recently modified log file
