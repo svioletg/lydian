@@ -41,7 +41,7 @@ LOG_FILE_PATTERN: re.Pattern[str] = re.compile(
     flags=re.MULTILINE,
 )
 
-COLOR_INFO: int = 0x00aaff
+COLOR_INFO: int = 0xcccccc
 COLOR_OK: int = 0x00ff00
 COLOR_WARN: int = 0xffcc00
 COLOR_ERROR: int = 0xff0000
@@ -106,7 +106,7 @@ def setup_logger(
     logger.level('DEBUG', color='<cyan>')
     logger.level('INFO', color='<normal>')
     logger.level('WARNING', color='<yellow>')
-    logger.level('ERROR', color='<red>')
+    logger.level('ERROR', color='<light-red>')
 
     msg_format: str = LOG_MSG_FORMAT_UTC if log_in_utc else LOG_MSG_FORMAT
 
