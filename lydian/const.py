@@ -61,6 +61,13 @@ class EmojiStr(StrEnum):
     WARN = emojize(':warning:', language='alias')
     ERROR = emojize(':x:', language='alias')
 
+class LogLevel(StrEnum):  # noqa: D101
+    TRACE = 'TRACE'
+    DEBUG = 'DEBUG'
+    INFO = 'INFO'
+    WARNING = 'WARNING'
+    ERROR = 'ERROR'
+
 def clear_tmp_dir() -> None:
     """Removes all contents of the directory defined by ``const.TMP_DIR``."""
     logger.debug(f'Clearing tmp directory contents from {TMP_DIR}')

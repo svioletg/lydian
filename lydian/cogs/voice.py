@@ -56,7 +56,7 @@ class VoiceCog(commands.Cog):
     def __init__(self, bot: discord.client.Bot) -> None:
         self.bot: discord.client.Bot = bot
 
-    @commands.command()
+    @commands.command(aliases=config.command_aliases.get('join', ()))
     async def join(self, ctx: commands.Context) -> None:
         """Joins the current voice channel."""
         if not isinstance(ctx.author, discord.Member):
@@ -76,7 +76,7 @@ class VoiceCog(commands.Cog):
         logger.info(f'Joining voice channel: {channel}')
         await channel.connect()
 
-    @commands.command()
+    @commands.command(aliases=config.command_aliases.get('leave', ()))
     async def leave(self, ctx: commands.Context) -> None:
         """Leaves the current voice channel."""
         if not isinstance(ctx.author, discord.Member):

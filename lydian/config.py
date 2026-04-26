@@ -6,7 +6,6 @@ import textwrap
 from collections import OrderedDict
 from collections.abc import Mapping
 from dataclasses import Field, asdict, dataclass, field, fields, is_dataclass
-from enum import StrEnum
 from pathlib import Path
 from typing import Any, Literal, Self, cast
 from zoneinfo import ZoneInfo
@@ -19,7 +18,7 @@ from tomlkit.exceptions import ConvertError
 from tomlkit.items import Item as TOMLItem
 from tomlkit.toml_document import TOMLDocument
 
-from lydian.const import CONFIG_PATH
+from lydian.const import CONFIG_PATH, LogLevel
 from lydian.util import DataclassUpdateMixin, get_dataclass_fields
 
 TOML_KEY_REGEX: re.Pattern[str] = re.compile(r'^\[?([\w.-]+)\]?', flags=re.MULTILINE)
@@ -65,13 +64,6 @@ class VoteSkippingConfig(DataclassUpdateMixin):
     threshold_type: Literal['percentage', 'exact'] = 'percentage'
     percentage: int = 50
     exact: int = 3
-
-class LogLevel(StrEnum):  # noqa: D101
-    TRACE = 'TRACE'
-    DEBUG = 'DEBUG'
-    INFO = 'INFO'
-    WARNING = 'WARNING'
-    ERROR = 'ERROR'
 
 @dataclass(kw_only=True)
 class LoggingConfig(DataclassUpdateMixin):

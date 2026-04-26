@@ -18,7 +18,31 @@ from lydian.errors import AssuranceError
 class DataclassUpdateMixin:
     """Adds an ``update`` method to a dataclass which can update its contents similar to ``dict.update``."""
 
-    def update(self, d: dict[str, Any], *, missing_ok: bool = False) -> None:
+    def _update_with_parameterized_type(self, key: str, val: object, typ: type) -> None:
+        origin = maybe(get_origin(typ)).unwrap(f'Not a parameterized type: {typ!r}')
+        args = get_args(typ)
+        if not isinstance(val, origin):
+            raise TypeError(f'Expected type {typ}: {val!r}')
+
+        if origin is list:
+            list_type = args[0]
+            for i in val:
+                if not isinstance(i, list_type):
+                    raise TypeError(f'Expected type {typ} in list: {i!r}')
+        if origin is dict:
+            kt, vt = args
+            vt_args = get_args(typ)
+            if vt_args:
+                vt = get_origin(vt)
+            for k, v in val.items():
+                if not isinstance(k, kt):
+                    raise TypeError(f'Expected type {kt} for dict key: {k!r}')
+                if not isinstance(v, vt):
+                    raise TypeError(f'Expected type {vt} for dict value of key {k!r}: {v!r}')
+
+        setattr(self, key, val)
+
+    def update(self, d: dict[str, Any], *, missing_ok: bool = False) -> None:  # noqa: C901
         """Updates field values as per ``d``, attempting to convert values to the correct type.
 
         :param missing_ok: Whether to ignore keys present in ``d`` which have no field in this dataclass.
@@ -30,24 +54,33 @@ class DataclassUpdateMixin:
             )
         for k, v in d.items():
             k = k.replace('-', '_')  # noqa: PLW2901
-            if not (fld := cast('dict[str, Any]', self.__dataclass_fields__).get(k)):
+            if not (fld := cast('dict[str, Field[Any]]', self.__dataclass_fields__).get(k)):
                 if missing_ok:
                     continue
                 raise KeyError(k)
-            fld = cast('Field[Any]', fld)
 
-            typ: type = cast('type', fld.type)
-            if get_origin(typ) is Literal:
+            typ = cast('type', fld.type)
+            t_origin = get_origin(typ)
+            t_args = get_args(typ)
+
+            if is_literal := (t_origin is Literal):
                 # Making an assumption that a Literal type only consists of the same type
-                typ = type(get_args(typ)[0])
-            typ = (get_args(typ) or (typ,))[0]
+                typ = type(t_args[0])
+            elif t_origin:
+                typ = t_origin
 
-            if isinstance(v, typ):
+            if hasattr(typ, 'update'):
+                if t_origin is not dict:
+                    getattr(self, k).update(v, missing_ok=missing_ok)
+                else:
+                    getattr(self, k).update(v)
+            elif isinstance(v, typ):
                 setattr(self, k, v)
             elif converter := fld.metadata.get('converter'):
-                setattr(self, k, converter(v))
-            elif hasattr(typ, 'update'):
-                getattr(self, k).update(v, missing_ok=missing_ok)
+                converted = converter(v)
+                if is_literal and (converted not in t_args):
+                    raise ValueError(f'Expected one of {','.join(repr(i) for i in t_args)}: {converted!r}')
+                setattr(self, k, converted)
             else:
                 setattr(self, k, typ(v))
 
@@ -107,10 +140,10 @@ class Stopwatch:
             else:
                 self._pause_offset += perf_counter_ns() - self._paused_at
 
-def assure(condition: bool) -> None:  # noqa: FBT001
+def assure(condition: bool, exc_args: str = '') -> None:  # noqa: FBT001
     """Raises :py:class:`lydian.errors.AssuranceError` if ``condition`` is ``False``, otherwise does nothing."""
     if not condition:
-        raise AssuranceError
+        raise AssuranceError(exc_args)
 
 def get_dataclass_fields(dc: object, parents: list[str] | None = None) -> dict[str, Field]:
     """Returns a dictionary of field names (dotted if the field is a dataclass) to field objects for a dataclass.

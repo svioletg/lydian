@@ -22,13 +22,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Renamed `VERSION` in module `const` to `PROJECT_VERSION`
+- Renamed constant `VERSION` in module `const` to `PROJECT_VERSION`
 - `config.Config.to_toml()` now adds environment variable names of each field (if applicable) to
   the beginning of each key's associated comments
 - Log message timestamps are now shown in UTC if config key `logging.utc` is `true`, otherwise they
   are shown in the system's local time
 - Reduced log rotation size limit from 100 MB to 10 MB
-- Moved and renamed `config.DataClassUpdateMixin` to `util.DataclassUpdateMixin`
+- Moved and renamed mixin class `config.DataClassUpdateMixin` to `util.DataclassUpdateMixin`
+- Moved enum class `config.LogLevel` to `const.LogLevel`
 
 ### Removed
 

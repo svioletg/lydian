@@ -6,6 +6,10 @@ prefix = "-"
 debug = false # env: LYDIAN_DEBUG
 max-filesize = 20000000
 
+[command-aliases]
+join = ["j"]
+leave = ["l"]
+
 [vote-skipping]
 enabled = true
 threshold-type = "percentage"
