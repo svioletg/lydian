@@ -36,6 +36,6 @@ class DebugCog(commands.Cog):
     @commands.command(checks=[debug_enabled])
     async def fail(self, _ctx: commands.Context) -> None:
         """Raises a ``ValueError``."""
-        logger.debug('About to raise ValueError...')
+        logger.debug('Raising ValueError...')
         raise ValueError('Testing, testing!')
         logger.debug('Raised ValueError; this message should not be visible')
