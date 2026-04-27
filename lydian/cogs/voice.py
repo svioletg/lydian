@@ -1,6 +1,6 @@
 """Voice-related commands."""
 import asyncio
-from typing import Self, cast
+from typing import Any, Self, cast
 
 import discord
 import yt_dlp
@@ -13,7 +13,28 @@ from lydian.config import config
 from lydian.const import DL_DIR
 from lydian.errors import AbortCommand
 
-ytdl_format_options = {
+
+class YTDLLogHandler:
+    """Basic class implementing ``debug``, ``info``, and ``warning`` methods to handle YoutubeDL logging.
+
+    YoutubeDL logs both "debug" and "info" level messages using the ``debug`` method of its logger, this class allows
+    distinguishing between the two properly and instead calling the appropriate ``loguru.Logger`` methods.
+    """
+
+    def debug(self, msg: str) -> None:  # noqa: D102
+        if msg.startswith('[debug]'):
+            logger.debug(msg)
+        else:
+            logger.info(msg)
+
+    def info(self, msg: str) -> None:  # noqa: D102
+        logger.info(msg)
+
+    def warning(self, msg: str) -> None:  # noqa: D102
+        logger.warning(msg)
+
+YTDL_FORMAT_OPTIONS: dict[str, Any] = {
+    'logger': YTDLLogHandler(),
     'format': 'bestaudio/best',
     'paths': {'home': str(DL_DIR)},
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
@@ -22,13 +43,13 @@ ytdl_format_options = {
     'nocheckcertificate': True,
     'ignoreerrors': False,
     'logtostderr': False,
-    'quiet': True,
-    'no_warnings': True,
+    'quiet': False,
+    'no_warnings': False,
     'default_search': 'auto',
     'max_filesize': config.max_filesize,
 }
 
-ytdl = yt_dlp.YoutubeDL()
+ytdl = yt_dlp.YoutubeDL(YTDL_FORMAT_OPTIONS)
 
 class YTDLSource(discord.PCMVolumeTransformer):
     """A ``YoutubeDL``-based audio source to use in voice channels."""
@@ -44,7 +65,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
     async def from_url(cls, url: str, *, loop: asyncio.AbstractEventLoop | None = None, stream: bool = False) -> Self:
         """Creates a ``YTDLSource`` from a URL."""
         loop = loop or asyncio.get_event_loop()
-        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
+        data: dict[str, Any] = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
 
         if 'entries' in data:
             data = data['entries'][0]
@@ -81,7 +102,7 @@ class VoiceCog(commands.Cog):
         await voice.disconnect()
 
     @commands.command(aliases=config.command_aliases.get('play', ()))
-    async def play(self, ctx: commands.Context) -> None:
+    async def play(self, ctx: commands.Context, url: str) -> None:
         """Plays new media or resumes the currently paused media."""
         voice = _assert_voice_client(ctx.voice_client)
 
@@ -90,7 +111,8 @@ class VoiceCog(commands.Cog):
             voice.resume()
             return
 
-        source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(str(DL_DIR / 'audio.mp3')))
+        logger.info(f'Extracting info from url: {url}')
+        source = await YTDLSource.from_url(url)
         voice.play(source, signal_type='music')
 
         logger.info('Starting player')
