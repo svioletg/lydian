@@ -10,7 +10,7 @@ from maybetype import maybe
 
 from lydian.cogs.util import embed_info
 from lydian.config import config
-from lydian.const import DL_DIR
+from lydian.const import DL_DIR, YTDL_DOWNLOAD_PROGRESS_REGEX
 from lydian.errors import AbortCommand
 
 
@@ -25,9 +25,11 @@ class YTDLLogHandler:
         if msg.startswith('[debug]'):
             logger.debug('[YoutubeDL] ' + msg)
         else:
-            logger.info('[YoutubeDL] ' + msg)
+            self.info(msg)
 
     def info(self, msg: str) -> None:  # noqa: D102
+        if YTDL_DOWNLOAD_PROGRESS_REGEX.search(msg):
+            return
         logger.info('[YoutubeDL] ' + msg)
 
     def warning(self, msg: str) -> None:  # noqa: D102

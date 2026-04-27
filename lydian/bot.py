@@ -20,6 +20,7 @@ from lydian.config import config
 from lydian.const import (
     CONFIG_PATH,
     LOGS_DIR,
+    PROJECT_VERSION,
     TOKEN_PATH,
     clear_tmp_dir,
     console,
@@ -112,6 +113,7 @@ async def async_main() -> int:
     )
 
     logger.debug('Logging started')
+    logger.info(f'Lydian v{PROJECT_VERSION}')
 
     if config.logging.utc:
         logger.info('Log times are set to UTC')
