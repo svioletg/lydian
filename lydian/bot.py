@@ -133,5 +133,6 @@ async def async_main() -> int:
 
     return 0
 
+@logger.catch(onerror=lambda _: sys.exit(1))
 def main() -> int:  # noqa: D103
     sys.exit(asyncio.run(async_main()))
