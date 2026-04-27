@@ -12,11 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added config table `command_aliases`
   - Takes lists of strings to use as aliases for each command given, e.g. `join = ["j"]`
 - Added config key `debug` (boolean)
+  - A warning message will be logged if `debug` is `true` on bot startup
 - Added config key `max_filesize` (integer)
 - Added module `cogs.debug`
 - Added module `cogs.voice`
 - Added module `errors`
 - Added enum class `const.EmojiStr`
+- Added function `bot.on_command_error()` to handle command errors
+- Added function `const.create_directories()`
 - Added `lydian-cli` command `logs`
   - `logs latest`: Returns the most recently modified log file
 - Added test to `test_util` for `util.get_dataclass_fields`
@@ -28,9 +31,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the beginning of each key's associated comments
 - Log message timestamps are now shown in UTC if config key `logging.utc` is `true`, otherwise they
   are shown in the system's local time
-- Reduced log rotation size limit from 100 MB to 10 MB
+- Log files now use retention instead of rotating, keeping a maximum of 10 files
 - Moved and renamed mixin class `config.DataClassUpdateMixin` to `util.DataclassUpdateMixin`
 - Moved enum class `config.LogLevel` to `const.LogLevel`
+- Console command `stop` will now call the bot's `.close()` method and return from the thread
+  instead of just calling `sys.exit()`
+- Running `lydian.config` without a filename argument will now print the TOML to stdout instead of
+  giving an error
+- Logger "DEBUG" level color change to `cyan`
+- Logger "INFO" level color changed to `normal`
+- Logger "ERROR" level color changed to `light-red`
 
 ### Removed
 
