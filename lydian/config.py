@@ -202,7 +202,8 @@ def add_comments_to_toml(toml: str, comment_map: dict[str, dict[str, str]], comm
             table_prefix = maybe(TOML_TABLE_KEY_REGEX.match(last_line)) \
                 .unwrap(f'Failed to match TOML table key name from line: {last_line}') \
                 .group(1) + '.'
-        if (m := TOML_KEY_REGEX.match(ln)) and ((key := f'{table_prefix}{m.group(1)}') in comment_map):
+        if (m := TOML_KEY_REGEX.match(ln)) \
+            and ((key := f'{table_prefix}{m.group(1)}'.replace('-', '_')) in comment_map):
             key_line_map[key] = n
         last_line = ln
 
