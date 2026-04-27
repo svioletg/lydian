@@ -46,6 +46,8 @@ COLOR_OK: int = 0x00ff00
 COLOR_WARN: int = 0xffcc00
 COLOR_ERROR: int = 0xff0000
 
+YTDL_DOWNLOAD_PROGRESS_REGEX: re.Pattern[str] = re.compile(r'\[download\].+ETA')
+
 class ConsoleHighlighter(Highlighter):
     """Custom highlighter class for the ``rich`` console."""
 
@@ -93,6 +95,12 @@ def create_directories() -> None:
             logger.info(f'Making directory: {dp}')
             dp.mkdir()
 
+def log_file_filter(record: loguru.Record) -> bool:
+    """Determines whether a log message should be written to the current log file."""
+    msg: str = record['message']
+    # Filter out download progress messages
+    return not YTDL_DOWNLOAD_PROGRESS_REGEX.search(msg)
+
 def setup_logger(
         stdout_level: str = 'INFO',
         file_level: str = 'DEBUG',
@@ -122,6 +130,7 @@ def setup_logger(
         logs_dir / LOG_FILE_FORMAT,
         level=file_level,
         format=msg_format,
+        filter=log_file_filter,
         diagnose=False,
         retention=10,
         delay=True,
