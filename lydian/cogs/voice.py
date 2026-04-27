@@ -23,15 +23,15 @@ class YTDLLogHandler:
 
     def debug(self, msg: str) -> None:  # noqa: D102
         if msg.startswith('[debug]'):
-            logger.debug(msg)
+            logger.debug('[YoutubeDL] ' + msg)
         else:
-            logger.info(msg)
+            logger.info('[YoutubeDL] ' + msg)
 
     def info(self, msg: str) -> None:  # noqa: D102
-        logger.info(msg)
+        logger.info('[YoutubeDL] ' + msg)
 
     def warning(self, msg: str) -> None:  # noqa: D102
-        logger.warning(msg)
+        logger.warning('[YoutubeDL] ' + msg)
 
 YTDL_FORMAT_OPTIONS: dict[str, Any] = {
     'logger': YTDLLogHandler(),
