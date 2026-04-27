@@ -2,8 +2,10 @@
 
 prefix = "-"
 # debug: Enables various commands and features intended for developers. Will
-# also override the log level to "DEBUG".
+#    also override the log level to "DEBUG".
 debug = false # env: LYDIAN_DEBUG
+# max_filesize: Maximum filesize in bytes for media that can be downloaded by
+#    the bot.
 max-filesize = 20000000
 
 [command-aliases]
@@ -17,7 +19,7 @@ percentage = 50
 exact = 3
 
 [logging]
-log-level = "INFO"
+log-level = "INFO" # env: LYDIAN_LOG_LEVEL
 # utc: Whether to show log timestamps in UTC. If false, they are shown in your
-# system's local time.
+#    system's local time.
 utc = true # env: LYDIAN_LOG_UTC

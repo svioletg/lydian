@@ -216,7 +216,7 @@ def add_comments_to_toml(toml: str, comment_map: dict[str, dict[str, str]], comm
                 comment_pre,
                 width=comment_width,
                 initial_indent='# ',
-                subsequent_indent='# ',
+                subsequent_indent='#    ',
             )
             toml_lines = toml_lines[:lineno + line_offset] + comment + toml_lines[lineno + line_offset:]
             line_offset += len(comment)
@@ -225,7 +225,7 @@ def add_comments_to_toml(toml: str, comment_map: dict[str, dict[str, str]], comm
                 comment_post,
                 width=comment_width,
                 initial_indent='# ',
-                subsequent_indent='# ',
+                subsequent_indent='#    ',
             )
             toml_lines = toml_lines[:1 + lineno + line_offset] + comment + toml_lines[1 + lineno + line_offset:]
             line_offset += len(comment)

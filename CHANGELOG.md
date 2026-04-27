@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed `const.LOG_FILE_FORMAT` not being used when setting up the file handler in `const.setup_logging()`
+- Fixed `config.add_comments_to_toml` skipping hyphenated keys
 
 ## [0.1.0] - 2026-04-18
 
