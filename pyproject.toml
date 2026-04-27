@@ -1,6 +1,6 @@
 [project]
 name = "lydian-discord-bot"
-version = "0.2.0"
+version = "0.3.0"
 description = "A Discord music bot."
 authors = [
     { name = "Seth 'Violet' Gibbs" },
