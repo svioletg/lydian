@@ -6,10 +6,12 @@ import discord
 import yt_dlp
 from discord.ext import commands
 from loguru import logger
+from maybetype import maybe
 
 from lydian.cogs.util import embed_info
 from lydian.config import config
 from lydian.const import DL_DIR
+from lydian.errors import AbortCommand
 
 ytdl_format_options = {
     'format': 'bestaudio/best',
@@ -50,6 +52,15 @@ class YTDLSource(discord.PCMVolumeTransformer):
         filename: str = data['url'] if stream else ytdl.prepare_filename(data)
         return cls(discord.FFmpegPCMAudio(filename, options='-vn'), data=data)
 
+def _assert_voice_client(vc: discord.VoiceProtocol | None) -> discord.VoiceClient:
+    """Returns a ``discord.VoiceProtocol | None`` value casted to ``discord.VoiceClient``.
+
+    If ``vc`` is ``None`` or not a ``discord.VoiceClient``, a ``ValueError`` is raised.
+    """
+    return cast('discord.VoiceClient', maybe(vc) \
+        .filter(lambda x: isinstance(x, discord.VoiceClient)) \
+        .unwrap(f'expected VoiceClient instance: {vc!r}'))
+
 class VoiceCog(commands.Cog):
     """Voice-related commands."""
 
@@ -59,16 +70,76 @@ class VoiceCog(commands.Cog):
     @commands.command(aliases=config.command_aliases.get('join', ()))
     async def join(self, ctx: commands.Context) -> None:
         """Joins the current voice channel."""
+        # The auto_join hook covers this
+
+    @commands.command(aliases=config.command_aliases.get('leave', ()))
+    async def leave(self, ctx: commands.Context) -> None:
+        """Leaves the current voice channel."""
+        voice = _assert_voice_client(ctx.voice_client)
+
+        logger.info(f'Leaving voice channel: {voice.channel}')
+        await voice.disconnect()
+
+    @commands.command(aliases=config.command_aliases.get('play', ()))
+    async def play(self, ctx: commands.Context) -> None:
+        """Plays new media or resumes the currently paused media."""
+        voice = _assert_voice_client(ctx.voice_client)
+
+        if voice.is_paused():
+            logger.info('Resuming paused player')
+            voice.resume()
+            return
+
+        source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(str(DL_DIR / 'audio.mp3')))
+        voice.play(source, signal_type='music')
+
+        logger.info('Starting player')
+        await ctx.send('Playing...')
+
+    @commands.command(aliases=config.command_aliases.get('pause', ()))
+    async def pause(self, ctx: commands.Context) -> None:
+        """Pauses the currently playing media."""
+        voice = _assert_voice_client(ctx.voice_client)
+
+        if not voice.is_playing():
+            await ctx.send(embed=embed_info('Nothing is playing.'))
+            return
+
+        logger.info('Pausing player')
+        voice.pause()
+
+    @commands.command(aliases=config.command_aliases.get('stop', ()))
+    async def stop(self, ctx: commands.Context) -> None:
+        """Stops the currently playing media.
+
+        If ``-play`` is used after this command and the queue has not been cleared yet, it will play the stopped media
+        from the beginning.
+        """
+        voice = _assert_voice_client(ctx.voice_client)
+
+        if (not voice.is_playing()) and (not voice.is_paused()):
+            await ctx.send(embed=embed_info('Nothing is playing.'))
+            return
+
+        logger.info('Stopping player')
+        voice.stop()
+
+    @join.before_invoke
+    @play.before_invoke
+    async def auto_join(self, ctx: commands.Context) -> None:
+        """Automatically joins or moves to the author's current channel."""
         if not isinstance(ctx.author, discord.Member):
             return
 
         if (not ctx.author.voice) or (not ctx.author.voice.channel):
             await ctx.send(embed=embed_info('You must be connected to a voice channel.'))
-            return
+            raise AbortCommand
 
         channel = ctx.author.voice.channel
 
         if ctx.voice_client is not None:
+            if ctx.voice_client.channel == channel:
+                return
             logger.info(f'Moving from voice channel "{ctx.voice_client.channel}" to "{channel}"')
             await cast('discord.VoiceClient', ctx.voice_client).move_to(channel)
             return
@@ -76,19 +147,17 @@ class VoiceCog(commands.Cog):
         logger.info(f'Joining voice channel: {channel}')
         await channel.connect()
 
-    @commands.command(aliases=config.command_aliases.get('leave', ()))
-    async def leave(self, ctx: commands.Context) -> None:
-        """Leaves the current voice channel."""
+    @leave.before_invoke
+    @stop.before_invoke
+    async def require_connection(self, ctx: commands.Context) -> None:
+        """Cancels execution of the command if the author is not connected to the same voice channel as the bot."""
         if not isinstance(ctx.author, discord.Member):
-            return
+            raise AbortCommand
 
         if (ctx.voice_client is None) or (ctx.voice_client.channel is None):
             await ctx.send(embed=embed_info('Not connected to a voice channel.'))
-            return
+            raise AbortCommand
 
         if (not ctx.author.voice) or (ctx.author.voice.channel != ctx.voice_client.channel):
             await ctx.send(embed=embed_info('You must be connected to the same voice channel as the bot.'))
-            return
-
-        logger.info(f'Leaving voice channel: {ctx.voice_client.channel}')
-        await cast('discord.VoiceClient', ctx.voice_client).disconnect()
+            raise AbortCommand

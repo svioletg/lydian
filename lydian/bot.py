@@ -26,6 +26,7 @@ from lydian.const import (
     create_directories,
     setup_logger,
 )
+from lydian.errors import AbortCommand
 
 load_dotenv('.env')
 
@@ -48,7 +49,7 @@ def get_token() -> str | None:
 @bot.event
 async def on_command_error(ctx: commands.Context, exc: Exception) -> None:
     """Handles exceptions raised while the bot is running."""
-    if isinstance(exc, commands.errors.CommandNotFound):
+    if isinstance(exc, (commands.errors.CommandNotFound, AbortCommand)):
         return
 
     await ctx.send(embed=embed_error('An unexpected error occurred.', 'Check logs for details.'))
