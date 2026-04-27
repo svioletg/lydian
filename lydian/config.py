@@ -96,7 +96,7 @@ class Config(DataclassUpdateMixin):
         default=False,
         doc='Enables various commands and features intended for developers.'
             + ' Will also override the log level to "DEBUG".',
-        metadata={'env': 'DEBUG', 'envconv': env_to_bool},
+        metadata={'env': 'DEBUG'},
     )
     command_aliases: dict[str, list[str]] = field(default_factory=_default_command_aliases)
     max_filesize: int = field(default=20_000_000,
@@ -151,7 +151,7 @@ class Config(DataclassUpdateMixin):
         :param env: If ``None``, the current OS environment is used. A ``str`` to ``str`` mapping can be given to use
             instead, e.g. for testing.
         """
-        # An empty dictionary should still be allowed if passed
+        # An empty dictionary should still be allowed if passed, so no "env or os.environ"
         env = maybe(env).unwrap_or(os.environ)
 
         supported_fields: dict[str, Field] = {k:v for k, v in get_dataclass_fields(self).items() if 'env' in v.metadata}
@@ -162,7 +162,15 @@ class Config(DataclassUpdateMixin):
 
             # Fall back on the field type as a constructor if no converter is specified, but don't convert if envconv
             # has been explicitly set to None
-            val = env_val if not (converter := fld.metadata.get('envconv', fld.type)) else converter(env_val)
+            converter = None
+            if envconv := fld.metadata.get('envconv'):
+                converter = envconv
+            elif fld.type is bool:
+                converter = env_to_bool
+            else:
+                converter = cast('type', fld.type)
+
+            val = env_val if converter is None else converter(env_val)
 
             if not isinstance(val, cast('type', fld.type)):
                 raise TypeError(f'Invalid type for field "{name}": {val!r}')
