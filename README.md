@@ -1,10 +1,18 @@
-# Lydian (Discord Bot)
+# Lydian (Discord Bot) <!-- omit in toc -->
 
-Lydian is a Discord bot for playing music.
+Lydian is a Discord bot for playing music. It uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) to
+extract info and download media from URLs, and thus will support
+[any source that yt-dlp supports](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md).
 
 Documentation: <https://lydian-discord-bot.readthedocs.io/en/latest/>
 
-## Setup
+- [Setup: Lydian](#setup-lydian)
+- [Setup: Discord](#setup-discord)
+- [Usage: Running the bot](#usage-running-the-bot)
+- [Usage: Bot console](#usage-bot-console)
+- [Usage: CLI commands](#usage-cli-commands)
+
+## Setup: Lydian
 
 Install [Python](https://www.python.org/) version 3.14 or higher. If you're using MacOS or Linux, I
 recommend using [pyenv](https://github.com/pyenv/pyenv). The bot is structed as a Python package,
