@@ -23,16 +23,16 @@ dependencies = [
     "yt-dlp>=2026.3.17",
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 3 - Beta",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "ipython>=9.12.0",
     "pytest>=9.0.3",
-    "ruff>=0.15.10",
-    "ty>=0.0.30",
+    "ruff>=0.15.12",
+    "ty>=0.0.32",
 ]
 docs = [
     "furo>=2025.12.19",
