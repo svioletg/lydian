@@ -85,10 +85,15 @@ async def thread_console() -> None:
     """Returns the ``Coroutine`` thread for the interactive console."""
     logger.info('Console is active')
     while True:
-        user_input: str = await aioconsole.ainput()
-        user_input = user_input.lower().strip()
+        try:
+            user_input: str = (await aioconsole.ainput()).lower().strip()
+        except EOFError:
+            user_input = 'stop'
         if not user_input:
             continue
+
+        logger.log('CONSOLE', user_input)
+
         if user_input == 'stop':
             logger.info('Stopping...')
             await bot.close()
@@ -107,7 +112,7 @@ async def async_main() -> int:
         return 0
 
     setup_logger(
-        stdout_level='DEBUG' if config.debug else config.logging.log_level,
+        'DEBUG' if config.debug else config.logging.log_level,
         logs_dir=LOGS_DIR,
         log_in_utc=config.logging.utc,
     )

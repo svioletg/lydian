@@ -95,6 +95,9 @@ def create_directories() -> None:
             logger.info(f'Making directory: {dp}')
             dp.mkdir()
 
+def _stdout_log_filter(record: loguru.Record) -> bool:
+    return record['level'].name != 'CONSOLE'
+
 def setup_logger(
         stdout_level: str = 'INFO',
         file_level: str = 'DEBUG',
@@ -112,14 +115,24 @@ def setup_logger(
     """
     logger.remove()
 
+    # Standard levels
     logger.level('DEBUG', color='<cyan>')
     logger.level('INFO', color='<normal>')
     logger.level('WARNING', color='<yellow>')
     logger.level('ERROR', color='<light-red>')
 
+    # For echoing console input to log files
+    logger.level('CONSOLE', no=50, color='<normal>')
+
     msg_format: str = LOG_MSG_FORMAT_UTC if log_in_utc else LOG_MSG_FORMAT
 
-    logger.add(sys.stdout, level=stdout_level, format=msg_format, diagnose=False)
+    logger.add(
+        sys.stdout,
+        level=stdout_level,
+        format=msg_format,
+        filter=_stdout_log_filter,
+        diagnose=False,
+    )
     logger.add(
         logs_dir / LOG_FILE_FORMAT,
         level=file_level,

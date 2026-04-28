@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Lydian version is now logged on bot startup
+- Console input is now logged in log files
 
 ### Changed
 
