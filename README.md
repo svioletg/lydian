@@ -11,6 +11,7 @@ Documentation: <https://lydian-discord-bot.readthedocs.io/en/latest/>
 - [Usage: Running the bot](#usage-running-the-bot)
 - [Usage: Bot console](#usage-bot-console)
 - [Usage: CLI commands](#usage-cli-commands)
+  - [`logs latest`](#logs-latest)
 
 ## Setup: Lydian
 
@@ -37,13 +38,13 @@ If both options are present, the environment variable will be used.
 
 ## Usage: Running the bot
 
-Lydian's main command is `lydian-start`, which will start running the bot. When attempting to run,
+Lydian's main command is `lydian`, which will start running the bot. When attempting to run,
 Lydian will check for a file named `lydian-config.toml` in your current working directory (the
 directory you ran the command from), and will exit with an error if one is not present. If it does
 see this file, it will begin to use that directory for storing data related to the bot like logs
 and downloaded media. You should make a folder somewhere on your PC, for example named `lydian`,
 make a new file called `lydian-config.toml` (ensure the file extension really *is* `.toml`), then
-run `lydian-start` in that folder.
+run `lydian` in that folder.
 
 The bot can be stopped either by using the `stop` command, or hitting Ctrl+C while focused on the
 window.
@@ -58,6 +59,11 @@ Lydian implements a basic console that can accept some limited commands while th
 
 ## Usage: CLI commands
 
-Lydian provides some utilities under the `lydian-cli` command. Run `lydian-cli --help` to view them.
+Lydian provides some utilities under the `lydian-manage` command. Run `lydian-manage --help` to
+view them.
 
-TODO
+### `logs latest`
+
+Prints the filepath to the most recently created log file.
+
+Arguments: N/A

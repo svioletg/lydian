@@ -1,5 +1,6 @@
 """Voice-related commands."""
 import asyncio
+import re
 from collections import deque
 from dataclasses import dataclass
 from typing import Any, Self, cast, override
@@ -10,7 +11,7 @@ from discord.ext import commands
 from loguru import logger
 from maybetype import maybe
 
-from lydian.cogs.util import embed_info
+from lydian.cogs.util import embed_info, embed_ok
 from lydian.config import config
 from lydian.const import DL_DIR, YTDL_DOWNLOAD_PROGRESS_REGEX
 from lydian.errors import AbortCommand
@@ -142,16 +143,21 @@ class VoiceCog(commands.Cog):
             await ctx.send(embed=embed_info('The player is not paused.'))
             return
 
+        if not re.match(r'https?://', url):
+            logger.info(f'Invalid URL: {url}')
+            await ctx.send(embed=embed_info('URL must start with `http://` or `https://`.'))
+            return
+
         logger.info(f'Extracting info from URL: {url}')
         progress_msg: discord.Message = await ctx.send(embed=embed_info('Getting media info...', url))
 
-        source = await YTDLSource.from_url(url)
-        await progress_msg.edit(embed=embed_info(''))
+        info: dict[str, Any] = await asyncio.get_event_loop().run_in_executor(None,
+            lambda: ytdl.extract_info(url, download=False))
 
-        logger.info('Starting player')
-        voice.play(source, signal_type='music')
+        self.queue.append(item := MediaItem(info['title'], url))
 
-        await ctx.send('Playing...')
+        logger.debug(f'Appended to queue: {item}')
+        await progress_msg.edit(embed=embed_ok(f'Appended to queue: {item.title}', item.url))
 
     @commands.command(aliases=config.command_aliases.get('pause', ()))
     async def pause(self, ctx: commands.Context) -> None:
@@ -180,6 +186,11 @@ class VoiceCog(commands.Cog):
 
         logger.info('Stopping player')
         voice.stop()
+
+    @commands.command('queue', aliases=config.command_aliases.get('queue', ()))
+    async def show_queue(self, ctx: commands.Context) -> None:
+        """Shows the queue."""
+        await ctx.send('\n'.join(map(str, self.queue)))
 
     @join.before_invoke
     @play.before_invoke
