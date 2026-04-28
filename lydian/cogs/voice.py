@@ -1,6 +1,8 @@
 """Voice-related commands."""
 import asyncio
-from typing import Any, Self, cast
+from collections import deque
+from dataclasses import dataclass
+from typing import Any, Self, cast, override
 
 import discord
 import yt_dlp
@@ -75,6 +77,26 @@ class YTDLSource(discord.PCMVolumeTransformer):
         filename: str = data['url'] if stream else ytdl.prepare_filename(data)
         return cls(discord.FFmpegPCMAudio(filename, options='-vn'), data=data)
 
+@dataclass
+class MediaItem:
+    """Represents a media item in the bot's queue."""
+
+    title: str
+    url: str
+
+class MediaQueue(deque[MediaItem]):
+    """Queue for keeping track of what media is playing or to be played."""
+
+    def __init__(self, *, maxlen: int | None = None) -> None:
+        super().__init__(maxlen=maxlen)
+        self.locked: bool = False
+
+    @override
+    def append(self, x: MediaItem) -> None:
+        self.locked = True
+        super().append(x)
+        self.locked = False
+
 def _assert_voice_client(vc: discord.VoiceProtocol | None) -> discord.VoiceClient:
     """Returns a ``discord.VoiceProtocol | None`` value casted to ``discord.VoiceClient``.
 
@@ -89,6 +111,7 @@ class VoiceCog(commands.Cog):
 
     def __init__(self, bot: discord.client.Bot) -> None:
         self.bot: discord.client.Bot = bot
+        self.queue = MediaQueue(maxlen=config.max_queue_length)
 
     @commands.command(aliases=config.command_aliases.get('join', ()))
     async def join(self, ctx: commands.Context) -> None:
@@ -104,20 +127,30 @@ class VoiceCog(commands.Cog):
         await voice.disconnect()
 
     @commands.command(aliases=config.command_aliases.get('play', ()))
-    async def play(self, ctx: commands.Context, url: str) -> None:
-        """Plays new media or resumes the currently paused media."""
+    async def play(self, ctx: commands.Context, url: str | None = None) -> None:
+        """Plays media, adds media to the queue, or resumes the player if paused.
+
+        If the player is paused, the command can be used without any arguments to resume it.
+        """
         voice = _assert_voice_client(ctx.voice_client)
 
-        if voice.is_paused():
-            logger.info('Resuming paused player')
-            voice.resume()
+        if not url:
+            if voice.is_paused():
+                logger.info('Resuming paused player')
+                voice.resume()
+                return
+            await ctx.send(embed=embed_info('The player is not paused.'))
             return
 
-        logger.info(f'Extracting info from url: {url}')
+        logger.info(f'Extracting info from URL: {url}')
+        progress_msg: discord.Message = await ctx.send(embed=embed_info('Getting media info...', url))
+
         source = await YTDLSource.from_url(url)
-        voice.play(source, signal_type='music')
+        await progress_msg.edit(embed=embed_info(''))
 
         logger.info('Starting player')
+        voice.play(source, signal_type='music')
+
         await ctx.send('Playing...')
 
     @commands.command(aliases=config.command_aliases.get('pause', ()))

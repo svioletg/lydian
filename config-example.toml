@@ -4,6 +4,9 @@ prefix = "-"
 # debug: Enables various commands and features intended for developers. Will
 #    also override the log level to "DEBUG".
 debug = false # env: LYDIAN_DEBUG
+# max_queue_length: Maximum number of items that can be added to the media
+#    queue.
+max-queue-length = 100
 # max_filesize: Maximum filesize in bytes for media that can be downloaded by
 #    the bot.
 max-filesize = 20000000

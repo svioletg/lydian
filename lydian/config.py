@@ -99,6 +99,8 @@ class Config(DataclassUpdateMixin):
         metadata={'env': 'DEBUG'},
     )
     command_aliases: dict[str, list[str]] = field(default_factory=_default_command_aliases)
+    max_queue_length: int = field(default=100,
+        doc='Maximum number of items that can be added to the media queue.')
     max_filesize: int = field(default=20_000_000,
         doc='Maximum filesize in bytes for media that can be downloaded by the bot.')
     vote_skipping: VoteSkippingConfig = field(default_factory=VoteSkippingConfig)
