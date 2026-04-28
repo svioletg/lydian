@@ -49,8 +49,8 @@ Changelog = "https://github.com/svioletg/lydian-discord-bot/blob/main/CHANGELOG.
 Issues = "https://github.com/svioletg/lydian-discord-bot/issues"
 
 [project.scripts]
-lydian-start = "lydian.bot:main"
-lydian-cli = "lydian.cli:cli"
+lydian = "lydian.bot:main"
+lydian-manage = "lydian.cli:cli"
 
 [build-system]
 requires = ["hatchling >= 1.26"]
