@@ -1,4 +1,5 @@
 """Debugging or testing commands for development purposes."""
+from discord import Embed
 from discord.ext import commands
 from loguru import logger
 
@@ -39,3 +40,20 @@ class DebugCog(commands.Cog):
         logger.debug('Raising ValueError...')
         raise ValueError('Testing, testing!')
         logger.debug('Raised ValueError; this message should not be visible')
+
+    @commands.command(checks=[debug_enabled])
+    async def bigembed(self, ctx: commands.Context) -> None:
+        """Sends a variety of messages with more complicated ``discord.Embed``s."""
+        embed = Embed(title='Test Embed', description='Description')
+
+        for n in range(25):
+            embed.add_field(name=f'inline embed #{n + 1}', value='value')
+
+        await ctx.send(embed=embed)
+
+        embed = Embed(title='Test Embed', description='Description')
+
+        for n in range(25):
+            embed.add_field(name=f'non-inline embed #{n + 1}', value='value', inline=False)
+
+        await ctx.send(embed=embed)

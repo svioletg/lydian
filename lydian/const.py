@@ -30,9 +30,10 @@ DATA_DIR         : Path = (CONFIG_PATH.parent / 'lydian-data') if CONFIG_PATH.pa
 TMP_DIR          : Path = DATA_DIR / 'tmp'
 LOGS_DIR         : Path = DATA_DIR / 'logs'
 DL_DIR           : Path = DATA_DIR / 'dl'
+"""Directory for storing media downloaded by youtube-dl."""
 TOKEN_PATH       : Path = CONFIG_PATH.parent / 'token.txt'
 
-LOG_MSG_FORMAT_UTC: str = '<level>[{time:YYYY-MM-DD HH:mm:ss!UTC}] [{module}/{level}]: {message}</level>'
+LOG_MSG_FORMAT_UTC: str = '<level>[{time:YYYY-MM-DD HH:mm:ss!UTC}] [{module}::{function}/{level}]: {message}</level>'
 LOG_MSG_FORMAT: str = LOG_MSG_FORMAT_UTC.replace('!UTC', '')
 LOG_FILE_FORMAT: str = '{time:YYYY-MM-DDTHHmmssZZ}.log'
 LOG_FILE_PATTERN: re.Pattern[str] = re.compile(
@@ -58,10 +59,17 @@ class ConsoleHighlighter(Highlighter):
 class EmojiStr(StrEnum):
     """Strings for emoji commonly used by the bot."""
 
+    # General
     INFO = emojize(':information:', language='alias')
     OK = emojize(':white_check_mark:', language='alias')
     WARN = emojize(':warning:', language='alias')
     ERROR = emojize(':x:', language='alias')
+
+    # Media
+    PLAY = emojize(':arrow_forward:', language='alias')
+    PAUSE = emojize(':pause_button:', language='alias')
+    STOP = emojize(':stop_button:', language='alias')
+    SKIP = emojize(':fast_forward:', language='alias')
 
 class LogLevel(StrEnum):  # noqa: D101
     TRACE = 'TRACE'

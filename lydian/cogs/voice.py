@@ -3,7 +3,7 @@ import asyncio
 import re
 from collections import deque
 from dataclasses import dataclass
-from typing import Any, Self, cast, override
+from typing import Any, Self, cast
 
 import discord
 import yt_dlp
@@ -13,7 +13,7 @@ from maybetype import maybe
 
 from lydian.cogs.util import embed_info, embed_ok
 from lydian.config import config
-from lydian.const import DL_DIR, YTDL_DOWNLOAD_PROGRESS_REGEX
+from lydian.const import DL_DIR, YTDL_DOWNLOAD_PROGRESS_REGEX, EmojiStr
 from lydian.errors import AbortCommand
 
 
@@ -84,28 +84,31 @@ class MediaItem:
 
     title: str
     url: str
+    thumbnail_url: str | None = None
+
+    @classmethod
+    def from_ytdl_extracted(cls, info: dict[str, Any]) -> Self:
+        """Returns a ``MediaItem`` created from the dictionary returned by ``yt_dlp.YoutubeDL.extract_info``."""
+        return cls(
+            title=info['title'],
+            url=info['original_url'],
+            thumbnail_url=info.get('thumbnail'),
+        )
 
 class MediaQueue(deque[MediaItem]):
     """Queue for keeping track of what media is playing or to be played."""
 
     def __init__(self, *, maxlen: int | None = None) -> None:
         super().__init__(maxlen=maxlen)
-        self.locked: bool = False
-
-    @override
-    def append(self, x: MediaItem) -> None:
-        self.locked = True
-        super().append(x)
-        self.locked = False
 
 def _assert_voice_client(vc: discord.VoiceProtocol | None) -> discord.VoiceClient:
     """Returns a ``discord.VoiceProtocol | None`` value casted to ``discord.VoiceClient``.
 
-    If ``vc`` is ``None`` or not a ``discord.VoiceClient``, a ``ValueError`` is raised.
+    If ``vc`` is ``None`` or not a ``discord.VoiceClient``, a ``TypeError`` is raised.
     """
     return cast('discord.VoiceClient', maybe(vc) \
         .filter(lambda x: isinstance(x, discord.VoiceClient)) \
-        .unwrap(f'expected VoiceClient instance: {vc!r}'))
+        .unwrap(TypeError(f'expected VoiceClient instance: {vc!r}')))
 
 class VoiceCog(commands.Cog):
     """Voice-related commands."""
@@ -113,6 +116,65 @@ class VoiceCog(commands.Cog):
     def __init__(self, bot: discord.client.Bot) -> None:
         self.bot: discord.client.Bot = bot
         self.queue = MediaQueue(maxlen=config.max_queue_length)
+        self.can_advance: bool = True
+        """Whether the queue is allowed to be advanced right now. Used as a lock for :py:meth:`advance_queue`."""
+        self.now_playing: MediaItem | None = None
+        """The :py:class:`MediaItem`, if any, that is currently being played by the bot."""
+
+    async def advance_queue(self, ctx: commands.Context, *, exc: Exception | None = None) -> None:
+        """Plays the next item in the queue.
+
+        Returns immediately if the queue is empty.
+        If the bot is paused or playing audio, it will be stopped and the current media is skipped.
+
+        .. important::
+            It is assumed that the bot is connected voice when calling this method, otherwise ``TypeError`` will be
+            raised. If whether there is a connection is not reasonably guaranteed, the check should happen before
+            calling this.
+
+        :param ctx: A ``discord.ext.commands.Context`` object, needed to send messages.
+        :param exc: Any ``Exception`` passed to the function by the ``discord.VoiceClient``'s ``.play()`` method.
+            If an exception is given, it is raised immediately the queue is not advanced.
+        """
+        if exc:
+            raise exc
+
+        if not self.can_advance:
+            return
+
+        if not self.queue:
+            if self.now_playing:
+                self.now_playing = None
+                logger.info('Media queue has emptied out')
+            return
+
+        self.can_advance = False
+
+        try:
+            voice = _assert_voice_client(ctx.voice_client)
+
+            if voice.is_playing() or voice.is_paused():
+                voice.stop()
+                self.now_playing = None
+
+            item = self.queue.popleft()
+
+            logger.debug(f'Getting YTDLSource from: {item.url}')
+            source = await YTDLSource.from_url(item.url)
+
+            logger.info(f'Playing: {item}')
+            voice.play(source, after=lambda e: asyncio.run(self.advance_queue(ctx, exc=e)))
+            self.now_playing = item
+
+            await ctx.send(embed=discord.Embed(
+                title=f'{EmojiStr.PLAY} Playing: {item.title}',
+                description=item.url,
+            ).set_thumbnail(url=item.thumbnail_url))
+        finally:
+            # Make sure to release the queue lock
+            self.can_advance = True
+
+    #region COMMANDS
 
     @commands.command(aliases=config.command_aliases.get('join', ()))
     async def join(self, ctx: commands.Context) -> None:
@@ -135,6 +197,7 @@ class VoiceCog(commands.Cog):
         """
         voice = _assert_voice_client(ctx.voice_client)
 
+        # Treat this as a "resume" command if no URL is given
         if not url:
             if voice.is_paused():
                 logger.info('Resuming paused player')
@@ -143,6 +206,8 @@ class VoiceCog(commands.Cog):
             await ctx.send(embed=embed_info('The player is not paused.'))
             return
 
+        # Otherwise, make sure it *is* a URL
+        # We're preventing plain text YouTube searches for now, but it'll be implemented later
         if not re.match(r'https?://', url):
             logger.info(f'Invalid URL: {url}')
             await ctx.send(embed=embed_info('URL must start with `http://` or `https://`.'))
@@ -154,10 +219,15 @@ class VoiceCog(commands.Cog):
         info: dict[str, Any] = await asyncio.get_event_loop().run_in_executor(None,
             lambda: ytdl.extract_info(url, download=False))
 
-        self.queue.append(item := MediaItem(info['title'], url))
+        self.queue.append(item := MediaItem.from_ytdl_extracted(info))
 
-        logger.debug(f'Appended to queue: {item}')
-        await progress_msg.edit(embed=embed_ok(f'Appended to queue: {item.title}', item.url))
+        # Start running the queue if nothing is playing, otherwise add this onto the queue
+        if not self.now_playing:
+            await progress_msg.delete()
+            await self.advance_queue(ctx)
+        else:
+            logger.debug(f'Appended to media queue: {item}')
+            await progress_msg.edit(embed=embed_ok(f'Queued at position #{len(self.queue)}: {item.title}', item.url))
 
     @commands.command(aliases=config.command_aliases.get('pause', ()))
     async def pause(self, ctx: commands.Context) -> None:
@@ -170,6 +240,11 @@ class VoiceCog(commands.Cog):
 
         logger.info('Pausing player')
         voice.pause()
+
+    @commands.command(aliases=config.command_aliases.get('skip', ()))
+    async def skip(self, ctx: commands.Context) -> None:
+        """Skips the currently playing media."""
+        await self.advance_queue(ctx)
 
     @commands.command(aliases=config.command_aliases.get('stop', ()))
     async def stop(self, ctx: commands.Context) -> None:
@@ -190,7 +265,24 @@ class VoiceCog(commands.Cog):
     @commands.command('queue', aliases=config.command_aliases.get('queue', ()))
     async def show_queue(self, ctx: commands.Context) -> None:
         """Shows the queue."""
-        await ctx.send('\n'.join(map(str, self.queue)))
+        if not self.queue:
+            await ctx.send(embed=embed_info('Queue is empty.'))
+
+        queue_embed = discord.Embed(title='Queue', description=f'{len(self.queue)} items')
+        for n, item in enumerate(self.queue, start=1):
+            queue_embed.add_field(name=f'#{n}. {item.title}', value=item.url, inline=False)
+
+        await ctx.send(embed=queue_embed)
+
+    @commands.command(aliases=config.command_aliases.get('clear', ()))
+    async def clear(self, ctx: commands.Context) -> None:
+        """Clears the queue."""
+        self.queue.clear()
+        await ctx.send(embed=embed_ok('Cleared the queue.'))
+
+    #endregion COMMANDS
+
+    #region HOOKS
 
     @join.before_invoke
     @play.before_invoke
@@ -216,9 +308,14 @@ class VoiceCog(commands.Cog):
         await channel.connect()
 
     @leave.before_invoke
+    @skip.before_invoke
     @stop.before_invoke
     async def require_connection(self, ctx: commands.Context) -> None:
-        """Cancels execution of the command if the author is not connected to the same voice channel as the bot."""
+        """Prevents execution of the command if the author is not connected to the same voice channel as the bot.
+
+        This hook does not need to be used for commands which already use the :py:meth:`auto_join` hook, since that
+        will join and ensure a connection.
+        """
         if not isinstance(ctx.author, discord.Member):
             raise AbortCommand
 
@@ -229,3 +326,5 @@ class VoiceCog(commands.Cog):
         if (not ctx.author.voice) or (ctx.author.voice.channel != ctx.voice_client.channel):
             await ctx.send(embed=embed_info('You must be connected to the same voice channel as the bot.'))
             raise AbortCommand
+
+    #endregion HOOKS
