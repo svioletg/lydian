@@ -11,12 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Lydian version is now logged on bot startup
 - Console input is now logged in log files
+- Added function `const._stdout_log_filter()`
+- Added members `PLAY`, `PAUSE`, `SKIP`, and `STOP` to enum class `const.EmojiStr`
 
 ### Changed
 
 - Media download progress messages are now completely ignored
 - Traceback logs for `CommandInvokeError` exceptions will now only include the traceback for the
   original exception it was raised from, otherwise largely useless clutter is introduced
+- `cogs.voice._assert_voice_client()` now more accurately raises `TypeError` instead of `ValueError`
+  when its argument is `None` or not a `discord.VoiceClient`
 
 ### Removed
 
