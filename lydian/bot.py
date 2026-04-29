@@ -59,7 +59,7 @@ async def on_command_error(ctx: commands.Context, exc: Exception) -> None:
 @bot.event
 async def on_ready() -> None:  # noqa: D103
     logger.info(f'Logged in as {bot.user}')
-    logger.info('Ready!')
+    logger.info('*** Ready! ***')
 
 async def thread_bot() -> None:
     """Returns the ``Coroutine`` thread for the bot."""
