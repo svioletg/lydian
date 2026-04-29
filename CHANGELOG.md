@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Media download progress messages are now completely ignored
+- Traceback logs for `CommandInvokeError` exceptions will now only include the traceback for the
+  original exception it was raised from, otherwise largely useless clutter is introduced
 
 ### Removed
 

@@ -53,8 +53,15 @@ async def on_command_error(ctx: commands.Context, exc: Exception) -> None:
     if isinstance(exc, (commands.errors.CommandNotFound, AbortCommand)):
         return
 
+    formatted_exc: str
+    if isinstance(exc, commands.CommandInvokeError):
+        # Will clutter up the traceback, just use the exception this was raised from
+        formatted_exc = ''.join(traceback.format_exception(exc.args[0]))
+    else:
+        formatted_exc = ''.join(traceback.format_exception(exc))
+
     await ctx.send(embed=embed_error('An unexpected error occurred.', 'Check logs for details.'))
-    logger.error(f'{exc}\n{''.join(traceback.format_exception(exc)).strip()}')
+    logger.error(f'{exc}\n{formatted_exc.strip()}')
 
 @bot.event
 async def on_ready() -> None:  # noqa: D103
