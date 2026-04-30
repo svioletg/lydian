@@ -5,11 +5,12 @@ import os
 import sys
 import traceback
 
-import aioconsole
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 from loguru import logger
+from prompt_toolkit import PromptSession
+from prompt_toolkit.patch_stdout import patch_stdout
 from rich.prompt import Confirm
 
 from lydian.cogs.debug import DebugCog
@@ -21,7 +22,6 @@ from lydian.const import (
     CONFIG_PATH,
     LOGS_DIR,
     PROJECT_VERSION,
-    TOKEN_PATH,
     clear_tmp_dir,
     console,
     create_directories,
@@ -40,28 +40,23 @@ bot = commands.Bot(
     log_handler=logging.FileHandler(filename=LOGS_DIR / 'discord.log', encoding='utf-8', mode='w'),
 )
 
-def get_token() -> str | None:
-    """Returns the Discord bot token from either a ``token.txt`` file or from the environment.
-
-    If the environment variable ``LYDIAN_TOKEN`` is set, its value takes precedence over ``token.txt``.
-    """
-    return os.environ.get('LYDIAN_TOKEN') or (TOKEN_PATH.read_text('utf-8').strip() if TOKEN_PATH.exists() else None)
+event_start_console = asyncio.Event()
 
 @bot.event
 async def on_command_error(ctx: commands.Context, exc: Exception) -> None:
     """Handles exceptions raised while the bot is running."""
-    if isinstance(exc, (commands.errors.CommandNotFound, AbortCommand)):
-        return
+    try:
+        if isinstance(exc, (commands.errors.CommandNotFound, AbortCommand)):
+            return
 
-    formatted_exc: str
-    if isinstance(exc, commands.CommandInvokeError):
-        # Will clutter up the traceback, just use the exception this was raised from
-        formatted_exc = ''.join(traceback.format_exception(exc.args[0]))
-    else:
-        formatted_exc = ''.join(traceback.format_exception(exc))
+        if isinstance(exc, commands.CommandInvokeError):
+            # Will clutter up the traceback, just use the exception this was raised from
+            exc = exc.original
 
-    await ctx.send(embed=embed_error('An unexpected error occurred.', 'Check logs for details.'))
-    logger.error(f'{exc}\n{formatted_exc.strip()}')
+        await ctx.send(embed=embed_error('An unexpected error occurred.', 'Check logs for details.'))
+        logger.error(f'{exc}\n{''.join(traceback.format_exception(exc)).strip()}')
+    except Exception as e:  # noqa: BLE001 ; Otherwise any exception raised in the handler is eaten and ignored
+        logger.error(''.join(traceback.format_exception(e)))
 
 @bot.event
 async def on_ready() -> None:  # noqa: D103
@@ -80,22 +75,31 @@ async def thread_bot() -> None:
 
         # Start
         logger.info('Logging in; wait for "Ready!" before running commands')
-        if not (token := get_token()):
-            logger.error(
-                'Failed to find a bot token; no token.txt file present and the LYDIAN_TOKEN environment variable has'
-                + ' not been set',
-            )
-            raise SystemExit(1)
+
+        target_env_var: str = 'LYDIAN_DEBUG_TOKEN' if config.debug else 'LYDIAN_TOKEN'
+        if not (token := os.environ.get(target_env_var)):
+            logger.error(f'No bot token found, please set the {target_env_var} environment variable')
+            return
+
+        event_start_console.set()
         await bot.start(token)
 
 async def thread_console() -> None:
     """Returns the ``Coroutine`` thread for the interactive console."""
-    logger.info('Console is active')
+    await event_start_console.wait()
+
+    session = PromptSession()
+
+    logger.debug('Console is active')
+
     while True:
-        try:
-            user_input: str = (await aioconsole.ainput()).lower().strip()
-        except EOFError:
-            user_input = 'stop'
+        # raw=True to allow log colorization
+        with patch_stdout(raw=True):
+            try:
+                user_input: str = await session.prompt_async('> ')
+            except EOFError:
+                user_input = 'stop'
+
         if not user_input:
             continue
 
@@ -140,10 +144,13 @@ async def async_main() -> int:
     create_directories()
     clear_tmp_dir()
 
-    await asyncio.gather(
-        asyncio.create_task(thread_bot()),
-        asyncio.create_task(thread_console()),
+    _, pending = await asyncio.wait(
+        (asyncio.create_task(thread_bot()), asyncio.create_task(thread_console())),
+        return_when=asyncio.FIRST_COMPLETED,
     )
+
+    for task in pending:
+        task.cancel()
 
     return 0
 

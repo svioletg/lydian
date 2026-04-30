@@ -19,12 +19,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Media download progress messages are now completely ignored
 - Traceback logs for `CommandInvokeError` exceptions will now only include the traceback for the
   original exception it was raised from, otherwise largely useless clutter is introduced
-- `cogs.voice._assert_voice_client()` now more accurately raises `TypeError` instead of `ValueError`
-  when its argument is `None` or not a `discord.VoiceClient`
+- `cogs.voice._assert_voice_client()` now more accurately raises `TypeError` instead of
+  `ValueError` when its argument is `None` or not a `discord.VoiceClient`
+- Switched to using `prompt-toolkit` for the bot console instead of `aioconsole`
+- The logger's stdout sink is now a function that directly calls `sys.stdout.write()` to work
+  around an `prompt-toolkit`'s `patch_stdout` not working as intended in combination with
+  `loguru`'s logging
+  - See: <https://github.com/Delgan/loguru/issues/1385>
 
 ### Removed
 
+- Removed function `bot.get_token()`
 - Removed function `const.log_file_filter()`
+
+### Fixed
+
+- Exceptions raised inside of `bot.on_command_error` are now logged and not silently ignored
 
 ## [0.2.0] - 2026-04-27
 
@@ -69,7 +79,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed `const.LOG_FILE_FORMAT` not being used when setting up the file handler in `const.setup_logging()`
+- Fixed `const.LOG_FILE_FORMAT` not being used when setting up the file handler in
+  `const.setup_logging()`
 - Fixed `config.add_comments_to_toml` skipping hyphenated keys
 
 ## [0.1.0] - 2026-04-18

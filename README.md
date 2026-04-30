@@ -1,12 +1,12 @@
 # Lydian (Discord Bot) <!-- omit in toc -->
 
 Lydian is a Discord bot for playing music. It uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) to
-extract info and download media from URLs, and thus will support
-[any source that yt-dlp supports](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md).
+extract info and download media from URLs, and thus will support [any source that yt-dlp
+supports](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md).
 
-> [!IMPORTANT]
-> Lydian is intended to be used in only one server at a time. Trying to play music in two or more
-> different servers at once may cause unexpected issues and is unsupported for the time being.
+> [!IMPORTANT] Lydian is intended to be used in only one server at a time. Trying to play music in
+> two or more different servers at once may cause unexpected issues and is unsupported for the time
+> being.
 
 Documentation: <https://lydian-discord-bot.readthedocs.io/en/latest/>
 
@@ -41,20 +41,18 @@ pip install -U git+https://github.com/svioletg/lydian-discord-bot.git
 
 Follow the instructions here: <https://discordpy.readthedocs.io/en/stable/discord.html>
 
-Lydian will look for your bot's token in one of two places, either inside a `token.txt` file in the
-current directory when running the bot, or it will check if the `LYDIAN_TOKEN` environment variable
-is set. The latter can also be specified in a `.env` file, which the bot will load automatically.
-If both options are present, the environment variable will be used.
+You must provide your bot's token via the `LYDIAN_TOKEN` environment variable. The recommended way
+to do this is by creating a file called exactly `.env` in the directory you'll run the bot from, and
+write in `LYDIAN_TOKEN=<token>` where `<token>` should be replaced with your real bot token.
 
 ## Usage: Running the bot
 
-Lydian's main command is `lydian`, which will start running the bot. When attempting to run,
-Lydian will check for a file named `lydian-config.toml` in your current working directory (the
-directory you ran the command from), and will exit with an error if one is not present. If it does
-see this file, it will begin to use that directory for storing data related to the bot like logs
-and downloaded media. You should make a folder somewhere on your PC, for example named `lydian`,
-make a new file called `lydian-config.toml` (ensure the file extension really *is* `.toml`), then
-run `lydian` in that folder.
+Use the `lydian` command to start running the bot. Lydian will check for a file named
+`lydian-config.toml` in your current working directory (the directory you ran the command from), and
+will exit with an error if one is not present. If it does see this file, it will begin to use that
+directory for storing data related to the bot like logs and downloaded media. You should make a
+folder somewhere on your PC, for example named `lydian`, make a new file called `lydian-config.toml`
+(ensure the file extension really *is* `.toml`), then run `lydian` in that folder.
 
 The bot can be stopped either by using the `stop` command, or hitting Ctrl+C while focused on the
 window.
@@ -69,8 +67,8 @@ Lydian implements a basic console that can accept some limited commands while th
 
 ## Usage: CLI commands
 
-Lydian provides some utilities under the `lydian-manage` command. Run `lydian-manage --help` to
-view them.
+Lydian provides some utilities under the `lydian-manage` command. Run `lydian-manage --help` to view
+them.
 
 ### `logs latest`
 

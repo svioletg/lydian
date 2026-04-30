@@ -103,6 +103,11 @@ def create_directories() -> None:
             logger.info(f'Making directory: {dp}')
             dp.mkdir()
 
+def _stdout_log_sink(msg: loguru.Message) -> None:
+    # This is a workaround to make ``prompt_toolkit``'s ``patch_stdout`` still work as intended
+    # https://github.com/Delgan/loguru/issues/1385
+    sys.stdout.write(msg)
+
 def _stdout_log_filter(record: loguru.Record) -> bool:
     return record['level'].name != 'CONSOLE'
 
@@ -135,10 +140,11 @@ def setup_logger(
     msg_format: str = LOG_MSG_FORMAT_UTC if log_in_utc else LOG_MSG_FORMAT
 
     logger.add(
-        sys.stdout,
+        _stdout_log_sink,
         level=stdout_level,
         format=msg_format,
         filter=_stdout_log_filter,
+        colorize=True,
         diagnose=False,
     )
     logger.add(

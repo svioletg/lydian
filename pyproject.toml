@@ -10,10 +10,10 @@ license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "aioconsole>=0.8.2",
     "discord-py[voice]>=2.7.1",
     "emoji>=2.15.0",
     "loguru>=0.7.3",
+    "prompt-toolkit>=3.0.52",
     "py-maybetype>=0.11.0",
     "python-benedict>=0.36.0",
     "python-dotenv>=1.2.2",
