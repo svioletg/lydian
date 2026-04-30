@@ -6,8 +6,8 @@ from lydian.const import LOG_FILE_PATTERN, LOGS_DIR, console, setup_logger
 
 cligroup_logs = typer.Typer(no_args_is_help=True)
 
-@cligroup_logs.command()
-def latest() -> None:
+@cligroup_logs.command('latest')
+def logs_latest() -> None:
     """Returns the file path to the most recently modified log file."""
     console.print(max(
         (fp for fp in LOGS_DIR.glob('*.log') if LOG_FILE_PATTERN.match(fp.name)),

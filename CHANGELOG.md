@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `loguru`'s logging
   - See: <https://github.com/Delgan/loguru/issues/1385>
 - Lydian's data directory is no longer created when importing `const`
+- Rename function `cli.latest()` to `cli.logs_latest()`
 
 ### Removed
 

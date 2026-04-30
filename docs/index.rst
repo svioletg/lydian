@@ -15,6 +15,7 @@ lydian-discord-bot documentation
    cogs.debug module <reference/cogs/debug>
    cogs.general module <reference/cogs/general>
    cogs.util module <reference/cogs/util>
+   cogs.voice module <reference/cogs/voice>
 
 Indices and tables
 ==================
