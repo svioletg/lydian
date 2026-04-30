@@ -13,9 +13,11 @@ from maybetype import maybe
 
 from lydian.cogs.util import alias_from_config, embed_info, embed_ok
 from lydian.config import config
-from lydian.const import DL_DIR, YTDL_DOWNLOAD_PROGRESS_REGEX, EmojiStr
+from lydian.const import COLOR_INFO, DL_DIR, YTDL_DOWNLOAD_PROGRESS_REGEX, EmojiStr
 from lydian.errors import AbortCommand
 
+EV_PLAYER_STOPPED_BY_COMMAND = asyncio.Event()
+"""Set and cleared right after when the voice client's ``.stop()`` method is called from ``-stop``."""
 
 class YTDLLogHandler:
     """Basic class implementing ``debug``, ``info``, and ``warning`` methods to handle YoutubeDL logging.
@@ -121,7 +123,9 @@ class VoiceCog(commands.Cog):
         self.now_playing: MediaItem | None = None
         """The :py:class:`MediaItem`, if any, that is currently being played by the bot."""
 
-    async def advance_queue(self, ctx: commands.Context, *, exc: Exception | None = None) -> None:
+        self._manual_stop: bool = False
+
+    async def advance_queue(self, ctx: commands.Context) -> None:
         """Plays the next item in the queue.
 
         Returns immediately if the queue is empty.
@@ -136,16 +140,7 @@ class VoiceCog(commands.Cog):
         :param exc: Any ``Exception`` passed to the function by the ``discord.VoiceClient``'s ``.play()`` method.
             If an exception is given, it is raised immediately the queue is not advanced.
         """
-        if exc:
-            raise exc
-
         if not self.can_advance:
-            return
-
-        if not self.queue:
-            if self.now_playing:
-                self.now_playing = None
-                logger.info('Media queue has emptied out')
             return
 
         self.can_advance = False
@@ -157,22 +152,56 @@ class VoiceCog(commands.Cog):
                 voice.stop()
                 self.now_playing = None
 
+            if not self.queue:
+                return
+
             item = self.queue.popleft()
 
             logger.debug(f'Getting YTDLSource from: {item.url}')
             source = await YTDLSource.from_url(item.url)
 
             logger.info(f'Playing: {item}')
-            voice.play(source, after=lambda e: asyncio.run(self.advance_queue(ctx, exc=e)))
+            voice.play(source, after=lambda e: self.on_player_stop(ctx, exc=e))
             self.now_playing = item
 
             await ctx.send(embed=discord.Embed(
                 title=f'{EmojiStr.PLAY} Playing: {item.title}',
                 description=item.url,
+                color=COLOR_INFO,
             ).set_thumbnail(url=item.thumbnail_url))
         finally:
             # Make sure to release the queue lock
             self.can_advance = True
+
+    def stop_player(self, voice: discord.VoiceClient) -> None:
+        """Stops the player if it is playing media.
+
+        This method should generally be used instead of directly calling ``.stop()`` on the voice client so the manual
+        stop flag can be set. The flag will be unset by :py:meth:`on_player_stop`.
+        """
+        if self.now_playing:
+            # The stopped track will be played from the beginning if -play is used after -stop
+            self.queue.appendleft(self.now_playing)
+            self.now_playing = None
+
+        self._manual_stop = True
+        voice.stop()
+
+    def on_player_stop(self, ctx: commands.Context, exc: Exception | None) -> None:
+        """Callback for the voice client's ``.play()`` method ``after`` callback.
+
+        :param exc: An exception raised during playback which caused the player to halt, if any.
+        :param advance: Whether :py:meth:`advance_queue` should be called.
+        """
+        if exc:
+            logger.error(f'An exception interrupted the player: {exc}')
+            raise exc
+
+        if not self._manual_stop:
+            self._manual_stop = False
+            asyncio.run_coroutine_threadsafe(self.advance_queue(ctx), self.bot.loop).result()
+        else:
+            self._manual_stop = False
 
     #region COMMANDS
 
@@ -206,7 +235,11 @@ class VoiceCog(commands.Cog):
                 logger.info('Resuming paused player')
                 voice.resume()
                 return
-            await ctx.send(embed=embed_info('The player is not paused.'))
+            if (not voice.is_playing()) and self.queue:
+                # Start running the queue again if stopped
+                await self.advance_queue(ctx)
+                return
+            await ctx.send(embed=embed_info('The player is not paused.', 'Use `-play <URL>` to queue something up.'))
             return
 
         # Otherwise, make sure it *is* a URL
@@ -266,7 +299,7 @@ class VoiceCog(commands.Cog):
             return
 
         logger.info('Stopping player')
-        voice.stop()
+        self.stop_player(voice)
 
     @alias_from_config
     @commands.command('queue', aliases=[])
@@ -274,8 +307,15 @@ class VoiceCog(commands.Cog):
         """Shows the queue."""
         if not self.queue:
             await ctx.send(embed=embed_info('Queue is empty.'))
+            return
 
-        queue_embed = discord.Embed(title='Queue', description=f'{len(self.queue)} items')
+        queue_embed = discord.Embed(title='Queue', description=f'{len(self.queue)} items', color=COLOR_INFO)
+        if self.now_playing:
+            queue_embed.add_field(
+                name=f'Now playing: {self.now_playing.title}',
+                value=self.now_playing.url,
+                inline=False,
+            )
         for n, item in enumerate(self.queue, start=1):
             queue_embed.add_field(name=f'#{n}. {item.title}', value=item.url, inline=False)
 
@@ -290,7 +330,7 @@ class VoiceCog(commands.Cog):
 
     #endregion COMMANDS
 
-    #region HOOKS
+    #region COMMAND HOOKS
 
     @join.before_invoke
     @play.before_invoke
@@ -335,4 +375,4 @@ class VoiceCog(commands.Cog):
             await ctx.send(embed=embed_info('You must be connected to the same voice channel as the bot.'))
             raise AbortCommand
 
-    #endregion HOOKS
+    #endregion COMMAND HOOKS
