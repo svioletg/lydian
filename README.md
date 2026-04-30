@@ -4,7 +4,8 @@ Lydian is a Discord bot for playing music. It uses [yt-dlp](https://github.com/y
 extract info and download media from URLs, and thus will support [any source that yt-dlp
 supports](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md).
 
-> [!IMPORTANT] Lydian is intended to be used in only one server at a time. Trying to play music in
+> [!IMPORTANT]
+> Lydian is intended to be used in only one server at a time. Trying to play music in
 > two or more different servers at once may cause unexpected issues and is unsupported for the time
 > being.
 
