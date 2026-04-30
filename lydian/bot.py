@@ -20,6 +20,7 @@ from lydian.cogs.voice import VoiceCog
 from lydian.config import config
 from lydian.const import (
     CONFIG_PATH,
+    DL_DIR,
     LOGS_DIR,
     PROJECT_VERSION,
     clear_tmp_dir,
@@ -28,6 +29,7 @@ from lydian.const import (
     setup_logger,
 )
 from lydian.errors import AbortCommand
+from lydian.util import dirsize
 
 load_dotenv('.env')
 
@@ -140,6 +142,11 @@ async def async_main() -> int:
         logger.info('Log times are set to UTC')
     else:
         logger.info("Log times are set to the system's local time")
+
+    if (config.media_dir_warn_threshold > -1) \
+        and (media_size_total := dirsize(DL_DIR)) > config.media_dir_warn_threshold:
+        logger.warning(f'Media directory is taking up {media_size_total} bytes, exceeding the threshold of'
+        + f' {config.media_dir_warn_threshold}')
 
     logger.info('Starting...')
 

@@ -104,6 +104,9 @@ class Config(DataclassUpdateMixin):
         doc='Maximum number of items that can be added to the media queue.')
     max_filesize: int = field(default=20_000_000,
         doc='Maximum filesize in bytes for media that can be downloaded by the bot.')
+    media_dir_warn_threshold: int = field(default=100_000_000,
+        doc='Total size in bytes that downloaded media can take up before a warning is emitted at bot'
+        + ' startup. Set to -1 to disable the warning entirely.')
     vote_skipping: VoteSkippingConfig = field(default_factory=VoteSkippingConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
 

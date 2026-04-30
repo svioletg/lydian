@@ -11,6 +11,10 @@ max-queue-length = 100
 # max_filesize: Maximum filesize in bytes for media that can be downloaded by
 #    the bot.
 max-filesize = 20000000
+# media_dir_warn_threshold: Total size in bytes that downloaded media can take
+#    up before a warning is emitted at bot startup. Set to -1 to disable the
+#    warning entirely.
+media-dir-warn-threshold = 100000000
 
 [command-aliases]
 join = ["j"]

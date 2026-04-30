@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Lydian version is now logged on bot startup
 - Console input is now logged in log files
+- Added config key `media-dir-warn-threshold` (integer)
+  - If the size of the downloaded media directory exceeds this threshold, a warning is emitted at
+    bot startup
+  - Can be set to -1 to never emit a warning
 - Added function `const._stdout_log_filter()`
 - Added function `util.dirsize()`
 - Added members `PLAY`, `PAUSE`, `SKIP`, and `STOP` to enum class `const.EmojiStr`
@@ -45,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Takes lists of strings to use as aliases for each command given, e.g. `join = ["j"]`
 - Added config key `debug` (boolean)
   - A warning message will be logged if `debug` is `true` on bot startup
-- Added config key `max_filesize` (integer)
+- Added config key `max-filesize` (integer)
 - Added module `cogs.debug`
 - Added module `cogs.voice`
 - Added module `errors`
