@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - If the size of the downloaded media directory exceeds this threshold, a warning is emitted at
     bot startup
   - Can be set to -1 to never emit a warning
-- Added debug-only console commands `read` and `readlog`
+- Added console commands `debug read` and `debug readlog`
 - Added function `const._stdout_log_filter()`
 - Added function `util.dirsize()`
 - Added members `PLAY`, `PAUSE`, `SKIP`, and `STOP` to enum class `const.EmojiStr`
