@@ -43,8 +43,13 @@ bot = commands.Bot(
 event_start_console = asyncio.Event()
 
 @bot.event
+async def on_error(event: str, *_: object, **__: object) -> None:
+    """Handles non-command exceptions raised by events."""
+    logger.exception(f'An error occurred during event {event!r}')
+
+@bot.event
 async def on_command_error(ctx: commands.Context, exc: Exception) -> None:
-    """Handles exceptions raised while the bot is running."""
+    """Handles exceptions raised during command execution."""
     try:
         if isinstance(exc, (commands.errors.CommandNotFound, AbortCommand)):
             return
