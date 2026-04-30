@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- Removed constant `const.TOKEN_PATH`
 - Removed function `bot.get_token()`
 - Removed function `const.log_file_filter()`
 

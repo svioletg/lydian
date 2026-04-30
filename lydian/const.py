@@ -20,6 +20,7 @@ PROJECT_VERSION: str = metadata('lydian-discord-bot')['version']
 PACKAGE_DIR      : Path = Path(__file__).resolve().parent
 TESTS_DIR        : Path = PACKAGE_DIR.parent / 'tests'
 DEFAULT_DATA_DIR : Path = PACKAGE_DIR / 'lydian-data'
+"""Points to a ``lydian-data`` directory under the package's installation directory."""
 DEFAULT_TMP_DIR  : Path = DEFAULT_DATA_DIR.parent / 'tmp'
 DEFAULT_LOGS_DIR : Path = DEFAULT_DATA_DIR / 'logs'
 CONFIG_PATH      : Path = Path.cwd() / 'lydian-config.toml'
@@ -28,11 +29,11 @@ CONFIG_PATH      : Path = Path.cwd() / 'lydian-config.toml'
 :meta hide-value:
 """
 DATA_DIR         : Path = (CONFIG_PATH.parent / 'lydian-data') if CONFIG_PATH.parent.exists() else DEFAULT_DATA_DIR
+"""Data directory as relative to the user's configuration file if it exists, or :py:data:`DEFAULT_DATA_DIR`."""
 TMP_DIR          : Path = DATA_DIR / 'tmp'
 LOGS_DIR         : Path = DATA_DIR / 'logs'
 DL_DIR           : Path = DATA_DIR / 'dl'
 """Directory for storing media downloaded by youtube-dl."""
-TOKEN_PATH       : Path = CONFIG_PATH.parent / 'token.txt'
 
 LOG_MSG_FORMAT_UTC: str = '<level>[{time:YYYY-MM-DD HH:mm:ss!UTC}] [{module}::{function}/{level}]: {message}</level>'
 LOG_MSG_FORMAT: str = LOG_MSG_FORMAT_UTC.replace('!UTC', '')
