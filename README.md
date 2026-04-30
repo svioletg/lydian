@@ -18,6 +18,7 @@ Documentation: <https://lydian-discord-bot.readthedocs.io/en/latest/>
 - [Usage: Bot console commands](#usage-bot-console-commands)
 - [Usage: CLI commands](#usage-cli-commands)
   - [`logs latest`](#logs-latest)
+- [Debug Mode](#debug-mode)
 
 ## Setup: Lydian
 
@@ -75,3 +76,12 @@ them.
 Prints the filepath to the most recently created log file.
 
 Arguments: N/A
+
+## Debug Mode
+
+Debug mode can be enabled either by setting the `LYDIAN_DEBUG` environment variable to `1` or by
+setting `debug` to `true` in `lydian-config.toml`. This will:
+
+- Use the `LYDIAN_DEBUG_TOKEN` environment variable's value instead of `LYDIAN_TOKEN` for the bot
+  token
+- Enable commands in the `DebugCog` commands cog; see <!-- TODO: add docs link to cogs.debug.DebugCog -->

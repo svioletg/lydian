@@ -1,8 +1,9 @@
 # discord-vc-bot configuration
 
 prefix = "-"
-# debug: Enables various commands and features intended for developers. Will
-#    also override the log level to "DEBUG".
+# debug: Enables various commands and features intended for developers. See the
+#    README for a full description of what debug mode does:
+#    https://github.com/svioletg/lydian-discord-bot/blob/main/README.md
 debug = false # env: LYDIAN_DEBUG
 # max_queue_length: Maximum number of items that can be added to the media
 #    queue.
