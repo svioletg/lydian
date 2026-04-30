@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - If the size of the downloaded media directory exceeds this threshold, a warning is emitted at
     bot startup
   - Can be set to -1 to never emit a warning
+- Added debug-only console commands `read` and `readlog`
 - Added function `const._stdout_log_filter()`
 - Added function `util.dirsize()`
 - Added members `PLAY`, `PAUSE`, `SKIP`, and `STOP` to enum class `const.EmojiStr`
@@ -31,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   around an `prompt-toolkit`'s `patch_stdout` not working as intended in combination with
   `loguru`'s logging
   - See: <https://github.com/Delgan/loguru/issues/1385>
+- Lydian's data directory is no longer created when importing `const`
 
 ### Removed
 

@@ -16,6 +16,8 @@ Documentation: <https://lydian-discord-bot.readthedocs.io/en/latest/>
 - [Setup: Discord](#setup-discord)
 - [Usage: Running the bot](#usage-running-the-bot)
 - [Usage: Bot console commands](#usage-bot-console-commands)
+  - [`debug read`, `debug readlog`](#debug-read-debug-readlog)
+  - [`stop`](#stop)
 - [Usage: CLI commands](#usage-cli-commands)
   - [`logs latest`](#logs-latest)
 - [Debug Mode](#debug-mode)
@@ -62,9 +64,40 @@ window.
 
 Lydian implements a basic console that can accept some limited commands while the bot is running:
 
-|Command |Description                           |
-|--------|--------------------------------------|
-|`stop`  |Attempts to shut down the bot cleanly.|
+> [!NOTE]
+> All commands starting with `debug` require [debug mode](#debug-mode) to use.
+
+### `debug read`, `debug readlog`
+
+> [!WARNING]
+> This command uses the `eval()` function, which is [unsafe to use with untrusted user
+> input](https://nedbatchelder.com/blog/201206/eval_really_is_dangerous) and enables potentially
+> destructive actions. You should be using a separate bot token for debug mode (set with
+> `LYDIAN_DEBUG_TOKEN`), and as long as you're only running the bot locally on a secure machine this
+> shouldn't be an issue.
+
+Prints the result of an expression to stdout, or logs it as a DEBUG-level log if using `readlog`.
+`read` and `readlog` have access to the `config` object, and a `dbg` dictionary which stores
+references to various things specifically for debugging or development usage, as well as Python's
+built-ins.
+
+Arguments:
+  - expression (string)
+
+Example:
+
+```log
+> debug read dbg.cog.voice.queue
+debug_context['cog.voice.queue'] == MediaQueue([])
+> debug readlog dbg.cog.voice.queue
+[2026-04-30 00:51:30] [bot::thread_console/DEBUG]: debug_context['cog.voice.queue'] == MediaQueue([])
+```
+
+### `stop`
+
+Attempts to shut the bot down cleanly.
+
+Arguments: N/A
 
 ## Usage: CLI commands
 
@@ -84,4 +117,5 @@ setting `debug` to `true` in `lydian-config.toml`. This will:
 
 - Use the `LYDIAN_DEBUG_TOKEN` environment variable's value instead of `LYDIAN_TOKEN` for the bot
   token
-- Enable commands in the `DebugCog` commands cog; see <!-- TODO: add docs link to cogs.debug.DebugCog -->
+- Enable bot commands from the `DebugCog` commands cog; see <!-- TODO: add docs link to cogs.debug.DebugCog -->
+- Enable debug-only console commands (see [Usage: CLI commands](#usage-cli-commands))

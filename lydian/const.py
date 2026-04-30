@@ -6,6 +6,7 @@ from importlib.metadata import metadata
 from pathlib import Path
 
 import loguru
+from benedict import benedict
 from emoji import emojize
 from loguru import logger
 from rich.console import Console
@@ -179,3 +180,5 @@ def setup_rich_console() -> Console:
     )
 
 console: Console = setup_rich_console()
+
+debug_context = benedict()

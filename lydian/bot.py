@@ -2,6 +2,7 @@
 import asyncio
 import logging
 import os
+import shlex
 import sys
 import traceback
 
@@ -26,6 +27,7 @@ from lydian.const import (
     clear_tmp_dir,
     console,
     create_directories,
+    debug_context,
     setup_logger,
 )
 from lydian.errors import AbortCommand
@@ -76,9 +78,11 @@ async def thread_bot() -> None:
     async with bot:
         # Add cogs
         await bot.add_cog(GeneralCog(bot))
-        await bot.add_cog(VoiceCog(bot))
+        await bot.add_cog(cog_voice := VoiceCog(bot))
         if config.debug:
             await bot.add_cog(DebugCog(bot))
+
+        debug_context['cog.voice'] = cog_voice
 
         # Start
         logger.info('Logging in; wait for "Ready!" before running commands')
@@ -91,7 +95,8 @@ async def thread_bot() -> None:
         event_start_console.set()
         await bot.start(token)
 
-async def thread_console() -> None:
+# TODO(svioletg): https://github.com/svioletg/lydian-discord-bot/issues/2
+async def thread_console() -> None:  # noqa: C901
     """Returns the ``Coroutine`` thread for the interactive console."""
     await event_start_console.wait()
 
@@ -117,6 +122,38 @@ async def thread_console() -> None:
             await bot.close()
             logger.info('Bot connection closed')
             return
+
+        command, *args = shlex.split(user_input)
+
+        if config.debug and (command == 'debug'):
+            if not args:
+                logger.error('Expected sub-command after "debug"')
+                continue
+            command, *args = args
+
+            if command == 'list':
+                if args:
+                    logger.error('Expected no arguments to console command "list"')
+                    continue
+                console.print(debug_context)
+                continue
+
+            if (command in ('read', 'readlog')):
+                print_fn = logger.debug if command == 'readlog' else console.print
+                if len(args) != 1:
+                    logger.error(f'Expected single argument to console command "{command}"')
+                    continue
+
+                expr: str = args[0]
+
+                # Can't be ast.literal_eval, we explicitly need access to some outside variables
+                # This is only accessible in debug mode and will be warned about in multiple places
+                try:
+                    print_fn(f'{expr} == {eval(expr, {'config': config, 'dbg': debug_context})}')  # noqa: S307
+                except Exception as e:  # noqa: BLE001
+                    logger.error(f'{e.__class__.__name__}: {e}')
+                continue
+
         logger.warning(f'Unrecognized console input: {user_input}')
 
 async def async_main() -> int:
@@ -151,7 +188,7 @@ async def async_main() -> int:
     logger.info('Starting...')
 
     if config.debug:
-        logger.warning('Debug mode is enabled!')
+        logger.warning('*** Debug mode is enabled! ***')
 
     create_directories()
     clear_tmp_dir()
