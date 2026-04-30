@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     bot startup
   - Can be set to -1 to never emit a warning
 - Added console commands `debug read` and `debug readlog`
+- Added function `cogs.util.alias_from_config()` ([#3](https://github.com/svioletg/lydian-discord-bot/issues/3))
 - Added function `const._stdout_log_filter()`
 - Added function `util.dirsize()`
 - Added members `PLAY`, `PAUSE`, `SKIP`, and `STOP` to enum class `const.EmojiStr`

@@ -11,7 +11,7 @@ from discord.ext import commands
 from loguru import logger
 from maybetype import maybe
 
-from lydian.cogs.util import embed_info, embed_ok
+from lydian.cogs.util import alias_from_config, embed_info, embed_ok
 from lydian.config import config
 from lydian.const import DL_DIR, YTDL_DOWNLOAD_PROGRESS_REGEX, EmojiStr
 from lydian.errors import AbortCommand
@@ -176,12 +176,14 @@ class VoiceCog(commands.Cog):
 
     #region COMMANDS
 
-    @commands.command(aliases=config.command_aliases.get('join', ()))
+    @alias_from_config
+    @commands.command(aliases=[])
     async def join(self, ctx: commands.Context) -> None:
         """Joins the current voice channel."""
         # The auto_join hook covers this
 
-    @commands.command(aliases=config.command_aliases.get('leave', ()))
+    @alias_from_config
+    @commands.command(aliases=[])
     async def leave(self, ctx: commands.Context) -> None:
         """Leaves the current voice channel."""
         voice = _assert_voice_client(ctx.voice_client)
@@ -189,7 +191,8 @@ class VoiceCog(commands.Cog):
         logger.info(f'Leaving voice channel: {voice.channel}')
         await voice.disconnect()
 
-    @commands.command(aliases=config.command_aliases.get('play', ()))
+    @alias_from_config
+    @commands.command(aliases=[])
     async def play(self, ctx: commands.Context, url: str | None = None) -> None:
         """Plays media, adds media to the queue, or resumes the player if paused.
 
@@ -229,7 +232,8 @@ class VoiceCog(commands.Cog):
             logger.debug(f'Appended to media queue: {item}')
             await progress_msg.edit(embed=embed_ok(f'Queued at position #{len(self.queue)}: {item.title}', item.url))
 
-    @commands.command(aliases=config.command_aliases.get('pause', ()))
+    @alias_from_config
+    @commands.command(aliases=[])
     async def pause(self, ctx: commands.Context) -> None:
         """Pauses the currently playing media."""
         voice = _assert_voice_client(ctx.voice_client)
@@ -241,12 +245,14 @@ class VoiceCog(commands.Cog):
         logger.info('Pausing player')
         voice.pause()
 
-    @commands.command(aliases=config.command_aliases.get('skip', ()))
+    @alias_from_config
+    @commands.command(aliases=[])
     async def skip(self, ctx: commands.Context) -> None:
         """Skips the currently playing media."""
         await self.advance_queue(ctx)
 
-    @commands.command(aliases=config.command_aliases.get('stop', ()))
+    @alias_from_config
+    @commands.command(aliases=[])
     async def stop(self, ctx: commands.Context) -> None:
         """Stops the currently playing media.
 
@@ -262,7 +268,8 @@ class VoiceCog(commands.Cog):
         logger.info('Stopping player')
         voice.stop()
 
-    @commands.command('queue', aliases=config.command_aliases.get('queue', ()))
+    @alias_from_config
+    @commands.command('queue', aliases=[])
     async def show_queue(self, ctx: commands.Context) -> None:
         """Shows the queue."""
         if not self.queue:
@@ -274,7 +281,8 @@ class VoiceCog(commands.Cog):
 
         await ctx.send(embed=queue_embed)
 
-    @commands.command(aliases=config.command_aliases.get('clear', ()))
+    @alias_from_config
+    @commands.command(aliases=[])
     async def clear(self, ctx: commands.Context) -> None:
         """Clears the queue."""
         self.queue.clear()

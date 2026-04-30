@@ -1,8 +1,30 @@
 """Utilities specifically for use in cog modules."""
-from discord import Embed
 
+from discord import Embed
+from discord.ext import commands
+
+from lydian.config import config
 from lydian.const import COLOR_ERROR, COLOR_INFO, COLOR_OK, COLOR_WARN, EmojiStr
 
+
+def alias_from_config[T: commands.Command](cmd: T) -> T:
+    """Extends a command's ``aliases`` with the aliases defined in user configuration for that command.
+
+    .. note::
+        The command must be defined explicitly with an empty aliases list in order for this to work, like so:
+
+        ```python
+        @alias_from_config
+        @commands.command(aliases=[])
+        async def command(...):
+        ```
+
+        Otherwise, the aliases don't get added.
+    """
+    if not isinstance(cmd.aliases, list):
+        raise TypeError(f'aliases must be a list for @alias_from_config decorator to work: {cmd!r}')
+    cmd.aliases.extend(config.command_aliases.get(cmd.name, ()))
+    return cmd
 
 def embed_info(title: str, description: str | None = None) -> Embed:
     """Returns an ``Embed`` with the embed color defined by ``const.COLOR_INFO``."""
