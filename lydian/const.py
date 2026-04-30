@@ -179,5 +179,3 @@ def setup_rich_console() -> Console:
     )
 
 console: Console = setup_rich_console()
-
-DEFAULT_DATA_DIR.mkdir(exist_ok=True)
