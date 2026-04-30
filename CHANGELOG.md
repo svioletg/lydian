@@ -16,7 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     bot startup
   - Can be set to -1 to never emit a warning
 - Added console commands `debug read` and `debug readlog`
-- Added function `cogs.util.alias_from_config()` ([#3](https://github.com/svioletg/lydian-discord-bot/issues/3))
+- Added function `cogs.util.alias_from_config()`
+  ([#3](https://github.com/svioletg/lydian-discord-bot/issues/3))
 - Added function `const._stdout_log_filter()`
 - Added function `util.dirsize()`
 - Added members `PLAY`, `PAUSE`, `SKIP`, and `STOP` to enum class `const.EmojiStr`
@@ -35,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - See: <https://github.com/Delgan/loguru/issues/1385>
 - Lydian's data directory is no longer created when importing `const`
 - Rename function `cli.latest()` to `cli.logs_latest()`
+- Rename function `cogs.voice.Voice.clear` to `clear_queue`
 
 ### Removed
 

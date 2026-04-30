@@ -282,8 +282,8 @@ class VoiceCog(commands.Cog):
         await ctx.send(embed=queue_embed)
 
     @alias_from_config
-    @commands.command(aliases=[])
-    async def clear(self, ctx: commands.Context) -> None:
+    @commands.command('clear', aliases=[])
+    async def clear_queue(self, ctx: commands.Context) -> None:
         """Clears the queue."""
         self.queue.clear()
         await ctx.send(embed=embed_ok('Cleared the queue.'))
