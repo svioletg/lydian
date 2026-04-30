@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lydian version is now logged on bot startup
 - Console input is now logged in log files
 - Added function `const._stdout_log_filter()`
+- Added function `util.dirsize()`
 - Added members `PLAY`, `PAUSE`, `SKIP`, and `STOP` to enum class `const.EmojiStr`
 
 ### Changed

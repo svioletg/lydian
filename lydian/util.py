@@ -145,6 +145,10 @@ def assure(condition: bool, exc_args: str = '') -> None:  # noqa: FBT001
     if not condition:
         raise AssuranceError(exc_args)
 
+def dirsize(source_dir: str | Path) -> int:
+    """Returns the total size of a directory's contents in bytes."""
+    return sum(fp.stat().st_size for fp in Path(source_dir).rglob('*') if fp.is_file())
+
 def get_dataclass_fields(dc: object, parents: list[str] | None = None) -> dict[str, Field]:
     """Returns a dictionary of field names (dotted if the field is a dataclass) to field objects for a dataclass.
 
