@@ -110,7 +110,7 @@ def _assert_voice_client(vc: discord.VoiceProtocol | None) -> discord.VoiceClien
     """
     return cast('discord.VoiceClient', maybe(vc) \
         .filter(lambda x: isinstance(x, discord.VoiceClient)) \
-        .unwrap(TypeError(f'expected VoiceClient instance: {vc!r}')))
+        .unwrap(TypeError(f'Expected VoiceClient instance: {vc!r}')))
 
 class VoiceCog(commands.Cog):
     """Voice-related commands."""
@@ -282,6 +282,12 @@ class VoiceCog(commands.Cog):
     @commands.command(aliases=[])
     async def skip(self, ctx: commands.Context) -> None:
         """Skips the currently playing media."""
+        voice = _assert_voice_client(ctx.voice_client)
+
+        if (not voice.is_playing()) and (not voice.is_paused()) and self.queue:
+            # If the player was stopped and there's still a queue, skip the track we were stopped on
+            self.queue.popleft()
+
         await self.advance_queue(ctx)
 
     @alias_from_config
@@ -356,6 +362,7 @@ class VoiceCog(commands.Cog):
         await channel.connect()
 
     @leave.before_invoke
+    @pause.before_invoke
     @skip.before_invoke
     @stop.before_invoke
     async def require_connection(self, ctx: commands.Context) -> None:
