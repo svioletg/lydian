@@ -49,23 +49,26 @@ event_start_console = asyncio.Event()
 @bot.event
 async def on_error(event: str, *_: object, **__: object) -> None:
     """Handles non-command exceptions raised by events."""
-    logger.exception(f'An error occurred during event {event!r}')
+    exc = sys.exc_info()[1]
+
+    if isinstance(exc, AbortCommand):
+        return
+
+    logger.error(f'An error occurred during event {event!r}')
+    logger.error(f'{exc}\n{''.join(traceback.format_exception(exc)).strip()}')
 
 @bot.event
 async def on_command_error(ctx: commands.Context, exc: Exception) -> None:
     """Handles exceptions raised during command execution."""
-    try:
-        if isinstance(exc, (commands.errors.CommandNotFound, AbortCommand)):
-            return
+    if isinstance(exc, (commands.errors.CommandNotFound, AbortCommand)):
+        return
 
-        if isinstance(exc, commands.CommandInvokeError):
-            # Will clutter up the traceback, just use the exception this was raised from
-            exc = exc.original
+    if isinstance(exc, commands.CommandInvokeError):
+        # Will clutter up the traceback, just use the exception this was raised from
+        exc = exc.original
 
-        await ctx.send(embed=embed_error('An unexpected error occurred.', 'Check logs for details.'))
-        logger.error(f'{exc}\n{''.join(traceback.format_exception(exc)).strip()}')
-    except Exception as e:  # noqa: BLE001 ; Otherwise any exception raised in the handler is eaten and ignored
-        logger.error(''.join(traceback.format_exception(e)))
+    await ctx.send(embed=embed_error('An unexpected error occurred.', 'Check logs for details.'))
+    logger.error(f'{exc}\n{''.join(traceback.format_exception(exc)).strip()}')
 
 @bot.event
 async def on_ready() -> None:  # noqa: D103
