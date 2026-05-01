@@ -71,6 +71,14 @@ async def on_command_error(ctx: commands.Context, exc: Exception) -> None:
     logger.error(f'{exc}\n{''.join(traceback.format_exception(exc)).strip()}')
 
 @bot.event
+async def on_message(message: discord.Message) -> None:
+    """Called when a message is created and sent."""
+    if message.author.bot and (message.author.id != debug_context.get('testbot_client_id')):
+        return
+    ctx = await bot.get_context(message)
+    await bot.invoke(ctx)
+
+@bot.event
 async def on_ready() -> None:  # noqa: D103
     logger.info(f'Logged in as {bot.user}')
     logger.info('*** Ready! ***')
@@ -195,6 +203,9 @@ async def async_main() -> int:
 
     create_directories()
     clear_tmp_dir()
+
+    if config.debug:
+        debug_context['testbot_client_id'] = int(os.environ.get('LYDIAN_TESTBOT_CLIENTID', '0'))
 
     _, pending = await asyncio.wait(
         (asyncio.create_task(thread_bot()), asyncio.create_task(thread_console())),

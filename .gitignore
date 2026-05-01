@@ -21,3 +21,4 @@ testenv/
 *.log
 .ignore/
 build
+testbot
