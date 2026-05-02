@@ -3,7 +3,8 @@ import asyncio
 import re
 from collections import deque
 from dataclasses import dataclass
-from typing import Any, Self, cast
+from datetime import timedelta
+from typing import Any, ClassVar, Self, cast
 
 import discord
 import yt_dlp
@@ -16,6 +17,7 @@ from lydian.cogs.util import alias_from_config, embed_error, embed_info, embed_o
 from lydian.config import config
 from lydian.const import COLOR_ESCAPE_REGEX, COLOR_INFO, DL_DIR, YTDL_DOWNLOAD_PROGRESS_REGEX, EmojiStr
 from lydian.errors import AbortCommand
+from lydian.util import Cache
 
 EV_PLAYER_STOPPED_BY_COMMAND = asyncio.Event()
 """Set and cleared right after when the voice client's ``.stop()`` method is called from ``-stop``."""
@@ -92,6 +94,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
 class MediaItem:
     """Represents a media item in the bot's queue."""
 
+    _url_cache: ClassVar[Cache[str, dict[str, Any]]] = Cache()
+
     title: str
     url: str
     duration: float | None = None
@@ -109,9 +113,19 @@ class MediaItem:
         )
 
     @classmethod
-    def from_url(cls, url: str) -> Self:
-        """Returns a ``MediaItem`` created from the info extracted from ``url`` by yt-dlp."""
-        return cls.from_ytdl_extracted(ytdl.extract_info(url, download=False))
+    def from_url(cls, url: str, *, cache: bool = True) -> Self:
+        """Returns a ``MediaItem`` created from the info extracted from ``url`` by yt-dlp.
+
+        :param cache: If ``True``, cached info will be used instead of requesting the information for ``url`` again if
+            the URL exists in the cache and is not expired, otherwise the result of this extraction will be cached.
+            If ``False``, the cache is neither checked nor stored to.
+        """
+        info: dict[str, Any] = cls._url_cache.get_or_set(
+            url,
+            lambda: ytdl.extract_info(url, download=False),
+            timedelta(hours=1),
+        ) if cache else ytdl.extract_info(url, download=False)
+        return cls.from_ytdl_extracted(info)
 
 class MediaQueue(deque[MediaItem]):
     """Queue for keeping track of what media is playing or to be played."""
