@@ -94,6 +94,8 @@ class MediaItem:
 
     title: str
     url: str
+    duration: float | None = None
+    """The item's duration in seconds."""
     thumbnail_url: str | None = None
 
     @classmethod
@@ -102,8 +104,14 @@ class MediaItem:
         return cls(
             title=info['title'],
             url=info['original_url'],
+            duration=info.get('duration'),
             thumbnail_url=info.get('thumbnail'),
         )
+
+    @classmethod
+    def from_url(cls, url: str) -> Self:
+        """Returns a ``MediaItem`` created from the info extracted from ``url`` by yt-dlp."""
+        return cls.from_ytdl_extracted(ytdl.extract_info(url, download=False))
 
 class MediaQueue(deque[MediaItem]):
     """Queue for keeping track of what media is playing or to be played."""
@@ -261,15 +269,15 @@ class VoiceCog(commands.Cog):
         progress_msg: discord.Message = await ctx.send(embed=embed_info('Getting media info...', url))
 
         try:
-            info: dict[str, Any] = await asyncio.get_event_loop().run_in_executor(None,
-                lambda: ytdl.extract_info(url, download=False))
+            item: MediaItem = await asyncio.get_event_loop().run_in_executor(None,
+                lambda: MediaItem.from_url(url))
         except DownloadError as e:
             msg: str = COLOR_ESCAPE_REGEX.sub('', e.msg or '')
             logger.error(f'URL info extraction failed: {msg}')
             await ctx.send(embed=embed_error('Failed to get URL information', f'{msg}'))
             return
 
-        self.queue.append(item := MediaItem.from_ytdl_extracted(info))
+        self.queue.append(item)
 
         # Start running the queue if nothing is playing, otherwise add this onto the queue
         if not self.now_playing:
