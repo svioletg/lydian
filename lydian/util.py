@@ -27,6 +27,9 @@ class CachedObject[T]:
         self.value: T = value
         self.expires: datetime | None = (datetime.now(UTC) + expires) if isinstance(expires, timedelta) else expires
 
+    def __repr__(self) -> str:  # noqa: D105
+        return f'{self.__class__.__name__}(value={self.value!r}, expires={self.expires})'
+
     def is_expired(self) -> bool:
         """Returns ``True`` if an expiration date is set and the current time is past it, otherwise ``False``."""
         return (self.expires is not None) and (datetime.now(UTC) > self.expires.astimezone(UTC))
@@ -36,6 +39,9 @@ class Cache[K, V]:
 
     def __init__(self) -> None:
         self._data: dict[K, CachedObject[V]] = {}
+
+    def __repr__(self) -> str:  # noqa: D105
+        return f'{self.__class__.__name__}({self._data!r})'
 
     def get(self, key: K) -> V | None:
         """Returns the value associated with ``key`` if it exists and has not expired, otherwise returns ``None``.
