@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Exceptions raised inside of `bot.on_command_error` are now logged and not silently ignored
+- Added method `YTDLLogHandler.error()` so yt-dlp error logs are correctly forwarded
 
 ## [0.2.0] - 2026-04-27
 

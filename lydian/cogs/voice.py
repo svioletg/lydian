@@ -40,6 +40,9 @@ class YTDLLogHandler:
     def warning(self, msg: str) -> None:  # noqa: D102
         logger.warning('[YoutubeDL] ' + msg)
 
+    def error(self, msg: str) -> None:  # noqa: D102
+        logger.error('[YoutubeDL]', msg)
+
 YTDL_FORMAT_OPTIONS: dict[str, Any] = {
     'logger': YTDLLogHandler(),
     'format': 'bestaudio/best',
