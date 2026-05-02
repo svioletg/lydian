@@ -10,10 +10,11 @@ import yt_dlp
 from discord.ext import commands
 from loguru import logger
 from maybetype import maybe
+from yt_dlp.utils import DownloadError
 
-from lydian.cogs.util import alias_from_config, embed_info, embed_ok
+from lydian.cogs.util import alias_from_config, embed_error, embed_info, embed_ok
 from lydian.config import config
-from lydian.const import COLOR_INFO, DL_DIR, YTDL_DOWNLOAD_PROGRESS_REGEX, EmojiStr
+from lydian.const import COLOR_ESCAPE_REGEX, COLOR_INFO, DL_DIR, YTDL_DOWNLOAD_PROGRESS_REGEX, EmojiStr
 from lydian.errors import AbortCommand
 
 EV_PLAYER_STOPPED_BY_COMMAND = asyncio.Event()
@@ -73,7 +74,11 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
     @classmethod
     async def from_url(cls, url: str, *, loop: asyncio.AbstractEventLoop | None = None, stream: bool = False) -> Self:
-        """Creates a ``YTDLSource`` from a URL."""
+        """Creates a ``YTDLSource`` from a URL.
+
+        :raises DownloadError:
+            The URL could not be downloaded, e.g. the request returned a 404 error.
+        """
         loop = loop or asyncio.get_event_loop()
         data: dict[str, Any] = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
 
@@ -248,15 +253,21 @@ class VoiceCog(commands.Cog):
         # Otherwise, make sure it *is* a URL
         # We're preventing plain text YouTube searches for now, but it'll be implemented later
         if not re.match(r'https?://', url):
-            logger.info(f'Invalid URL: {url}')
+            logger.info(f'Got invalid URL: {url}')
             await ctx.send(embed=embed_info('URL must start with `http://` or `https://`.'))
             return
 
         logger.info(f'Extracting info from URL: {url}')
         progress_msg: discord.Message = await ctx.send(embed=embed_info('Getting media info...', url))
 
-        info: dict[str, Any] = await asyncio.get_event_loop().run_in_executor(None,
-            lambda: ytdl.extract_info(url, download=False))
+        try:
+            info: dict[str, Any] = await asyncio.get_event_loop().run_in_executor(None,
+                lambda: ytdl.extract_info(url, download=False))
+        except DownloadError as e:
+            msg: str = COLOR_ESCAPE_REGEX.sub('', e.msg or '')
+            logger.error(f'URL info extraction failed: {msg}')
+            await ctx.send(embed=embed_error('Failed to get URL information', f'{msg}'))
+            return
 
         self.queue.append(item := MediaItem.from_ytdl_extracted(info))
 

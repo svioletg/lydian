@@ -49,6 +49,8 @@ COLOR_OK: int = 0x00ff00
 COLOR_WARN: int = 0xffcc00
 COLOR_ERROR: int = 0xff0000
 
+# Compiled regex
+COLOR_ESCAPE_REGEX: re.Pattern[str] = re.compile(r'\x1b\[.*?m')
 YTDL_DOWNLOAD_PROGRESS_REGEX: re.Pattern[str] = re.compile(r'\[download\].+ETA')
 
 class ConsoleHighlighter(Highlighter):

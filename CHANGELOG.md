@@ -16,10 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     bot startup
   - Can be set to -1 to never emit a warning
 - Added console commands `debug read` and `debug readlog`
+- Added constant `const.COLOR_ESCAPE_REGEX`
 - Added function `cogs.util.alias_from_config()`
   ([#3](https://github.com/svioletg/lydian-discord-bot/issues/3))
 - Added function `const._stdout_log_filter()`
 - Added function `util.dirsize()`
+- Added method `YTDLLogHandler.error()`
 - Added members `PLAY`, `PAUSE`, `SKIP`, and `STOP` to enum class `const.EmojiStr`
 
 ### Changed
@@ -47,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Exceptions raised inside of `bot.on_command_error` are now logged and not silently ignored
-- Added method `YTDLLogHandler.error()` so yt-dlp error logs are correctly forwarded
+- yt-dlp error logs (calls to the `.error()` method of its logger) are now properly handled
 
 ## [0.2.0] - 2026-04-27
 
