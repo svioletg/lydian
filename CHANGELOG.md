@@ -15,14 +15,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - If the size of the downloaded media directory exceeds this threshold, a warning is emitted at
     bot startup
   - Can be set to -1 to never emit a warning
+- Added 3 bot commands:
+  - `-clear`: Clears the media queue
+  - `-queue`: Shows what's currently in the media queue
+  - `-skip`: Skips the currently playing media
 - Added console commands `debug read` and `debug readlog`
 - Added constant `const.COLOR_ESCAPE_REGEX`
-- Added function `cogs.util.alias_from_config()`
+- Added decorator function `cogs.util.alias_from_config()`
   ([#3](https://github.com/svioletg/lydian-discord-bot/issues/3))
 - Added function `const._stdout_log_filter()`
 - Added function `util.dirsize()`
-- Added method `YTDLLogHandler.error()`
+- Added method `cogs.`
 - Added members `PLAY`, `PAUSE`, `SKIP`, and `STOP` to enum class `const.EmojiStr`
+- In module `cogs.voice`:
+  - Added class `MediaItem`
+  - Added class `MediaQueue`
+  - Added command method `Voice.show_queue()`
+  - Added command method `Voice.clear_queue()`
+  - Added method `YTDLLogHandler.error()`
+  - Added method `Voice.advance_queue()`
+  - Added method `Voice.stop_player()`
+  - Added method `Voice.on_player_stop()`
 
 ### Changed
 
@@ -39,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lydian's data directory is no longer created when importing `const`
 - Rename function `cli.latest()` to `cli.logs_latest()`
 - Rename function `cogs.voice.Voice.clear` to `clear_queue`
+- All command definitions which used aliases now use the `cogs.util.alias_from_config` decorator
 
 ### Removed
 
