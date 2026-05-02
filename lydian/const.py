@@ -35,7 +35,7 @@ LOGS_DIR         : Path = DATA_DIR / 'logs'
 DL_DIR           : Path = DATA_DIR / 'dl'
 """Directory for storing media downloaded by youtube-dl."""
 
-LOG_MSG_FORMAT_UTC: str = '<level>[{time:YYYY-MM-DD HH:mm:ss!UTC}] [{module}::{function}/{level}]: {message}</level>'
+LOG_MSG_FORMAT_UTC: str = '<level>[{time:YYYY-MM-DD HH:mm:ss!UTC}] [{name}::{function}/{level}]: {message}</level>'
 LOG_MSG_FORMAT: str = LOG_MSG_FORMAT_UTC.replace('!UTC', '')
 LOG_FILE_FORMAT: str = '{time:YYYY-MM-DDTHHmmssZZ}.log'
 LOG_FILE_PATTERN: re.Pattern[str] = re.compile(
