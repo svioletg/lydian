@@ -4,7 +4,7 @@ This module should not import any other modules from the package, to ensure its 
 """
 from collections.abc import Callable, Iterable
 from dataclasses import Field, fields, is_dataclass
-from datetime import UTC, datetime, tzinfo
+from datetime import UTC, datetime, timedelta, tzinfo
 from pathlib import Path
 from time import perf_counter_ns
 from typing import Any, Literal, cast, get_args, get_origin
@@ -14,6 +14,75 @@ from maybetype import Maybe, maybe
 
 from lydian.errors import AssuranceError
 
+
+class CachedObject[T]:
+    """A cached object with a value and expiration date, for use by :py:class:`Cache`."""
+
+    def __init__(self, value: T, expires: datetime | timedelta | None = None) -> None:
+        """Initializes a new ``CachedObject``.
+
+        :param expires: Optionally a date at which this cached object should be considered "expired" and discarded,
+            given either as a concrete date or a ``timedelta`` applied to the current time.
+        """
+        self.value: T = value
+        self.expires: datetime | None = (datetime.now(UTC) + expires) if isinstance(expires, timedelta) else expires
+
+    def is_expired(self) -> bool:
+        """Returns ``True`` if an expiration date is set and the current time is past it, otherwise ``False``."""
+        return (self.expires is not None) and (datetime.now(UTC) > self.expires.astimezone(UTC))
+
+class Cache[K, V]:
+    """A simple cache."""
+
+    def __init__(self) -> None:
+        self._data: dict[K, CachedObject[V]] = {}
+
+    def get(self, key: K) -> V | None:
+        """Returns the value associated with ``key`` if it exists and has not expired, otherwise returns ``None``.
+
+        If the key exists but is expired, the key is removed from the cache and ``None`` is returned.
+        """
+        if key not in self._data:
+            return None
+        obj = self._data[key]
+        if obj.is_expired():
+            del self._data[key]
+            return None
+        return obj.value
+
+    def get_or_set(self, key: K, func: Callable[[], V], expires: datetime | timedelta | None = None) -> V:
+        """Returns the value associated with ``key`` if it exists and has not expires, or sets it via ``func``.
+
+        If the key does not exist or its value has expired, ``func`` is called with no arguments and its result is
+        stored as the value of ``key``, the same result is then returned.
+
+        :param expires: Expiration date to use when setting the value of a new key. An existing key's expiration date
+            will not be modified. This date must be in the future from the current time, otherwise ``ValueError`` is
+            raised.
+
+        :raises ValueError:
+            ``expires`` was given a date in the past.
+        """
+        if expires and \
+            (((datetime.now(UTC) + expires) if isinstance(expires, timedelta) else expires) < datetime.now(UTC)):
+            raise ValueError(f'Expiration date for get_or_set must be a future date: {expires}')
+        if (key not in self._data) or ((obj := self._data[key]).is_expired()):
+            obj = CachedObject(func(), expires=expires)
+            self._data[key] = obj
+            return obj.value
+        return obj.value
+
+    def remove(self, key: K) -> None:
+        """Removes ``key`` from the cache's keys.
+
+        Does nothing if the key did not exist.
+        """
+        if key in self._data:
+            del self._data[key]
+
+    def set(self, key: K, value: V, expires: datetime | timedelta | None = None) -> None:
+        """Adds or replaces the value of ``key`` with ``value`` and the given optional expiration date."""
+        self._data[key] = CachedObject(value, expires=expires)
 
 class DataclassUpdateMixin:
     """Adds an ``update`` method to a dataclass which can update its contents similar to ``dict.update``."""

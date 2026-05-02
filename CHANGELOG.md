@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `-skip`: Skips the currently playing media
 - Added console commands `debug read` and `debug readlog`
 - Added constant `const.COLOR_ESCAPE_REGEX`
+- Added class `util.Cache`
+- Added class `util.CachedObject`
 - Added decorator function `cogs.util.alias_from_config()`
   ([#3](https://github.com/svioletg/lydian-discord-bot/issues/3))
 - Added function `const._stdout_log_filter()`

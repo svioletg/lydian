@@ -1,13 +1,14 @@
 from collections.abc import Callable, Iterable
 from dataclasses import Field, dataclass, field
-from datetime import tzinfo
+from datetime import UTC, datetime, timedelta, tzinfo
 from typing import Any
 
 import pytest
-from maybetype import Nothing, Some
+from maybetype import Nothing, Some, maybe
 
 from lydian import util
 from lydian.errors import AssuranceError
+from lydian.util import Cache
 from tests import ReadOnlyDict
 
 NESTED_DICT_RO: ReadOnlyDict[str, Any] = ReadOnlyDict({'a': 1, 'b': {'a': 2, 'b': {'a': 3}}, 'c': 4})
@@ -28,6 +29,41 @@ def test_assure() -> None:
     util.assure(True)  # noqa: FBT003
     with pytest.raises(AssuranceError):
         util.assure(False)  # noqa: FBT003
+
+def test_cached_object_init() -> None:
+    assert util.CachedObject(1).expires is None
+
+    obj_expired = util.CachedObject(1, dt := datetime(2025, 1, 1, tzinfo=UTC))
+    assert obj_expired.expires == dt
+    assert obj_expired.is_expired()
+
+    # Works for now but remember to update test in about 80 years
+    obj_not_expired = util.CachedObject(1, dt := datetime(3000, 1, 1, tzinfo=UTC))
+    assert obj_not_expired.expires == dt
+    assert not obj_not_expired.is_expired()
+
+    assert maybe(util.CachedObject(1, timedelta(days=1)).expires).unwrap().day \
+        == (datetime.now(UTC) + timedelta(days=1)).day
+
+def test_cache() -> None:
+    cache: Cache[int, str] = Cache()
+    assert cache.get(1) is None
+    cache.set(1, 'one')
+    assert cache.get(1) == 'one'
+    cache.set(1, 'one', datetime(2025, 1, 1, tzinfo=UTC))
+    assert cache.get(1) is None
+    cache.set(1, 'one', timedelta(days=1))
+    assert cache.get(1) == 'one'
+    cache.remove(1)
+    assert cache.get(1) is None
+
+    cache = Cache()
+    assert cache.get_or_set(1, lambda: 'one') == 'one'
+    assert cache.get(1) == 'one'
+    cache.remove(1)
+    assert cache.get_or_set(1, lambda: 'one', timedelta(days=1)) == 'one'
+    with pytest.raises(ValueError, match='must be a future date'):
+        cache.get_or_set(1, lambda: 'one', datetime(2025, 1, 1, tzinfo=UTC))
 
 @pytest.mark.parametrize(('it', 'predicate', 'expected'),
     [
