@@ -73,8 +73,14 @@ async def on_command_error(ctx: commands.Context, exc: Exception) -> None:
 @bot.event
 async def on_message(message: discord.Message) -> None:
     """Called when a message is created and sent."""
-    if message.author.bot and (message.author.id != debug_context.get('testbot_client_id')):
+    is_testbot: bool = message.author.id == debug_context.get('testbot_client_id')
+
+    if message.author.bot and not is_testbot:
         return
+
+    if is_testbot and not config.debug:
+        return
+
     ctx = await bot.get_context(message)
     await bot.invoke(ctx)
 
