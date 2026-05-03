@@ -46,8 +46,16 @@ pip install -U git+https://github.com/svioletg/lydian-discord-bot.git
 Follow the instructions here: <https://discordpy.readthedocs.io/en/stable/discord.html>
 
 You must provide your bot's token via the `LYDIAN_TOKEN` environment variable. The recommended way
-to do this is by creating a file called exactly `.env` in the directory you'll run the bot from, and
+to do this is by creating a text file called `.env` in the directory you'll run the bot from, and
 write in `LYDIAN_TOKEN=<token>` where `<token>` should be replaced with your real bot token.
+
+> [!NOTE]
+> Make sure that the file is named *exactly* `.env`, and not `.env.txt` or anything else. If you're
+> using Windows or macOS, file extensions may be hidden in your file browser by default.
+> - [Showing file extensions on
+>   Windows](https://support.microsoft.com/en-us/windows/common-file-name-extensions-in-windows-da4a4430-8e76-89c5-59f7-1cdbbc75cb01)
+> - [Showing file extensions on
+>   macOS](https://support.apple.com/guide/mac-help/show-or-hide-filename-extensions-on-mac-mchlp2304/mac)
 
 ## Usage: Running the bot
 
