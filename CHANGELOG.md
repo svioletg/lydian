@@ -55,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rename function `cli.latest()` to `cli.logs_latest()`
 - Rename function `cogs.voice.Voice.clear` to `clear_queue`
 - All command definitions which used aliases now use the `cogs.util.alias_from_config` decorator
+- Log messages now include timezone
 
 ### Removed
 
