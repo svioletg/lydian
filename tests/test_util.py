@@ -1,7 +1,8 @@
 from collections.abc import Callable, Iterable
 from dataclasses import Field, dataclass, field
 from datetime import UTC, datetime, timedelta, tzinfo
-from typing import Any
+from pathlib import Path
+from typing import Any, Literal
 
 import pytest
 from maybetype import Nothing, Some, maybe
@@ -64,6 +65,33 @@ def test_cache() -> None:
     assert cache.get_or_set(1, lambda: 'one', timedelta(days=1)) == 'one'
     with pytest.raises(ValueError, match='must be a future date'):
         cache.get_or_set(1, lambda: 'one', datetime(2025, 1, 1, tzinfo=UTC))
+
+def test_dirsize(tmpdir: Path) -> None:
+    def write_dummy(size: int, dest: Path) -> Path:
+        with open(dest, 'wb') as f:
+            f.write(b'\x00' * size)
+        return dest
+
+    source_dir: Path = tmpdir / 'dirsize'
+    source_dir.mkdir()
+    (source_dir / 'a').mkdir()
+    (source_dir / 'b').mkdir()
+
+    file_size: int = 1000
+    files_per: int = 3
+
+    expected_count: dict[Literal['dir', 'file'], int] = {
+        'dir': 2,
+        'file': 3 * files_per,
+    }
+    expected_size: int = (expected_count['dir'] * 4096) + (expected_count['file'] * file_size)
+
+    for d in '.ab':
+        for f in 'xyz':
+            write_dummy(1000, source_dir / d / f)
+
+    assert util.dirsize(source_dir) == expected_size
+    assert util.dirsize_counted(source_dir) == (expected_size, expected_count)
 
 @pytest.mark.parametrize(('it', 'predicate', 'expected'),
     [
