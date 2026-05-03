@@ -222,7 +222,17 @@ def assure(condition: bool, exc_args: str = '') -> None:  # noqa: FBT001
 
 def dirsize(source_dir: str | Path) -> int:
     """Returns the total size of a directory's contents in bytes."""
-    return sum(fp.stat().st_size for fp in Path(source_dir).rglob('*') if fp.is_file())
+    return sum(fp.stat().st_size for fp in Path(source_dir).rglob('*'))
+
+def dirsize_counted(source_dir: str | Path) -> tuple[int, dict[Literal['dir', 'file'], int]]:
+    """Returns the total size of a directory's contents in bytes, and a dictionary of directory and file counts."""
+    total_bytes: int = 0
+    count: dict[Literal['dir', 'file'], int] = {'dir': 0, 'file': 0}
+    for fp in Path(source_dir).rglob('*'):
+        count['dir' if fp.is_dir() else 'file'] += 1
+        total_bytes += fp.stat().st_size
+
+    return total_bytes, count
 
 def get_dataclass_fields(dc: object, parents: list[str] | None = None) -> dict[str, Field]:
     """Returns a dictionary of field names (dotted if the field is a dataclass) to field objects for a dataclass.
