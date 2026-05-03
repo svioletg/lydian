@@ -338,7 +338,7 @@ class VoiceCog(commands.Cog):
         except DownloadError as e:
             msg: str = COLOR_ESCAPE_REGEX.sub('', e.msg or '')
             logger.error(f'URL info extraction failed: {msg}')
-            await ctx.send(embed=embed_error('Failed to get URL information', f'{msg}'))
+            await progress_msg.edit(embed=embed_error('Failed to get URL information', f'{msg}'))
             return
 
         self.queue.append(item)
@@ -349,7 +349,9 @@ class VoiceCog(commands.Cog):
             await self.advance_queue(ctx)
         else:
             logger.debug(f'Appended to media queue: {item}')
-            await progress_msg.edit(embed=embed_ok(f'Queued at position #{len(self.queue)}: {item.title}', item.url))
+            await progress_msg.edit(
+                embed=embed_ok(f'{EmojiStr.IN} Queued at position #{len(self.queue)}: {item.title}', item.url),
+            )
 
     @alias_from_config
     @commands.command(aliases=[])
@@ -368,7 +370,7 @@ class VoiceCog(commands.Cog):
     @commands.command(aliases=[])
     async def remove(self, ctx: commands.Context, index: int) -> None:
         """Removes an item at the given index from the queue."""
-        if 0 <= index <= len(self.queue):
+        if not 1 <= index <= len(self.queue):
             await ctx.send(embed=embed_info('Queue index out of range.'))
             return
 
@@ -412,7 +414,11 @@ class VoiceCog(commands.Cog):
             await ctx.send(embed=embed_info('Queue is empty.'))
             return
 
-        queue_embed = discord.Embed(title='Queue', description=f'{len(self.queue)} items', color=COLOR_INFO)
+        queue_embed = discord.Embed(
+            title='Queue',
+            description=f'{len(self.queue)} items',
+            color=COLOR_INFO,
+        )
         if self.now_playing:
             queue_embed.add_field(
                 name=f'Now playing: {self.now_playing.title}',
