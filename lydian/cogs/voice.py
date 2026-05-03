@@ -18,7 +18,7 @@ from lydian.cogs.util import alias_from_config, embed_error, embed_info, embed_o
 from lydian.config import config
 from lydian.const import COLOR_ESCAPE_REGEX, COLOR_INFO, DL_DIR, YTDL_DOWNLOAD_PROGRESS_REGEX, EmojiStr
 from lydian.errors import AbortCommand, MediaQueueLimitError
-from lydian.util import Cache
+from lydian.util import Cache, plural
 
 EV_PLAYER_STOPPED_BY_COMMAND = asyncio.Event()
 """Set and cleared right after when the voice client's ``.stop()`` method is called from ``-stop``."""
@@ -416,7 +416,7 @@ class VoiceCog(commands.Cog):
 
         queue_embed = discord.Embed(
             title='Queue',
-            description=f'{len(self.queue)} items',
+            description=f'{len(self.queue)} {plural('item.s', len(self.queue))}',
             color=COLOR_INFO,
         )
         if self.now_playing:
