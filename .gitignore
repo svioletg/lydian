@@ -12,6 +12,7 @@ wheels/
 # Project files
 .env
 **/lydian-data/
+.vscode/
 config.toml
 lydian-config.toml
 token.txt

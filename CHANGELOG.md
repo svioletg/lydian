@@ -15,9 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - If the size of the downloaded media directory exceeds this threshold, a warning is emitted at
     bot startup
   - Can be set to -1 to never emit a warning
-- Added 3 bot commands:
+- Added 4 bot commands:
   - `-clear`: Clears the media queue
   - `-queue`: Shows what's currently in the media queue
+  - `-remove`: Removes an item from the queue at a given index
   - `-skip`: Skips the currently playing media
 - Added `lydian-cli` command `clear-dl`
 - Added console commands `debug read` and `debug readlog`
@@ -39,8 +40,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - In module `cogs.voice`:
   - Added class `MediaItem`
   - Added class `MediaQueue`
-  - Added command method `Voice.show_queue()`
   - Added command method `Voice.clear_queue()`
+  - Added command method `Voice.remove()`
+  - Added command method `Voice.show_queue()`
+  - Added command method `Voice.skip()`
   - Added method `YTDLLogHandler.error()`
   - Added method `Voice.advance_queue()`
   - Added method `Voice.stop_player()`

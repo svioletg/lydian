@@ -64,16 +64,18 @@ class EmojiStr(StrEnum):
     """Strings for emoji commonly used by the bot."""
 
     # General
-    INFO = emojize(':information:', language='alias')
-    OK = emojize(':white_check_mark:', language='alias')
-    WARN = emojize(':warning:', language='alias')
+    INFO  = emojize(':information:', language='alias')
+    OK    = emojize(':white_check_mark:', language='alias')
+    WARN  = emojize(':warning:', language='alias')
     ERROR = emojize(':x:', language='alias')
 
     # Media
-    PLAY = emojize(':arrow_forward:', language='alias')
+    PLAY  = emojize(':arrow_forward:', language='alias')
     PAUSE = emojize(':pause_button:', language='alias')
-    STOP = emojize(':stop_button:', language='alias')
-    SKIP = emojize(':fast_forward:', language='alias')
+    STOP  = emojize(':stop_button:', language='alias')
+    SKIP  = emojize(':fast_forward:', language='alias')
+    IN    = emojize(':inbox_tray:', language='alias')
+    OUT   = emojize(':outbox_tray:', language='alias')
 
 class LogLevel(StrEnum):  # noqa: D101
     TRACE = 'TRACE'

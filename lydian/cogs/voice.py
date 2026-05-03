@@ -366,6 +366,17 @@ class VoiceCog(commands.Cog):
 
     @alias_from_config
     @commands.command(aliases=[])
+    async def remove(self, ctx: commands.Context, index: int) -> None:
+        """Removes an item at the given index from the queue."""
+        if 0 <= index <= len(self.queue):
+            await ctx.send(embed=embed_info('Queue index out of range.'))
+            return
+
+        self.queue.remove(item := self.queue[index - 1])
+        await ctx.send(embed=embed_ok(f'{EmojiStr.OUT} Removed item from position #{index}: {item.title}', item.url))
+
+    @alias_from_config
+    @commands.command(aliases=[])
     async def skip(self, ctx: commands.Context) -> None:
         """Skips the currently playing media."""
         voice = _assert_voice_client(ctx.voice_client)
