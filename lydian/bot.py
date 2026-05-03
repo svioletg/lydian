@@ -44,6 +44,8 @@ bot = commands.Bot(
     log_handler=logging.FileHandler(filename=LOGS_DIR / 'discord.log', encoding='utf-8', mode='w'),
 )
 
+debug_context['bot'] = bot
+
 event_start_console = asyncio.Event()
 
 @bot.event
@@ -99,7 +101,7 @@ async def thread_bot() -> None:
         await bot.start(token)
 
 # TODO(svioletg): https://github.com/svioletg/lydian-discord-bot/issues/2
-async def thread_console() -> None:  # noqa: C901
+async def thread_console() -> None:
     """Returns the ``Coroutine`` thread for the interactive console."""
     await event_start_console.wait()
 
@@ -133,13 +135,6 @@ async def thread_console() -> None:  # noqa: C901
                 logger.error('Expected sub-command after "debug"')
                 continue
             command, *args = args
-
-            if command == 'list':
-                if args:
-                    logger.error('Expected no arguments to console command "list"')
-                    continue
-                console.print(debug_context)
-                continue
 
             if (command in ('read', 'readlog')):
                 print_fn = logger.debug if command == 'readlog' else console.print
