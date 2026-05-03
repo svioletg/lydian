@@ -115,6 +115,17 @@ def test_maybepath() -> None:
     assert util.maybepath('qwertyuiop') is Nothing
     assert isinstance(util.maybepath('pyproject.toml'), Some)
 
+@pytest.mark.parametrize(('word', 'singular', 'plural'),
+    [
+        ('item.s', 'item', 'items'),
+        ('octop.us.i', 'octopus', 'octopi'),
+        ('m.ouse.ice', 'mouse', 'mice'),
+    ],
+)
+def test_plural(word: str, singular: str, plural: str) -> None:
+    assert util.plural(word, 0) == util.plural(word, 2) == plural
+    assert util.plural(word, 1) == singular
+
 @pytest.mark.parametrize(('timestamp', 'format_str', 'tz', 'expected'),
     [
         (0, None, None, '1970-01-01T000000+0000'),

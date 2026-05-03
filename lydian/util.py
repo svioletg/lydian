@@ -272,6 +272,30 @@ def maybepath(fp: str | Path, must_be: Literal['file', 'dir'] | None = None) -> 
 
     return maybe(Path(fp), check)
 
+def plural(s: str, n: int) -> str:
+    """Returns a string as plural or singular based on the value of ``n``.
+
+    ``s`` must be formatted as the singular form, followed by a dot, then followed by the plural suffix, e.g.
+    ``item.s``. One dot indicates the characters after it should simply be suffixed to the string with no modification.
+    An extra dot can be given to separate more specific singular and plural forms, where in ``a.b.c``, ``b`` is used as
+    the singular suffix to ``a``, while ``c`` is used as the plural suffix.
+
+    >>> assert plural('item.s', 1) == 'item'
+    >>> assert plural('item.s', 2) == 'items'
+
+    >>> assert plural('octop.us.i', 1) == 'octopus'
+    >>> assert plural('octop.us.i', 2) == 'octopi'
+
+    >>> assert plural('m.ouse.ice', 1) == 'mouse'
+    >>> assert plural('m.ouse.ice', 2) == 'mice'
+    """
+    root, b, *c = s.split('.')
+    if c:
+        singular, plural = b, c[0]
+    else:
+        singular, plural = '', b
+    return f'{root}{singular if n == 1 else plural}'
+
 def strftimestamp(
         timestamp: float,
         format_str: str = '%Y-%m-%dT%H%M%S%z',
