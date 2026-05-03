@@ -5,6 +5,7 @@ import os
 import shlex
 import sys
 import traceback
+from typing import cast
 
 import discord
 from discord.ext import commands
@@ -124,6 +125,13 @@ async def thread_console() -> None:
 
         if user_input == 'stop':
             logger.info('Stopping...')
+
+            # Make sure the bot doesn't try to download any more items in queue,
+            # .close() will trigger on_player_stop()
+            vc = cast('VoiceCog', bot.cogs['VoiceCog'])
+            vc.queue.clear()
+            vc.can_advance = False
+
             await bot.close()
             logger.info('Bot connection closed')
             return
