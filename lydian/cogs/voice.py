@@ -2,9 +2,10 @@
 import asyncio
 import re
 from collections import deque
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any, ClassVar, Self, cast
+from typing import Any, ClassVar, Self, cast, override
 
 import discord
 import yt_dlp
@@ -16,7 +17,7 @@ from yt_dlp.utils import DownloadError
 from lydian.cogs.util import alias_from_config, embed_error, embed_info, embed_ok
 from lydian.config import config
 from lydian.const import COLOR_ESCAPE_REGEX, COLOR_INFO, DL_DIR, YTDL_DOWNLOAD_PROGRESS_REGEX, EmojiStr
-from lydian.errors import AbortCommand
+from lydian.errors import AbortCommand, MediaQueueLimitError
 from lydian.util import Cache
 
 EV_PLAYER_STOPPED_BY_COMMAND = asyncio.Event()
@@ -128,10 +129,59 @@ class MediaItem:
         return cls.from_ytdl_extracted(info)
 
 class MediaQueue(deque[MediaItem]):
-    """Queue for keeping track of what media is playing or to be played."""
+    """Queue for keeping track of what media is playing or to be played.
+
+    The ``maxlen`` argument is strict, :py:class:`MediaQueueLimitError` will be raised if trying to append to or extend
+    the queue would exceed its limit.
+    """
 
     def __init__(self, *, maxlen: int | None = None) -> None:
+        if maxlen == 0:
+            # This just makes it easier to check "self.maxlen" instead of "self.maxlen is not None"
+            raise ValueError('MediaQueue maxlen cannot be 0')
         super().__init__(maxlen=maxlen)
+
+    @override
+    def append(self, x: MediaItem) -> None:
+        if self.maxlen and (len(self) >= self.maxlen):
+            raise MediaQueueLimitError
+        super().append(x)
+
+    @override
+    def appendleft(self, x: MediaItem) -> None:
+        if self.maxlen and (len(self) >= self.maxlen):
+            raise MediaQueueLimitError
+        super().appendleft(x)
+
+    @override
+    def extend(self, iterable: Iterable[MediaItem]) -> None:
+        """Extend the right side of the deque with elements from the iterable.
+
+        .. note::
+            If ``maxlen`` is not ``None``, ``iterable`` will be converted to a list so the length can be checked.
+        """
+        sequence: Sequence[MediaItem] = list(iterable)
+        if self.maxlen and ((len(self) + len(sequence)) > self.maxlen):
+                raise MediaQueueLimitError
+        super().extend(sequence)
+
+    @override
+    def extendleft(self, iterable: Iterable[MediaItem]) -> None:
+        """Extend the left side of the deque with elements from the iterable.
+
+        .. note::
+            If ``maxlen`` is not ``None``, ``iterable`` will be converted to a list so the length can be checked.
+        """
+        sequence: Sequence[MediaItem] = list(iterable)
+        if self.maxlen and ((len(self) + len(sequence)) > self.maxlen):
+                raise MediaQueueLimitError
+        super().extendleft(sequence)
+
+    @override
+    def insert(self, i: int, x: MediaItem) -> None:
+        if self.maxlen and (len(self) >= self.maxlen):
+            raise MediaQueueLimitError
+        super().insert(i, x)
 
 def _assert_voice_client(vc: discord.VoiceProtocol | None) -> discord.VoiceClient:
     """Returns a ``discord.VoiceProtocol | None`` value casted to ``discord.VoiceClient``.

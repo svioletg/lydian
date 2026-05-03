@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added constant `const.COLOR_ESCAPE_REGEX`
 - Added class `util.Cache`
 - Added class `util.CachedObject`
+- Added exception class `errors.MediaQueueLimitError`
 - Added decorator function `cogs.util.alias_from_config()`
   ([#3](https://github.com/svioletg/lydian-discord-bot/issues/3))
 - Added function `cli.abort()`
@@ -33,7 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added function `util.dirsize_counted()`
 - Added method `cogs.`
 - Added members `PLAY`, `PAUSE`, `SKIP`, and `STOP` to enum class `const.EmojiStr`
-- Added test `test_dirsize` to `test_util` for `util.dirsize()` and `util.dirsize_counted()`
+- Added test file `test_cogs_voice.py`
+- Added test `test_dirsize` to `test_util.py` for `util.dirsize()` and `util.dirsize_counted()`
 - In module `cogs.voice`:
   - Added class `MediaItem`
   - Added class `MediaQueue`
