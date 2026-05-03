@@ -19,16 +19,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `-clear`: Clears the media queue
   - `-queue`: Shows what's currently in the media queue
   - `-skip`: Skips the currently playing media
+- Added `lydian-cli` command `clear-dl`
 - Added console commands `debug read` and `debug readlog`
 - Added constant `const.COLOR_ESCAPE_REGEX`
 - Added class `util.Cache`
 - Added class `util.CachedObject`
 - Added decorator function `cogs.util.alias_from_config()`
   ([#3](https://github.com/svioletg/lydian-discord-bot/issues/3))
+- Added function `cli.abort()`
+- Added function `cli.clear_dl_dir()`
 - Added function `const._stdout_log_filter()`
 - Added function `util.dirsize()`
+- Added function `util.dirsize_counted()`
 - Added method `cogs.`
 - Added members `PLAY`, `PAUSE`, `SKIP`, and `STOP` to enum class `const.EmojiStr`
+- Added test `test_dirsize` to `test_util` for `util.dirsize()` and `util.dirsize_counted()`
 - In module `cogs.voice`:
   - Added class `MediaItem`
   - Added class `MediaQueue`
@@ -56,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rename function `cogs.voice.Voice.clear` to `clear_queue`
 - All command definitions which used aliases now use the `cogs.util.alias_from_config` decorator
 - Log messages now include timezone
+- `util.dirsize()` now includes the 4096 bytes per each directory in its returned size
 
 ### Removed
 

@@ -13,6 +13,7 @@ dependencies = [
     "davey>=0.1.5",
     "discord-py>=2.7.1",
     "emoji>=2.15.0",
+    "humanize>=4.15.0",
     "loguru>=0.7.3",
     "prompt-toolkit>=3.0.52",
     "py-maybetype==0.11.0",
@@ -52,6 +53,7 @@ Issues = "https://github.com/svioletg/lydian-discord-bot/issues"
 
 [project.scripts]
 lydian = "lydian.bot:main"
+lydian-cli = "lydian.cli:cli"
 lydian-manage = "lydian.cli:cli"
 
 [build-system]

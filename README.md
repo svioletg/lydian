@@ -20,6 +20,7 @@ Documentation: <https://lydian-discord-bot.readthedocs.io/en/latest/>
   - [`debug read`, `debug readlog`](#debug-read-debug-readlog)
   - [`stop`](#stop)
 - [Usage: CLI commands](#usage-cli-commands)
+  - [`clear-dl`](#clear-dl)
   - [`logs latest`](#logs-latest)
 - [Debug Mode](#debug-mode)
 
@@ -110,8 +111,15 @@ Arguments: N/A
 
 ## Usage: CLI commands
 
-Lydian provides some utilities under the `lydian-manage` command. Run `lydian-manage --help` to view
-them.
+Lydian provides some utilities under the `lydian-cli` or `lydian-manage` commands. Either can be
+used, they will behave exactly the same.
+
+### `clear-dl`
+
+Prints the total size being taken up by the downloaded media directory and asks if the user would
+like to delete its contents.
+
+Arguments: N/A
 
 ### `logs latest`
 
