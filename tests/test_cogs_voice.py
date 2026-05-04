@@ -6,8 +6,10 @@ from lydian.errors import MediaQueueLimitError
 
 def test_media_queue_maxlen() -> None:
     queue = MediaQueue()
+    many_items: list[MediaItem] = [MediaItem('', '') for _ in range(1000)]
+
     queue.append(MediaItem('', ''))
-    queue.extend(MediaItem('', '') for _ in range(1000))
+    queue.extend(many_items)
 
     queue = MediaQueue(maxlen=10)
     assert queue.maxlen
@@ -26,3 +28,11 @@ def test_media_queue_maxlen() -> None:
 
     with pytest.raises(MediaQueueLimitError):
         queue.extend(MediaItem('', '') for _ in range(11))
+
+    queue.clear()
+    queue.extend_max(many_items)
+    assert len(queue) == queue.maxlen
+
+    queue.clear()
+    queue.extendleft_max(many_items)
+    assert len(queue) == queue.maxlen

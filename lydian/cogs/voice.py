@@ -144,13 +144,13 @@ class MediaQueue(deque[MediaItem]):
     @override
     def append(self, x: MediaItem) -> None:
         if self.maxlen and (len(self) >= self.maxlen):
-            raise MediaQueueLimitError
+            raise MediaQueueLimitError('Cannot append to full MediaQueue')
         super().append(x)
 
     @override
     def appendleft(self, x: MediaItem) -> None:
         if self.maxlen and (len(self) >= self.maxlen):
-            raise MediaQueueLimitError
+            raise MediaQueueLimitError('Cannot append to full MediaQueue')
         super().appendleft(x)
 
     @override
@@ -158,29 +158,45 @@ class MediaQueue(deque[MediaItem]):
         """Extend the right side of the deque with elements from the iterable.
 
         .. note::
-            If ``maxlen`` is not ``None``, ``iterable`` will be converted to a list so the length can be checked.
+            ``iterable`` will consumed so the length can be checked.
         """
         sequence: Sequence[MediaItem] = list(iterable)
         if self.maxlen and ((len(self) + len(sequence)) > self.maxlen):
-                raise MediaQueueLimitError
+                raise MediaQueueLimitError('Cannot extend MediaQueue, length of iterable would exceed limit')
         super().extend(sequence)
+
+    def extend_max(self, iterable: Iterable[MediaItem]) -> None:
+        """Extend the right side of the deque with elements from the iterable until ``maxlen`` is reached."""
+        try:
+            for i in iterable:
+                self.append(i)
+        except MediaQueueLimitError:
+            pass
 
     @override
     def extendleft(self, iterable: Iterable[MediaItem]) -> None:
         """Extend the left side of the deque with elements from the iterable.
 
         .. note::
-            If ``maxlen`` is not ``None``, ``iterable`` will be converted to a list so the length can be checked.
+            ``iterable`` will consumed so the length can be checked.
         """
         sequence: Sequence[MediaItem] = list(iterable)
         if self.maxlen and ((len(self) + len(sequence)) > self.maxlen):
-                raise MediaQueueLimitError
+                raise MediaQueueLimitError('Cannot extend MediaQueue, length of iterable would exceed limit')
         super().extendleft(sequence)
+
+    def extendleft_max(self, iterable: Iterable[MediaItem]) -> None:
+        """Extend the left side of the deque with elements from the iterable until ``maxlen`` is reached."""
+        try:
+            for i in iterable:
+                self.appendleft(i)
+        except MediaQueueLimitError:
+            pass
 
     @override
     def insert(self, i: int, x: MediaItem) -> None:
         if self.maxlen and (len(self) >= self.maxlen):
-            raise MediaQueueLimitError
+            raise MediaQueueLimitError('Cannot insert into full MediaQueue')
         super().insert(i, x)
 
 def _assert_voice_client(vc: discord.VoiceProtocol | None) -> discord.VoiceClient:
@@ -320,6 +336,11 @@ class VoiceCog(commands.Cog):
                 await self.advance_queue(ctx)
                 return
             await ctx.send(embed=embed_info('The player is not paused.', 'Use `-play <URL>` to queue something up.'))
+            return
+
+        if len(self.queue) == self.queue.maxlen:
+            await ctx.send(embed=embed_info('Queue is full.',
+                f'Limit is currently set to {config.max_queue_length} entries.'))
             return
 
         # Otherwise, make sure it *is* a URL
