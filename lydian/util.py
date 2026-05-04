@@ -7,6 +7,7 @@ from dataclasses import Field, fields, is_dataclass
 from datetime import UTC, datetime, timedelta, tzinfo
 from pathlib import Path
 from time import perf_counter_ns
+from types import TracebackType
 from typing import Any, Literal, cast, get_args, get_origin
 from zoneinfo import ZoneInfo
 
@@ -14,6 +15,50 @@ from maybetype import Maybe, maybe
 
 from lydian.errors import AssuranceError
 
+
+class BasicLock:
+    """A basic "lock" object that can be used as a context manager.
+
+    ```python
+    lock = BasicLock()
+
+    print(lock) # BasicLock(False)
+
+    with lock:
+        print(lock) # BasicLock(True)
+
+    print(lock) # BasicLock(False)
+    ```
+
+    The ``name`` argument can be given to customize the ``repr``.
+
+    ```python
+    lock = BasicLock('QueueLock')
+    print(lock) # QueueLock(False)
+    ```
+    """
+
+    def __init__(self, name: str | None = None) -> None:
+        self.name = name or self.__class__.__name__
+        self._locked: bool = False
+
+    def __repr__(self) -> str:  # noqa: D105
+        return f'{self.name}({self._locked})'
+
+    def __bool__(self) -> bool:  # noqa: D105
+        return self._locked
+
+    def __enter__(self) -> None:  # noqa: D105
+        self._locked = True
+
+    def __exit__(self,  # noqa: D105
+            exc_type: type[BaseException] | None,
+            exc_value: BaseException | None,
+            traceback: TracebackType | None,
+        ) -> bool:
+        self._locked = False
+
+        return False
 
 class CachedObject[T]:
     """A cached object with a value and expiration date, for use by :py:class:`Cache`."""

@@ -9,7 +9,7 @@ from maybetype import Nothing, Some, maybe
 
 from lydian import util
 from lydian.errors import AssuranceError
-from lydian.util import Cache
+from lydian.util import BasicLock, Cache
 from tests import ReadOnlyDict
 
 NESTED_DICT_RO: ReadOnlyDict[str, Any] = ReadOnlyDict({'a': 1, 'b': {'a': 2, 'b': {'a': 3}}, 'c': 4})
@@ -30,6 +30,16 @@ def test_assure() -> None:
     util.assure(True)  # noqa: FBT003
     with pytest.raises(AssuranceError):
         util.assure(False)  # noqa: FBT003
+
+def test_basic_lock() -> None:
+    lock = BasicLock()
+    assert not lock
+    with lock:
+        assert lock
+    assert not lock
+
+    named_lock = BasicLock('NamedLock')
+    assert str(named_lock) == 'NamedLock(False)'
 
 def test_cached_object_init() -> None:
     assert util.CachedObject(1).expires is None

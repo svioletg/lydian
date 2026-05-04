@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `lydian-cli` command `clear-dl`
 - Added console commands `debug read` and `debug readlog`
 - Added constant `const.COLOR_ESCAPE_REGEX`
+- Added class `util.BasicLock`
 - Added class `util.Cache`
 - Added class `util.CachedObject`
 - Added exception class `errors.MediaQueueLimitError`
