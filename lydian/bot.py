@@ -66,7 +66,7 @@ async def on_command_error(ctx: commands.Context, exc: Exception) -> None:
     if isinstance(exc, (commands.errors.CommandNotFound, AbortCommand)):
         return
 
-    if isinstance(exc, commands.CommandInvokeError):
+    if isinstance(exc, commands.errors.CommandInvokeError):
         # Will clutter up the traceback, just use the exception this was raised from
         exc = exc.original
 
