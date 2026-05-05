@@ -129,8 +129,8 @@ async def thread_console() -> None:
             # Make sure the bot doesn't try to download any more items in queue,
             # .close() will trigger on_player_stop()
             vc = cast('VoiceCog', bot.cogs['VoiceCog'])
+            vc.queue_advance_lock.state = True
             vc.queue.clear()
-            vc.can_advance = False
 
             await bot.close()
             logger.info('Bot connection closed')

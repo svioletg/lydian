@@ -18,7 +18,7 @@ from lydian.cogs.util import alias_from_config, embed_error, embed_info, embed_o
 from lydian.config import config
 from lydian.const import COLOR_ESCAPE_REGEX, COLOR_INFO, DL_DIR, YTDL_DOWNLOAD_PROGRESS_REGEX, EmojiStr
 from lydian.errors import AbortCommand, MediaQueueLimitError
-from lydian.util import Cache, plural
+from lydian.util import BasicLock, Cache, plural
 
 EV_PLAYER_STOPPED_BY_COMMAND = asyncio.Event()
 """Set and cleared right after when the voice client's ``.stop()`` method is called from ``-stop``."""
@@ -214,14 +214,19 @@ class VoiceCog(commands.Cog):
     def __init__(self, bot: discord.client.Bot) -> None:
         self.bot: discord.client.Bot = bot
         self.queue = MediaQueue(maxlen=config.max_queue_length)
-        self.can_advance: bool = True
+        self.queue_advance_lock = BasicLock('QueueAdvanceLock')
         """Whether the queue is allowed to be advanced right now. Used as a lock for :py:meth:`advance_queue`."""
         self.now_playing: MediaItem | None = None
         """The :py:class:`MediaItem`, if any, that is currently being played by the bot."""
+        self.stopped_track: MediaItem | None = None
+        """Stores the currently playing track when ``-stop`` is used.
+
+        Set back to ``None`` when the track is played again.
+        """
 
         self._manual_stop: bool = False
 
-    async def advance_queue(self, ctx: commands.Context) -> None:
+    async def advance_queue(self, ctx: commands.Context, *, play_now: MediaItem | None = None) -> None:
         """Plays the next item in the queue.
 
         Returns immediately if the queue is empty.
@@ -233,25 +238,22 @@ class VoiceCog(commands.Cog):
             calling this.
 
         :param ctx: A ``discord.ext.commands.Context`` object, needed to send messages.
-        :param exc: Any ``Exception`` passed to the function by the ``discord.VoiceClient``'s ``.play()`` method.
-            If an exception is given, it is raised immediately the queue is not advanced.
+        :param play_now: A ``MediaItem`` to play right now instead of the next item in the queue.
         """
-        if not self.can_advance:
+        if self.queue_advance_lock:
             return
 
-        self.can_advance = False
-
-        try:
+        with self.queue_advance_lock:
             voice = _assert_voice_client(ctx.voice_client)
 
             if voice.is_playing() or voice.is_paused():
                 voice.stop()
                 self.now_playing = None
 
-            if not self.queue:
+            if (not self.queue) and (not play_now):
                 return
 
-            item = self.queue.popleft()
+            item = play_now or self.queue.popleft()
 
             logger.debug(f'Getting YTDLSource from: {item.url}')
             source = await YTDLSource.from_url(item.url)
@@ -265,29 +267,11 @@ class VoiceCog(commands.Cog):
                 description=item.url,
                 color=COLOR_INFO,
             ).set_thumbnail(url=item.thumbnail_url))
-        finally:
-            # Make sure to release the queue lock
-            self.can_advance = True
-
-    def stop_player(self, voice: discord.VoiceClient) -> None:
-        """Stops the player if it is playing media.
-
-        This method should generally be used instead of directly calling ``.stop()`` on the voice client so the manual
-        stop flag can be set. The flag will be unset by :py:meth:`on_player_stop`.
-        """
-        if self.now_playing:
-            # The stopped track will be played from the beginning if -play is used after -stop
-            self.queue.appendleft(self.now_playing)
-            self.now_playing = None
-
-        self._manual_stop = True
-        voice.stop()
 
     def on_player_stop(self, ctx: commands.Context, exc: Exception | None) -> None:
         """Callback for the voice client's ``.play()`` method ``after`` callback.
 
         :param exc: An exception raised during playback which caused the player to halt, if any.
-        :param advance: Whether :py:meth:`advance_queue` should be called.
         """
         if exc:
             logger.error(f'An exception interrupted the player: {exc}')
@@ -298,6 +282,20 @@ class VoiceCog(commands.Cog):
             asyncio.run_coroutine_threadsafe(self.advance_queue(ctx), self.bot.loop).result()
         else:
             self._manual_stop = False
+
+    def stop_player(self, voice: discord.VoiceClient) -> None:
+        """Stops the player if it is playing media.
+
+        This method should generally be used instead of directly calling ``.stop()`` on the voice client so the manual
+        stop flag can be set. The flag will be unset by :py:meth:`on_player_stop`.
+        """
+        if self.now_playing:
+            # The stopped track will be played from the beginning if -play is used after -stop
+            self.stopped_track = self.now_playing
+            self.now_playing = None
+
+        self._manual_stop = True
+        voice.stop()
 
     #region COMMANDS
 
@@ -314,7 +312,8 @@ class VoiceCog(commands.Cog):
         voice = _assert_voice_client(ctx.voice_client)
 
         logger.info(f'Leaving voice channel: {voice.channel}')
-        await voice.disconnect()
+        with self.queue_advance_lock:
+            await voice.disconnect()
 
     @alias_from_config
     @commands.command(aliases=[])
@@ -331,9 +330,9 @@ class VoiceCog(commands.Cog):
                 logger.info('Resuming paused player')
                 voice.resume()
                 return
-            if (not voice.is_playing()) and self.queue:
+            if (not voice.is_playing()) and self.stopped_track:
                 # Start running the queue again if stopped
-                await self.advance_queue(ctx)
+                await self.advance_queue(ctx, play_now=self.stopped_track)
                 return
             await ctx.send(embed=embed_info('The player is not paused.', 'Use `-play <URL>` to queue something up.'))
             return
@@ -440,12 +439,21 @@ class VoiceCog(commands.Cog):
             description=f'{len(self.queue)} {plural('item.s', len(self.queue))}',
             color=COLOR_INFO,
         )
+
         if self.now_playing:
             queue_embed.add_field(
                 name=f'Now playing: {self.now_playing.title}',
                 value=self.now_playing.url,
                 inline=False,
             )
+
+        if self.stopped_track:
+            queue_embed.add_field(
+                name=f'Stopped: {self.stopped_track.title}',
+                value=self.stopped_track.url,
+                inline=False,
+            )
+
         for n, item in enumerate(self.queue, start=1):
             queue_embed.add_field(name=f'#{n}. {item.title}', value=item.url, inline=False)
 
