@@ -333,6 +333,7 @@ class VoiceCog(commands.Cog):
             if (not voice.is_playing()) and self.stopped_track:
                 # Start running the queue again if stopped
                 await self.advance_queue(ctx, play_now=self.stopped_track)
+                self.stopped_track = None
                 return
             await ctx.send(embed=embed_info('The player is not paused.', 'Use `-play <URL>` to queue something up.'))
             return
@@ -403,9 +404,12 @@ class VoiceCog(commands.Cog):
         """Skips the currently playing media."""
         voice = _assert_voice_client(ctx.voice_client)
 
-        if (not voice.is_playing()) and (not voice.is_paused()) and self.queue:
-            # If the player was stopped and there's still a queue, skip the track we were stopped on
-            self.queue.popleft()
+        if (not voice.is_paused()) and (not voice.is_playing()):
+            if self.stopped_track:
+                # Skip the stopped track
+                self.stopped_track = None
+            else:
+                await ctx.send(embed=embed_info('Nothing to skip.'))
 
         await self.advance_queue(ctx)
 
@@ -430,10 +434,6 @@ class VoiceCog(commands.Cog):
     @commands.command('queue', aliases=[])
     async def show_queue(self, ctx: commands.Context) -> None:
         """Shows the queue."""
-        if not self.queue:
-            await ctx.send(embed=embed_info('Queue is empty.'))
-            return
-
         queue_embed = discord.Embed(
             title='Queue',
             description=f'{len(self.queue)} {plural('item.s', len(self.queue))}',
