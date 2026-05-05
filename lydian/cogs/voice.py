@@ -256,7 +256,9 @@ class VoiceCog(commands.Cog):
             item = play_now or self.queue.popleft()
 
             logger.debug(f'Getting YTDLSource from: {item.url}')
+            progress_msg: discord.Message = await ctx.send(embed=embed_info('Downloading...'))
             source = await YTDLSource.from_url(item.url)
+            await progress_msg.delete()
 
             logger.info(f'Playing: {item}')
             voice.play(source, after=lambda e: self.on_player_stop(ctx, exc=e))
@@ -475,7 +477,7 @@ class VoiceCog(commands.Cog):
     async def auto_join(self, ctx: commands.Context) -> None:
         """Automatically joins or moves to the author's current channel."""
         if not isinstance(ctx.author, discord.Member):
-            return
+            raise AbortCommand
 
         if (not ctx.author.voice) or (not ctx.author.voice.channel):
             await ctx.send(embed=embed_info('You must be connected to a voice channel.'))

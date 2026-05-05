@@ -86,6 +86,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Exceptions raised inside of `bot.on_command_error` are now logged and not silently ignored
 - yt-dlp error logs (calls to the `.error()` method of its logger) are now properly handled
+- Command hook method `cogs.voice.VoiceCog.auto_join()` now correctly raises `AbortCommand` when the
+  author is not a guild member instead of returning
 
 ## [0.2.0] - 2026-04-27
 
