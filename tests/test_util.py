@@ -41,6 +41,12 @@ def test_basic_lock() -> None:
     named_lock = BasicLock('NamedLock')
     assert str(named_lock) == 'NamedLock(False)'
 
+    inverted_lock = BasicLock(default_state=True)
+    assert inverted_lock
+    with inverted_lock:
+        assert not inverted_lock
+    assert inverted_lock
+
 def test_cached_object_init() -> None:
     assert util.CachedObject(1).expires is None
 

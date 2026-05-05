@@ -38,27 +38,35 @@ class BasicLock:
     ```
     """
 
-    def __init__(self, name: str | None = None) -> None:
+    def __init__(self, name: str | None = None, *, default_state: bool = False) -> None:
+        """Initializes a ``BasicLock``.
+
+        :param name: The name to use in the lock's ``repr`` instead of the class name.
+        :param default_state: What the ``state`` attribute should be set to by default and after exiting the context
+            manager, using its opposite when entering.
+        """
+        self._default_state: bool = default_state
+
         self.name = name or self.__class__.__name__
-        self._locked: bool = False
+        self.state: bool = default_state
 
     def __repr__(self) -> str:  # noqa: D105
-        return f'{self.name}({self._locked})'
+        return f'{self.name}({self.state})'
 
     def __bool__(self) -> bool:  # noqa: D105
-        return self._locked
+        return self.state
 
     def __enter__(self) -> None:  # noqa: D105
-        self._locked = True
+        self.state = not self._default_state
 
     def __exit__(self,  # noqa: D105
-            exc_type: type[BaseException] | None,
-            exc_value: BaseException | None,
-            traceback: TracebackType | None,
+            _exc_type: type[BaseException] | None,
+            _exc_value: BaseException | None,
+            _traceback: TracebackType | None,
         ) -> bool:
-        self._locked = False
+        self.state = self._default_state
 
-        return False
+        return self._default_state
 
 class CachedObject[T]:
     """A cached object with a value and expiration date, for use by :py:class:`Cache`."""
