@@ -29,15 +29,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added exception class `errors.MediaQueueLimitError`
 - Added decorator function `cogs.util.alias_from_config()`
   ([#3](https://github.com/svioletg/lydian-discord-bot/issues/3))
+- Added function `bot.on_error()`
 - Added function `cli.abort()`
 - Added function `cli.clear_dl_dir()`
 - Added function `const._stdout_log_filter()`
 - Added function `util.dirsize()`
 - Added function `util.dirsize_counted()`
-- Added method `cogs.`
+- Added function `util.plural()`
+- Added command method `cogs.debug.DebugCog.bigembed()`
 - Added members `PLAY`, `PAUSE`, `SKIP`, and `STOP` to enum class `const.EmojiStr`
 - Added test file `test_cogs_voice.py`
-- Added test `test_dirsize` to `test_util.py` for `util.dirsize()` and `util.dirsize_counted()`
+- Added tests to `test_util.py`:
+  - `test_cache()`
+  - `test_cached_object_init()`
+  - `test_dirsize()`
+  - `test_plural()`
 - In module `cogs.voice`:
   - Added class `MediaItem`
   - Added class `MediaQueue`
@@ -63,11 +69,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `loguru`'s logging
   - See: <https://github.com/Delgan/loguru/issues/1385>
 - Lydian's data directory is no longer created when importing `const`
-- Rename function `cli.latest()` to `cli.logs_latest()`
-- Rename function `cogs.voice.Voice.clear` to `clear_queue`
 - All command definitions which used aliases now use the `cogs.util.alias_from_config` decorator
 - Log messages now include timezone
 - `util.dirsize()` now includes the 4096 bytes per each directory in its returned size
+- `tests/tmp` is now cleared on test session start
+- Renamed function `cli.latest()` to `cli.logs_latest()`
+- Renamed function `cogs.voice.Voice.clear` to `clear_queue`
 
 ### Removed
 
