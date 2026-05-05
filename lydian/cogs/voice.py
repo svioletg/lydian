@@ -61,6 +61,7 @@ YTDL_FORMAT_OPTIONS: dict[str, Any] = {
     'no_warnings': False,
     'default_search': 'auto',
     'max_filesize': config.max_filesize,
+    'extract_flat': 'in_playlist',
 }
 
 ytdl = yt_dlp.YoutubeDL(YTDL_FORMAT_OPTIONS)
