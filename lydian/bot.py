@@ -210,5 +210,8 @@ async def async_main() -> int:
     return 0
 
 @logger.catch(onerror=lambda _: sys.exit(1))
-def main() -> int:  # noqa: D103
+def main() -> None:  # noqa: D103
+    if len(sys.argv) > 1:
+        console.print('[err]ERROR: lydian takes 0 arguments[/]')
+        sys.exit(1)
     sys.exit(asyncio.run(async_main()))
