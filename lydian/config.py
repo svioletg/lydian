@@ -120,10 +120,12 @@ class Config(DataclassUpdateMixin):
         inst.update_from_toml(fp)
         return inst
 
-    def to_toml(self, fp: str | Path | None = None) -> str:
+    def to_toml(self, fp: str | Path | None = None, *, add_comments: bool = True) -> str:
         """Returns this object converted into a TOML string.
 
         If ``fp`` is not ``None``, the TOML string will also be written to the file at that path.
+
+        :param add_comments: Whether to write comments for specified keys.
         """
         doc: tm.TOMLDocument = tm.document()
         doc.add(tm.comment('discord-vc-bot configuration'))
@@ -142,7 +144,9 @@ class Config(DataclassUpdateMixin):
 
             doc.add(toml_key, getattr(self, fld.name))
 
-        toml_string: str = add_comments_to_toml(doc.as_string(), comments) + '\n'
+        toml_string: str = doc.as_string() + '\n'
+        if add_comments:
+            toml_string = add_comments_to_toml(toml_string, comments)
 
         if fp:
             Path(fp).write_text(toml_string, encoding='utf-8')
