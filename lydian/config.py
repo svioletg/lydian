@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import textwrap
+from argparse import ArgumentParser
 from collections import OrderedDict
 from collections.abc import Mapping
 from dataclasses import Field, asdict, dataclass, field, fields, is_dataclass
@@ -257,13 +258,24 @@ config.update_from_environment(os.environ)
 
 def main() -> int:
     """Write the default configuration as TOML to a given file path."""
-    toml: str = Config().to_toml()
-    if len(sys.argv) < 2:  # noqa: PLR2004
+    parser = ArgumentParser()
+    parser.add_argument('-o', '--out', type=Path,
+        help='A file to write the default config to. Written to stdout if not given.')
+    parser.add_argument('--no-comments', action='store_true',
+        help='Adds no comments to the output TOML.')
+
+    args = parser.parse_args()
+    dest: Path | None = args.out
+    add_comments: bool = not args.no_comments
+
+    toml: str = Config().to_toml(add_comments=add_comments)
+
+    if not dest:
         print(toml)  # noqa: T201
         return 0
-    fp: Path = Path(sys.argv[1])
-    fp.write_text(toml, 'utf-8')
-    print(f'Default configuration written to: {fp}')  # noqa: T201
+
+    dest.write_text(toml, 'utf-8')
+    print(f'Default configuration written to: {dest}')  # noqa: T201
     return 0
 
 if __name__ == '__main__':
