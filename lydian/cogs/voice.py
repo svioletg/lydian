@@ -274,7 +274,6 @@ class VoiceCog(commands.Cog):
 
             if voice.is_playing() or voice.is_paused():
                 voice.stop()
-                self.now_playing = None
 
             if (not self.queue) and (not play_now):
                 return
@@ -297,6 +296,8 @@ class VoiceCog(commands.Cog):
 
         :param exc: An exception raised during playback which caused the player to halt, if any.
         """
+        self.now_playing = None
+
         if exc:
             logger.error(f'An exception interrupted the player: {exc}')
             raise exc
