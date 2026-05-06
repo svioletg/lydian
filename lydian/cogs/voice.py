@@ -5,6 +5,7 @@ from collections import deque
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import timedelta
+from math import ceil
 from typing import Any, ClassVar, Self, cast, override
 
 import discord
@@ -18,7 +19,7 @@ from lydian.cogs.util import alias_from_config, embed_error, embed_info, embed_o
 from lydian.config import config
 from lydian.const import COLOR_ESCAPE_REGEX, COLOR_INFO, DL_DIR, YTDL_DOWNLOAD_PROGRESS_REGEX, EmojiStr
 from lydian.errors import AbortCommand, MediaQueueLimitError
-from lydian.util import BasicLock, Cache, plural
+from lydian.util import BasicLock, Cache, format_duration, plural
 
 EV_PLAYER_STOPPED_BY_COMMAND = asyncio.Event()
 """Set and cleared right after when the voice client's ``.stop()`` method is called from ``-stop``."""
@@ -96,13 +97,21 @@ class YTDLSource(discord.PCMVolumeTransformer):
 class MediaItem:
     """Represents a media item in the bot's queue."""
 
-    _url_cache: ClassVar[Cache[str, dict[str, Any]]] = Cache()
+    _url_cache: ClassVar[Cache[str, dict[str, Any]]] = Cache(timedelta(hours=1))
 
     title: str
     url: str
+    """The web URL this item originated from (not the one being used for streaming)."""
     duration: float | None = None
     """The item's duration in seconds."""
     thumbnail_url: str | None = None
+
+    @property
+    def duration_str(self) -> str | None:
+        """Return a formatted string of the duration if present."""
+        if not self.duration:
+            return None
+        return format_duration(ceil(self.duration))
 
     @classmethod
     def from_ytdl_extracted(cls, info: dict[str, Any]) -> Self:
@@ -136,6 +145,14 @@ class MediaItem:
             timedelta(hours=1),
         ) if cache else ytdl.extract_info(url, download=False)
         return cls.from_ytdl_extracted(info)
+
+    def embed(self, title_prefix: str = '') -> discord.Embed:
+        """Returns a ``discord.Embed`` for this item."""
+        return discord.Embed(
+            title=title_prefix + self.title,
+            description=(f'({self.duration_str}) ' if self.duration else '') + self.url,
+            color=COLOR_INFO,
+        ).set_thumbnail(url=self.thumbnail_url)
 
 class MediaQueue(deque[MediaItem]):
     """Queue for keeping track of what media is playing or to be played.
@@ -273,11 +290,7 @@ class VoiceCog(commands.Cog):
             voice.play(source, after=lambda e: self.on_player_stop(ctx, exc=e))
             self.now_playing = item
 
-            await ctx.send(embed=discord.Embed(
-                title=f'{EmojiStr.PLAY} Playing: {item.title}',
-                description=item.url,
-                color=COLOR_INFO,
-            ).set_thumbnail(url=item.thumbnail_url))
+            await ctx.send(embed=item.embed(f'{EmojiStr.PLAY} Playing: '))
 
     def on_player_stop(self, ctx: commands.Context, exc: Exception | None) -> None:
         """Callback for the voice client's ``.play()`` method ``after`` callback.
@@ -455,19 +468,25 @@ class VoiceCog(commands.Cog):
         if self.now_playing:
             queue_embed.add_field(
                 name=f'Now playing: {self.now_playing.title}',
-                value=self.now_playing.url,
+                value=(f'({self.now_playing.duration_str}) ' if self.now_playing.duration else '') \
+                    + self.now_playing.url,
                 inline=False,
             )
 
         if self.stopped_track:
             queue_embed.add_field(
                 name=f'Stopped: {self.stopped_track.title}',
-                value=self.stopped_track.url,
+                value=(f'({self.stopped_track.duration_str}) ' if self.stopped_track.duration else '') \
+                    + self.stopped_track.url,
                 inline=False,
             )
 
         for n, item in enumerate(self.queue, start=1):
-            queue_embed.add_field(name=f'#{n}. {item.title}', value=item.url, inline=False)
+            queue_embed.add_field(
+                name=f'#{n}. {item.title}',
+                value=(f'({item.duration_str}) ' if item.duration else '') + item.url,
+                inline=False,
+            )
 
         await ctx.send(embed=queue_embed)
 
