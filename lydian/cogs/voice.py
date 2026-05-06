@@ -5,6 +5,7 @@ from collections import deque
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import timedelta
+from math import ceil
 from typing import Any, ClassVar, Self, cast, override
 
 import discord
@@ -18,7 +19,7 @@ from lydian.cogs.util import alias_from_config, embed_error, embed_info, embed_o
 from lydian.config import config
 from lydian.const import COLOR_ESCAPE_REGEX, COLOR_INFO, DL_DIR, YTDL_DOWNLOAD_PROGRESS_REGEX, EmojiStr
 from lydian.errors import AbortCommand, MediaQueueLimitError
-from lydian.util import BasicLock, Cache, plural
+from lydian.util import BasicLock, Cache, format_duration, plural
 
 EV_PLAYER_STOPPED_BY_COMMAND = asyncio.Event()
 """Set and cleared right after when the voice client's ``.stop()`` method is called from ``-stop``."""
@@ -96,20 +97,32 @@ class YTDLSource(discord.PCMVolumeTransformer):
 class MediaItem:
     """Represents a media item in the bot's queue."""
 
-    _url_cache: ClassVar[Cache[str, dict[str, Any]]] = Cache()
+    _url_cache: ClassVar[Cache[str, dict[str, Any]]] = Cache(timedelta(hours=1))
 
     title: str
     url: str
+    """The web URL this item originated from (not the one being used for streaming)."""
     duration: float | None = None
     """The item's duration in seconds."""
     thumbnail_url: str | None = None
 
+    @property
+    def duration_str(self) -> str | None:
+        """Return a formatted string of the duration if present."""
+        if not self.duration:
+            return None
+        return format_duration(ceil(self.duration))
+
     @classmethod
     def from_ytdl_extracted(cls, info: dict[str, Any]) -> Self:
         """Returns a ``MediaItem`` created from the dictionary returned by ``yt_dlp.YoutubeDL.extract_info``."""
+        if 'entries' in info:
+            # Take first entry of multiple until proper playlist limit is implemented
+            info = info['entries'][0]
+
         return cls(
             title=info['title'],
-            url=info['original_url'],
+            url=info.get('original_url', info['url']),
             duration=info.get('duration'),
             thumbnail_url=info.get('thumbnail'),
         )
@@ -117,6 +130,10 @@ class MediaItem:
     @classmethod
     def from_url(cls, url: str, *, cache: bool = True) -> Self:
         """Returns a ``MediaItem`` created from the info extracted from ``url`` by yt-dlp.
+
+        .. note::
+            At present, if the URL results in multiple entries (e.g. a playlist or album), only the first entry will be
+            used.
 
         :param cache: If ``True``, cached info will be used instead of requesting the information for ``url`` again if
             the URL exists in the cache and is not expired, otherwise the result of this extraction will be cached.
@@ -128,6 +145,14 @@ class MediaItem:
             timedelta(hours=1),
         ) if cache else ytdl.extract_info(url, download=False)
         return cls.from_ytdl_extracted(info)
+
+    def embed(self, title_prefix: str = '') -> discord.Embed:
+        """Returns a ``discord.Embed`` for this item."""
+        return discord.Embed(
+            title=title_prefix + self.title,
+            description=(f'({self.duration_str}) ' if self.duration else '') + self.url,
+            color=COLOR_INFO,
+        ).set_thumbnail(url=self.thumbnail_url)
 
 class MediaQueue(deque[MediaItem]):
     """Queue for keeping track of what media is playing or to be played.
@@ -249,7 +274,6 @@ class VoiceCog(commands.Cog):
 
             if voice.is_playing() or voice.is_paused():
                 voice.stop()
-                self.now_playing = None
 
             if (not self.queue) and (not play_now):
                 return
@@ -257,23 +281,23 @@ class VoiceCog(commands.Cog):
             item = play_now or self.queue.popleft()
 
             logger.debug(f'Getting YTDLSource from: {item.url}')
+            progress_msg: discord.Message = await ctx.send(embed=embed_info('Downloading...'))
             source = await YTDLSource.from_url(item.url)
+            await progress_msg.delete()
 
             logger.info(f'Playing: {item}')
             voice.play(source, after=lambda e: self.on_player_stop(ctx, exc=e))
             self.now_playing = item
 
-            await ctx.send(embed=discord.Embed(
-                title=f'{EmojiStr.PLAY} Playing: {item.title}',
-                description=item.url,
-                color=COLOR_INFO,
-            ).set_thumbnail(url=item.thumbnail_url))
+            await ctx.send(embed=item.embed(f'{EmojiStr.PLAY} Playing: '))
 
     def on_player_stop(self, ctx: commands.Context, exc: Exception | None) -> None:
         """Callback for the voice client's ``.play()`` method ``after`` callback.
 
         :param exc: An exception raised during playback which caused the player to halt, if any.
         """
+        self.now_playing = None
+
         if exc:
             logger.error(f'An exception interrupted the player: {exc}')
             raise exc
@@ -314,7 +338,17 @@ class VoiceCog(commands.Cog):
 
         logger.info(f'Leaving voice channel: {voice.channel}')
         with self.queue_advance_lock:
+            self.stop_player(voice)
             await voice.disconnect()
+
+    @alias_from_config
+    @commands.command(aliases=[])
+    async def nowplaying(self, ctx: commands.Context) -> None:
+        """Shows the currently playing track."""
+        if self.now_playing:
+            await ctx.send(embed=self.now_playing.embed(f'{EmojiStr.PLAY} Playing: '))
+        else:
+            await ctx.send(embed=embed_info('Nothing is playing.'))
 
     @alias_from_config
     @commands.command(aliases=[])
@@ -444,19 +478,25 @@ class VoiceCog(commands.Cog):
         if self.now_playing:
             queue_embed.add_field(
                 name=f'Now playing: {self.now_playing.title}',
-                value=self.now_playing.url,
+                value=(f'({self.now_playing.duration_str}) ' if self.now_playing.duration else '') \
+                    + self.now_playing.url,
                 inline=False,
             )
 
         if self.stopped_track:
             queue_embed.add_field(
                 name=f'Stopped: {self.stopped_track.title}',
-                value=self.stopped_track.url,
+                value=(f'({self.stopped_track.duration_str}) ' if self.stopped_track.duration else '') \
+                    + self.stopped_track.url,
                 inline=False,
             )
 
         for n, item in enumerate(self.queue, start=1):
-            queue_embed.add_field(name=f'#{n}. {item.title}', value=item.url, inline=False)
+            queue_embed.add_field(
+                name=f'#{n}. {item.title}',
+                value=(f'({item.duration_str}) ' if item.duration else '') + item.url,
+                inline=False,
+            )
 
         await ctx.send(embed=queue_embed)
 
@@ -476,7 +516,7 @@ class VoiceCog(commands.Cog):
     async def auto_join(self, ctx: commands.Context) -> None:
         """Automatically joins or moves to the author's current channel."""
         if not isinstance(ctx.author, discord.Member):
-            return
+            raise AbortCommand
 
         if (not ctx.author.voice) or (not ctx.author.voice.channel):
             await ctx.send(embed=embed_info('You must be connected to a voice channel.'))

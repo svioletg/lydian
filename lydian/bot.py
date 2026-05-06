@@ -66,7 +66,7 @@ async def on_command_error(ctx: commands.Context, exc: Exception) -> None:
     if isinstance(exc, (commands.errors.CommandNotFound, AbortCommand)):
         return
 
-    if isinstance(exc, commands.CommandInvokeError):
+    if isinstance(exc, commands.errors.CommandInvokeError):
         # Will clutter up the traceback, just use the exception this was raised from
         exc = exc.original
 
@@ -210,5 +210,8 @@ async def async_main() -> int:
     return 0
 
 @logger.catch(onerror=lambda _: sys.exit(1))
-def main() -> int:  # noqa: D103
+def main() -> None:  # noqa: D103
+    if len(sys.argv) > 1:
+        console.print('[err]ERROR: lydian takes 0 arguments[/]')
+        sys.exit(1)
     sys.exit(asyncio.run(async_main()))

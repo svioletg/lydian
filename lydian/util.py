@@ -90,11 +90,16 @@ class CachedObject[T]:
 class Cache[K, V]:
     """A simple cache."""
 
-    def __init__(self) -> None:
+    def __init__(self, default_expiration: timedelta | None = None) -> None:
+        self._default_expiration = default_expiration
         self._data: dict[K, CachedObject[V]] = {}
 
     def __repr__(self) -> str:  # noqa: D105
         return f'{self.__class__.__name__}({self._data!r})'
+
+    def clear(self) -> None:
+        """Removes all items from the cache."""
+        self._data.clear()
 
     def get(self, key: K) -> V | None:
         """Returns the value associated with ``key`` if it exists and has not expired, otherwise returns ``None``.
@@ -122,6 +127,7 @@ class Cache[K, V]:
         :raises ValueError:
             ``expires`` was given a date in the past.
         """
+        expires = expires if expires is not None else self._default_expiration
         if expires and \
             (((datetime.now(UTC) + expires) if isinstance(expires, timedelta) else expires) < datetime.now(UTC)):
             raise ValueError(f'Expiration date for get_or_set must be a future date: {expires}')
@@ -141,6 +147,7 @@ class Cache[K, V]:
 
     def set(self, key: K, value: V, expires: datetime | timedelta | None = None) -> None:
         """Adds or replaces the value of ``key`` with ``value`` and the given optional expiration date."""
+        expires = expires if expires is not None else self._default_expiration
         self._data[key] = CachedObject(value, expires=expires)
 
 class DataclassUpdateMixin:
@@ -324,6 +331,14 @@ def maybepath(fp: str | Path, must_be: Literal['file', 'dir'] | None = None) -> 
             check = lambda fp: fp.exists()  # noqa: E731
 
     return maybe(Path(fp), check)
+
+def format_duration(total_seconds: float) -> str:
+    """Returns seconds converted to H:M:S format, or M:S if the hour is 0."""
+    h, m = divmod(total_seconds, 3600)
+    m, s = divmod(m, 60)
+    if h:
+        return f'{h}:{m:02d}:{s:02d}'
+    return f'{m}:{s:02d}'
 
 def plural(s: str, n: int) -> str:
     """Returns a string as plural or singular based on the value of ``n``.

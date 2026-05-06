@@ -118,6 +118,17 @@ def test_dirsize(tmpdir: Path) -> None:
 def test_first_where[T](it: Iterable[T], predicate: Callable[[T], bool], expected: T | None) -> None:
     assert util.first_where(it, predicate) == expected
 
+@pytest.mark.parametrize(('total_seconds', 'expected'),
+    [
+        (59, '0:59'),
+        (60, '1:00'),
+        (3599, '59:59'),
+        (3600, '1:00:00'),
+    ],
+)
+def format_duration(total_seconds: float, expected: str) -> None:
+    assert util.format_duration(total_seconds) == expected
+
 def test_get_dataclass_fields() -> None:
     dc = Dataclass()
     dc_fields: dict[str, Field] = util.get_dataclass_fields(dc)

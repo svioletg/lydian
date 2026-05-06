@@ -5,12 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.coAm/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
+configured prefix accordingly.
+
 ## [Unreleased]
+
+### Added
+
+- Added bot command `-nowplaying`
+- Added function `util.format_duration()`
+- Added method `util.Cache.clear()`
+- Added method `cogs.voice.MediaItem.embed()`
+- Added command method `cogs.voice.VoiceCog.nowplaying`
+- Added property `cogs.voice.MediaItem.duration_str`
+
+### Changed
+
+- `util.Cache` constructor now accepts a `default_expiration` parameter
+  - Must be a `timedelta` object, will be used as the expiration date when calling the `set()` or
+    `get_or_set()` methods if `expires` is `None`
+
+## [0.3.0] - 2026-05-05
 
 ### Added
 
 - Lydian version is now logged on bot startup
 - Console input is now logged in log files
+- Added config key `max-queue-length` (integer)
 - Added config key `media-dir-warn-threshold` (integer)
   - If the size of the downloaded media directory exceeds this threshold, a warning is emitted at
     bot startup
@@ -23,21 +44,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `lydian-cli` command `clear-dl`
 - Added console commands `debug read` and `debug readlog`
 - Added constant `const.COLOR_ESCAPE_REGEX`
+- Added constant `const.DEFAULT_DISCORD_PROMPT_TIMEOUT`
+- Added class `cogs.util.ConfirmView`
 - Added class `util.BasicLock`
 - Added class `util.Cache`
 - Added class `util.CachedObject`
 - Added exception class `errors.MediaQueueLimitError`
-- Added decorator function `cogs.util.alias_from_config()`
-  ([#3](https://github.com/svioletg/lydian-discord-bot/issues/3))
+- Added warning class `cogs.util.ConfirmViewResponseWarning`
 - Added function `bot.on_error()`
 - Added function `cli.abort()`
 - Added function `cli.clear_dl_dir()`
+- Added decorator function `cogs.util.alias_from_config()`
+  ([#3](https://github.com/svioletg/lydian-discord-bot/issues/3))
+- Added function `cogs.util.confirm()`
 - Added function `const._stdout_log_filter()`
-- Added function `util.dirsize()`
 - Added function `util.dirsize_counted()`
+- Added function `util.dirsize()`
 - Added function `util.plural()`
 - Added command method `cogs.debug.DebugCog.bigembed()`
-- Added members `PLAY`, `PAUSE`, `SKIP`, and `STOP` to enum class `const.EmojiStr`
+- Added command method `cogs.debug.DebugCog.promptyn()`
+- Added members to `const.EmojiStr`:
+  - `CANCEL`
+  - `CONFIRM`
+  - `IN`
+  - `OUT`
+  - `PAUSE`
+  - `PLAY`
+  - `SKIP`
+  - `STOP`
 - Added test file `test_cogs_voice.py`
 - Added tests to `test_util.py`:
   - `test_cache()`
@@ -86,6 +120,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Exceptions raised inside of `bot.on_command_error` are now logged and not silently ignored
 - yt-dlp error logs (calls to the `.error()` method of its logger) are now properly handled
+- Command hook method `cogs.voice.VoiceCog.auto_join()` now correctly raises `AbortCommand` when the
+  author is not a guild member instead of returning
 
 ## [0.2.0] - 2026-04-27
 
