@@ -45,6 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added members to `const.EmojiStr`:
   - `CANCEL`
   - `CONFIRM`
+  - `IN`
+  - `OUT`
   - `PAUSE`
   - `PLAY`
   - `SKIP`
