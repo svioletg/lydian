@@ -97,6 +97,10 @@ class Cache[K, V]:
     def __repr__(self) -> str:  # noqa: D105
         return f'{self.__class__.__name__}({self._data!r})'
 
+    def clear(self) -> None:
+        """Removes all items from the cache."""
+        self._data.clear()
+
     def get(self, key: K) -> V | None:
         """Returns the value associated with ``key`` if it exists and has not expired, otherwise returns ``None``.
 
