@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added function `util.format_duration()`
 
+### Changed
+
+- `util.Cache` constructor now accepts a `default_expiration` parameter
+  - Must be a `timedelta` object, will be used as the expiration date when calling the `set()` or
+    `get_or_set()` methods if `expires` is `None`
+
 ## [0.3.0] - 2026-05-05
 
 ### Added

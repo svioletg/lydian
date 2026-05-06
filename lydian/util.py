@@ -90,7 +90,8 @@ class CachedObject[T]:
 class Cache[K, V]:
     """A simple cache."""
 
-    def __init__(self) -> None:
+    def __init__(self, default_expiration: timedelta | None = None) -> None:
+        self._default_expiration = default_expiration
         self._data: dict[K, CachedObject[V]] = {}
 
     def __repr__(self) -> str:  # noqa: D105
@@ -122,6 +123,7 @@ class Cache[K, V]:
         :raises ValueError:
             ``expires`` was given a date in the past.
         """
+        expires = expires if expires is not None else self._default_expiration
         if expires and \
             (((datetime.now(UTC) + expires) if isinstance(expires, timedelta) else expires) < datetime.now(UTC)):
             raise ValueError(f'Expiration date for get_or_set must be a future date: {expires}')
@@ -141,6 +143,7 @@ class Cache[K, V]:
 
     def set(self, key: K, value: V, expires: datetime | timedelta | None = None) -> None:
         """Adds or replaces the value of ``key`` with ``value`` and the given optional expiration date."""
+        expires = expires if expires is not None else self._default_expiration
         self._data[key] = CachedObject(value, expires=expires)
 
 class DataclassUpdateMixin:
