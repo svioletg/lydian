@@ -342,6 +342,15 @@ class VoiceCog(commands.Cog):
 
     @alias_from_config
     @commands.command(aliases=[])
+    async def nowplaying(self, ctx: commands.Context) -> None:
+        """Shows the currently playing track."""
+        if self.now_playing:
+            await ctx.send(embed=self.now_playing.embed(f'{EmojiStr.PLAY} Playing: '))
+        else:
+            await ctx.send(embed=embed_info('Nothing is playing.'))
+
+    @alias_from_config
+    @commands.command(aliases=[])
     async def play(self, ctx: commands.Context, url: str | None = None) -> None:
         """Plays media, adds media to the queue, or resumes the player if paused.
 

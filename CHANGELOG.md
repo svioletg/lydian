@@ -5,13 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.coAm/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
+configured prefix accordingly.
+
 ## [Unreleased]
 
 ### Added
 
+- Added bot command `-nowplaying`
 - Added function `util.format_duration()`
 - Added method `util.Cache.clear()`
 - Added method `cogs.voice.MediaItem.embed()`
+- Added command method `cogs.voice.VoiceCog.nowplaying`
 - Added property `cogs.voice.MediaItem.duration_str`
 
 ### Changed
