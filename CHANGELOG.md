@@ -23,21 +23,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `lydian-cli` command `clear-dl`
 - Added console commands `debug read` and `debug readlog`
 - Added constant `const.COLOR_ESCAPE_REGEX`
+- Added constant `const.DEFAULT_DISCORD_PROMPT_TIMEOUT`
+- Added class `cogs.util.ConfirmView`
 - Added class `util.BasicLock`
 - Added class `util.Cache`
 - Added class `util.CachedObject`
 - Added exception class `errors.MediaQueueLimitError`
-- Added decorator function `cogs.util.alias_from_config()`
-  ([#3](https://github.com/svioletg/lydian-discord-bot/issues/3))
+- Added warning class `cogs.util.ConfirmViewResponseWarning`
 - Added function `bot.on_error()`
 - Added function `cli.abort()`
 - Added function `cli.clear_dl_dir()`
+- Added decorator function `cogs.util.alias_from_config()`
+  ([#3](https://github.com/svioletg/lydian-discord-bot/issues/3))
+- Added function `cogs.util.confirm()`
 - Added function `const._stdout_log_filter()`
-- Added function `util.dirsize()`
 - Added function `util.dirsize_counted()`
+- Added function `util.dirsize()`
 - Added function `util.plural()`
 - Added command method `cogs.debug.DebugCog.bigembed()`
-- Added members `PLAY`, `PAUSE`, `SKIP`, and `STOP` to enum class `const.EmojiStr`
+- Added command method `cogs.debug.DebugCog.promptyn()`
+- Added members to `const.EmojiStr`:
+  - `CANCEL`
+  - `CONFIRM`
+  - `PAUSE`
+  - `PLAY`
+  - `SKIP`
+  - `STOP`
 - Added test file `test_cogs_voice.py`
 - Added tests to `test_util.py`:
   - `test_cache()`

@@ -53,6 +53,9 @@ COLOR_ERROR: int = 0xff0000
 COLOR_ESCAPE_REGEX: re.Pattern[str] = re.compile(r'\x1b\[.*?m')
 YTDL_DOWNLOAD_PROGRESS_REGEX: re.Pattern[str] = re.compile(r'\[download\].+ETA')
 
+# Other values
+DEFAULT_DISCORD_PROMPT_TIMEOUT: float = 60.0
+
 class ConsoleHighlighter(Highlighter):
     """Custom highlighter class for the ``rich`` console."""
 
@@ -64,10 +67,12 @@ class EmojiStr(StrEnum):
     """Strings for emoji commonly used by the bot."""
 
     # General
-    INFO  = emojize(':information:', language='alias')
-    OK    = emojize(':white_check_mark:', language='alias')
-    WARN  = emojize(':warning:', language='alias')
-    ERROR = emojize(':x:', language='alias')
+    INFO    = emojize(':information:', language='alias')
+    OK      = emojize(':white_check_mark:', language='alias')
+    WARN    = emojize(':warning:', language='alias')
+    ERROR   = emojize(':x:', language='alias')
+    CONFIRM = emojize(':heavy_check_mark:', language='alias')
+    CANCEL  = emojize(':heavy_multiplication_x:', language='alias')
 
     # Media
     PLAY  = emojize(':arrow_forward:', language='alias')
