@@ -325,6 +325,14 @@ def maybepath(fp: str | Path, must_be: Literal['file', 'dir'] | None = None) -> 
 
     return maybe(Path(fp), check)
 
+def format_duration(total_seconds: float) -> str:
+    """Returns seconds converted to H:M:S format, or M:S if the hour is 0."""
+    h, m = divmod(total_seconds, 3600)
+    m, s = divmod(m, 60)
+    if h:
+        return f'{h}:{m:02d}:{s:02d}'
+    return f'{m}:{s:02d}'
+
 def plural(s: str, n: int) -> str:
     """Returns a string as plural or singular based on the value of ``n``.
 
