@@ -61,6 +61,7 @@ YTDL_FORMAT_OPTIONS: dict[str, Any] = {
     'no_warnings': False,
     'default_search': 'auto',
     'max_filesize': config.max_filesize,
+    'extract_flat': True,
 }
 
 ytdl = yt_dlp.YoutubeDL(YTDL_FORMAT_OPTIONS)
@@ -106,9 +107,13 @@ class MediaItem:
     @classmethod
     def from_ytdl_extracted(cls, info: dict[str, Any]) -> Self:
         """Returns a ``MediaItem`` created from the dictionary returned by ``yt_dlp.YoutubeDL.extract_info``."""
+        if 'entries' in info:
+            # Take first entry of multiple until proper playlist limit is implemented
+            info = info['entries'][0]
+
         return cls(
             title=info['title'],
-            url=info['original_url'],
+            url=info.get('original_url', info['url']),
             duration=info.get('duration'),
             thumbnail_url=info.get('thumbnail'),
         )
@@ -116,6 +121,10 @@ class MediaItem:
     @classmethod
     def from_url(cls, url: str, *, cache: bool = True) -> Self:
         """Returns a ``MediaItem`` created from the info extracted from ``url`` by yt-dlp.
+
+        .. note::
+            At present, if the URL results in multiple entries (e.g. a playlist or album), only the first entry will be
+            used.
 
         :param cache: If ``True``, cached info will be used instead of requesting the information for ``url`` again if
             the URL exists in the cache and is not expired, otherwise the result of this extraction will be cached.
@@ -315,6 +324,7 @@ class VoiceCog(commands.Cog):
 
         logger.info(f'Leaving voice channel: {voice.channel}')
         with self.queue_advance_lock:
+            self.stop_player(voice)
             await voice.disconnect()
 
     @alias_from_config
