@@ -138,6 +138,12 @@ def test_get_dataclass_fields() -> None:
     assert dc_fields['d.x'].default == dc.d.x
     assert dc_fields['d.y'].default_factory() == dc.d.y  # ty:ignore[call-non-callable]
 
+def test_linepos_to_pos() -> None:
+    s: str = 'One\nTwo\nThree\n'
+    for lineno, ln in enumerate(s.splitlines(keepends=True)):
+        for linepos, char in enumerate(ln):
+            assert s[util.linepos_to_pos(s, lineno, linepos)] == char
+
 def test_maybepath() -> None:
     assert util.maybepath('qwertyuiop') is Nothing
     assert isinstance(util.maybepath('pyproject.toml'), Some)

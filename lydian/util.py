@@ -323,6 +323,11 @@ def format_duration(total_seconds: float) -> str:
         return f'{h}:{m:02d}:{s:02d}'
     return f'{m}:{s:02d}'
 
+def linepos_to_pos(s: str, lineno: int, linepos: int) -> int:
+    """Converts a 0-indexed line number and position to a global position in a string."""
+    lines: list[str] = s.splitlines(keepends=True)
+    return len(''.join(lines[:lineno])) + linepos
+
 def maybepath(fp: str | Path, must_be: Literal['file', 'dir'] | None = None) -> Maybe[Path]:
     """Returns a ``Maybe`` predicated on whether the given file path exists.
 
