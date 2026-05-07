@@ -103,6 +103,8 @@ class Config(DataclassUpdateMixin):
     command_aliases: dict[str, list[str]] = field(default_factory=_default_command_aliases)
     max_queue_length: int = field(default=100,
         doc='Maximum number of items that can be added to the media queue.')
+    max_playlist_length: int = field(default=20,
+        doc='Maximum number of items that can be added from a single playlist link.')
     max_filesize: int = field(default=20_000_000,
         doc='Maximum filesize in bytes for media that can be downloaded by the bot.')
     media_dir_warn_threshold: int = field(default=100_000_000,

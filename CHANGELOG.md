@@ -12,6 +12,7 @@ configured prefix accordingly.
 
 ### Added
 
+- Added config key `max-playlist-length` (integer)
 - Added bot command `-nowplaying`
 - Added function `util.format_duration()`
 - Added method `util.Cache.clear()`
