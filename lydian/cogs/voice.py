@@ -3,7 +3,7 @@ import asyncio
 import re
 from collections import deque
 from collections.abc import Iterable, Sequence
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import timedelta
 from math import ceil
 from typing import Any, ClassVar, Self, cast, override
@@ -15,7 +15,7 @@ from loguru import logger
 from maybetype import maybe
 from yt_dlp.utils import DownloadError
 
-from lydian.cogs.util import alias_from_config, embed_error, embed_info, embed_ok
+from lydian.cogs.util import alias_from_config, confirm, embed_error, embed_info, embed_ok
 from lydian.config import config
 from lydian.const import COLOR_ESCAPE_REGEX, COLOR_INFO, DL_DIR, YTDL_DOWNLOAD_PROGRESS_REGEX, EmojiStr
 from lydian.errors import AbortCommand, MediaQueueLimitError
@@ -60,7 +60,7 @@ YTDL_FORMAT_OPTIONS: dict[str, Any] = {
     'no_warnings': False,
     'default_search': 'auto',
     'max_filesize': config.max_filesize,
-    'extract_flat': True,
+    'extract_flat': 'in_playlist',
 }
 
 ytdl = yt_dlp.YoutubeDL(YTDL_FORMAT_OPTIONS)
@@ -95,7 +95,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
 class MediaItem:
     """Represents a media item in the bot's queue."""
 
-    _url_cache: ClassVar[Cache[str, dict[str, Any]]] = Cache(timedelta(hours=1))
+    _url_info_cache: ClassVar[Cache[str, dict[str, Any]]] = Cache(timedelta(hours=1))
+    """Cache for storing URLs to yt-dlp-extracted info dictionaries."""
 
     title: str
     url: str
@@ -110,6 +111,10 @@ class MediaItem:
         if not self.duration:
             return None
         return format_duration(ceil(self.duration))
+
+    def __copy__(self) -> Self:
+        """Returns a new ``MediaItem`` with this instance's field values."""
+        return self.__class__(**asdict(self))
 
     @classmethod
     def from_ytdl_extracted(cls, info: dict[str, Any]) -> Self:
@@ -126,23 +131,29 @@ class MediaItem:
         )
 
     @classmethod
-    def from_url(cls, url: str, *, cache: bool = True) -> Self:
-        """Returns a ``MediaItem`` created from the info extracted from ``url`` by yt-dlp.
+    def from_url(cls, url: str, *, cache: bool = True) -> tuple[Self, ...]:
+        """Returns a tuple of ``MediaItem`` objects created from the info extracted from ``url`` by yt-dlp.
 
-        .. note::
-            At present, if the URL results in multiple entries (e.g. a playlist or album), only the first entry will be
-            used.
+        If multiple entries are extracted from ``url``, the resulting ``MediaItem`` objects will only have the
+        ``title`` and ``url`` fields filled.
 
         :param cache: If ``True``, cached info will be used instead of requesting the information for ``url`` again if
             the URL exists in the cache and is not expired, otherwise the result of this extraction will be cached.
-            If ``False``, the cache is neither checked nor stored to.
+            If ``False``, the cache is not used.
         """
-        info: dict[str, Any] = cls._url_cache.get_or_set(
-            url,
-            lambda: ytdl.extract_info(url, download=False),
-            timedelta(hours=1),
-        ) if cache else ytdl.extract_info(url, download=False)
-        return cls.from_ytdl_extracted(info)
+        info: dict[str, Any] = cls._url_info_cache.get_or_set(url, lambda: ytdl.extract_info(url, download=False)) \
+            if cache \
+            else ytdl.extract_info(url, download=False)
+        return tuple(
+            cls.from_ytdl_extracted(cached) \
+                if cache and (cached := cls._url_info_cache.get(entry.get('original_url', entry['url']))) \
+                else cls.from_ytdl_extracted(entry) \
+            for entry in info.get('entries', [info])
+        )
+
+    def copy(self) -> Self:
+        """Returns a new ``MediaItem`` with this instance's field values."""
+        return self.__copy__()
 
     def embed(self, title_prefix: str = '') -> discord.Embed:
         """Returns a ``discord.Embed`` for this item."""
@@ -151,6 +162,36 @@ class MediaItem:
             description=(f'({self.duration_str}) ' if self.duration else '') + self.url,
             color=COLOR_INFO,
         ).set_thumbnail(url=self.thumbnail_url)
+
+    def refresh_copy(self, *, store_cache: bool = True) -> Self:
+        """Re-extracts information from this object's ``url`` and returns a new instance from it.
+
+        If the extracted information has multiple entries, the first entry is used.
+
+        :param store_cache: Whether to store the resulting extracted information into the cache. Note that the cache is
+            not used to retrieve any information for this method, it will *always* make a request.
+        """
+        new_info: dict[str, Any] = ytdl.extract_info(self.url, download=False)
+        new_info = new_info.get('entries', [new_info])[0]
+
+        if store_cache:
+            self._url_info_cache.set(self.url, new_info)
+
+        return self.from_ytdl_extracted(new_info)
+
+    def refresh(self, *, store_cache: bool = True) -> Self:
+        """Re-extracts information from this object's ``url`` and updates fields with the info accordingly.
+
+        Returns a reference to this object.
+        If the extracted information has multiple entries, the first entry is used.
+
+        :param store_cache: Whether to store the resulting extracted information into the cache. Note that the cache is
+            not used to retrieve any information for this method, it will *always* make a request.
+        """
+        for k, v in asdict(self.refresh_copy(store_cache=store_cache)).items():
+            setattr(self, k, v)
+
+        return self
 
 class MediaQueue(deque[MediaItem]):
     """Queue for keeping track of what media is playing or to be played.
@@ -278,6 +319,9 @@ class VoiceCog(commands.Cog):
 
             item = play_now or self.queue.popleft()
 
+            if (not item.duration) or (item.thumbnail_url):
+                item.refresh()
+
             logger.debug(f'Getting YTDLSource from: {item.url}')
             progress_msg: discord.Message = await ctx.send(embed=embed_info('Downloading...'))
             source = await YTDLSource.from_url(item.url)
@@ -350,7 +394,8 @@ class VoiceCog(commands.Cog):
 
     @alias_from_config
     @commands.command(aliases=[])
-    async def play(self, ctx: commands.Context, url: str | None = None) -> None:
+    # TODO(svioletg): Once this is merged up into dev, deal with C901 and PLR0911  # noqa: TD003
+    async def play(self, ctx: commands.Context, url: str | None = None) -> None:  # noqa: C901, PLR0911
         """Plays media, adds media to the queue, or resumes the player if paused.
 
         If the player is paused, the command can be used without any arguments to resume it.
@@ -387,7 +432,7 @@ class VoiceCog(commands.Cog):
         progress_msg: discord.Message = await ctx.send(embed=embed_info('Getting media info...', url))
 
         try:
-            item: MediaItem = await asyncio.get_event_loop().run_in_executor(None,
+            items: tuple[MediaItem, ...] = await asyncio.get_event_loop().run_in_executor(None,
                 lambda: MediaItem.from_url(url))
         except DownloadError as e:
             msg: str = COLOR_ESCAPE_REGEX.sub('', e.msg or '')
@@ -395,16 +440,55 @@ class VoiceCog(commands.Cog):
             await progress_msg.edit(embed=embed_error('Failed to get URL information', f'{msg}'))
             return
 
-        self.queue.append(item)
+        # Reject if the items won't fit in the queue
+        if config.max_queue_length and (len(self.queue) + len(items) > config.max_queue_length):
+            await progress_msg.edit(
+                embed=embed_info('Playlist is too long to fit in the queue.', f'Limit: {config.max_queue_length}'),
+            )
+            return
+
+        # If the playlist limit is exceeded, ask to add the max amount
+        if config.max_playlist_length and (len(items) > config.max_playlist_length):
+            can_add: bool | None = await confirm(ctx,
+                embed_info(
+                    f'Playlist is too long (limit of {config.max_playlist_length}).'
+                    + f'\nAdd the first {config.max_playlist_length} items instead?',
+                ),
+                prompt_timeout=120.0,
+            )
+            match can_add:
+                case True:
+                    items = items[:config.max_playlist_length]
+                case False:
+                    await progress_msg.delete()
+                    return
+                case _:
+                    await progress_msg.delete()
+                    await ctx.send('Timed out.')
+                    return
+
+        self.queue.extend(items)
+
+        logger.info(f'Added {len(items)} item(s) to the media queue')
+        for i in items:
+            logger.debug(f'Added to media queue: {i}')
 
         # Start running the queue if nothing is playing, otherwise add this onto the queue
         if not self.now_playing:
             await progress_msg.delete()
             await self.advance_queue(ctx)
-        else:
-            logger.debug(f'Appended to media queue: {item}')
+        elif len(items) == 1:
+            item = items[0]
             await progress_msg.edit(
                 embed=embed_ok(f'{EmojiStr.IN} Queued at position #{len(self.queue)}: {item.title}', item.url),
+            )
+        else:
+            end_pos: int = len(self.queue)
+            start_pos: int = end_pos - len(items)
+            await progress_msg.edit(
+                embed=embed_ok(
+                    f'{EmojiStr.IN} Queued {len(items)} items from position #{start_pos + 1} to #{end_pos}',
+                ),
             )
 
     @alias_from_config
