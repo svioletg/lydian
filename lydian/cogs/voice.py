@@ -489,7 +489,7 @@ class VoiceCog(commands.Cog):
             start_pos: int = end_pos - len(items)
             await progress_msg.edit(
                 embed=embed_ok(
-                    f'{EmojiStr.IN} Queued {len(items)} items from position #{start_pos} to #{end_pos}',
+                    f'{EmojiStr.IN} Queued {len(items)} items from position #{start_pos + 1} to #{end_pos}',
                 ),
             )
 
