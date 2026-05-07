@@ -55,6 +55,7 @@ YTDL_DOWNLOAD_PROGRESS_REGEX: re.Pattern[str] = re.compile(r'\[download\].+ETA')
 
 # Other values
 DEFAULT_DISCORD_PROMPT_TIMEOUT: float = 60.0
+QUEUE_MAX_PER_PAGE: int = 20
 
 class ConsoleHighlighter(Highlighter):
     """Custom highlighter class for the ``rich`` console."""

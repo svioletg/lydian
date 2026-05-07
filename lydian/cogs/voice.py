@@ -17,9 +17,16 @@ from yt_dlp.utils import DownloadError
 
 from lydian.cogs.util import alias_from_config, confirm, embed_error, embed_info, embed_ok
 from lydian.config import config
-from lydian.const import COLOR_ESCAPE_REGEX, COLOR_INFO, DL_DIR, YTDL_DOWNLOAD_PROGRESS_REGEX, EmojiStr
+from lydian.const import (
+    COLOR_ESCAPE_REGEX,
+    COLOR_INFO,
+    DL_DIR,
+    QUEUE_MAX_PER_PAGE,
+    YTDL_DOWNLOAD_PROGRESS_REGEX,
+    EmojiStr,
+)
 from lydian.errors import AbortCommand, MediaQueueLimitError
-from lydian.util import BasicLock, Cache, format_duration, plural
+from lydian.util import BasicLock, Cache, format_duration
 
 
 class YTDLLogHandler:
@@ -549,11 +556,35 @@ class VoiceCog(commands.Cog):
 
     @alias_from_config
     @commands.command('queue', aliases=[])
-    async def show_queue(self, ctx: commands.Context) -> None:
+    async def show_queue(self, ctx: commands.Context, page: int = 1) -> None:
         """Shows the queue."""
+        if page < 1:
+            await ctx.send(embed=embed_info('Page index must be more than zero.'))
+            return
+
+        pages: int = ceil(len(self.queue) / QUEUE_MAX_PER_PAGE) or 1
+
+        if page > pages:
+            await ctx.send(embed=embed_info('Page index out of range, showing the last page.'))
+            page = pages
+
+        queue_slice: tuple[MediaItem, ...]
+        embed_desc: str
+        page_start: int
+        page_end: int
+        if pages == 1:
+            page_start, page_end = 0, len(self.queue)
+            queue_slice = tuple(self.queue)
+            embed_desc = f'Showing {len(self.queue)} item(s)'
+        else:
+            page_start, page_end = QUEUE_MAX_PER_PAGE * (page - 1), QUEUE_MAX_PER_PAGE * page
+            queue_slice = tuple(self.queue)[page_start:page_end]
+            embed_desc = f'Showing items #{page_start + 1} to #{min(page_end, len(self.queue))}' \
+                + f' out of {len(self.queue)}\n(Page {page}/{pages})'
+
         queue_embed = discord.Embed(
             title='Queue',
-            description=f'{len(self.queue)} {plural('item.s', len(self.queue))}',
+            description=embed_desc,
             color=COLOR_INFO,
         )
 
@@ -573,7 +604,7 @@ class VoiceCog(commands.Cog):
                 inline=False,
             )
 
-        for n, item in enumerate(self.queue, start=1):
+        for n, item in enumerate(queue_slice, start=page_start + 1):
             queue_embed.add_field(
                 name=f'#{n}. {item.title}',
                 value=(f'({item.duration_str}) ' if item.duration else '') + item.url,
