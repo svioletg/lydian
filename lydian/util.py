@@ -352,8 +352,8 @@ def pos_to_linepos(s: str, pos: int) -> tuple[int, int]:
 
     >>> s = 'One\nTwo\nThree\n'
     >>> for n, char in enumerate(s):
-    >>>     lineno, linepos = pos_to_linepos(s, n)
-    >>>     assert s[n] == char == s.splitlines(keepends=True)[lineno][linepos]
+    ...     lineno, linepos = pos_to_linepos(s, n)
+    ...     assert s[n] == char == s.splitlines(keepends=True)[lineno][linepos]
 
     :raises IndexError:
         ``pos`` is out of range for ``s``.
