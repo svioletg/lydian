@@ -126,7 +126,7 @@ def test_first_where[T](it: Iterable[T], predicate: Callable[[T], bool], expecte
         (3600, '1:00:00'),
     ],
 )
-def format_duration(total_seconds: float, expected: str) -> None:
+def test_format_duration(total_seconds: float, expected: str) -> None:
     assert util.format_duration(total_seconds) == expected
 
 def test_get_dataclass_fields() -> None:
@@ -138,9 +138,21 @@ def test_get_dataclass_fields() -> None:
     assert dc_fields['d.x'].default == dc.d.x
     assert dc_fields['d.y'].default_factory() == dc.d.y  # ty:ignore[call-non-callable]
 
+def test_linepos_to_pos() -> None:
+    s: str = 'One\nTwo\nThree\n'
+    for lineno, ln in enumerate(s.splitlines(keepends=True)):
+        for linepos, char in enumerate(ln):
+            assert s[util.linepos_to_pos(s, lineno, linepos)] == char
+
 def test_maybepath() -> None:
     assert util.maybepath('qwertyuiop') is Nothing
     assert isinstance(util.maybepath('pyproject.toml'), Some)
+
+def test_pos_to_linepos() -> None:
+    s: str = 'One\nTwo\nThree\n'
+    for n, char in enumerate(s):
+        lineno, linepos = util.pos_to_linepos(s, n)
+        assert s[n] == char == s.splitlines(keepends=True)[lineno][linepos]  # noqa: PLR1736
 
 @pytest.mark.parametrize(('word', 'singular', 'plural'),
     [

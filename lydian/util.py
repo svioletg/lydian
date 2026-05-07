@@ -1,6 +1,7 @@
 """General-purpose utility/"helper" functions and classes.
 
-This module should not import any other modules from the package, to ensure its contents can be used by any module.
+This module should not import any other modules from the package other than ``errors``, to ensure its contents can be
+used by any module.
 """
 from collections.abc import Callable, Iterable
 from dataclasses import Field, fields, is_dataclass
@@ -315,6 +316,19 @@ def first_where[T](it: Iterable[T], predicate: Callable[[T], bool]) -> T | None:
     except StopIteration:
         return None
 
+def format_duration(total_seconds: float) -> str:
+    """Returns seconds converted to H:M:S format, or M:S if the hour is 0."""
+    h, m = divmod(total_seconds, 3600)
+    m, s = divmod(m, 60)
+    if h:
+        return f'{h}:{m:02d}:{s:02d}'
+    return f'{m}:{s:02d}'
+
+def linepos_to_pos(s: str, lineno: int, linepos: int) -> int:
+    """Converts a 0-indexed line number and position to a global position in a string."""
+    lines: list[str] = s.splitlines(keepends=True)
+    return len(''.join(lines[:lineno])) + linepos
+
 def maybepath(fp: str | Path, must_be: Literal['file', 'dir'] | None = None) -> Maybe[Path]:
     """Returns a ``Maybe`` predicated on whether the given file path exists.
 
@@ -332,13 +346,23 @@ def maybepath(fp: str | Path, must_be: Literal['file', 'dir'] | None = None) -> 
 
     return maybe(Path(fp), check)
 
-def format_duration(total_seconds: float) -> str:
-    """Returns seconds converted to H:M:S format, or M:S if the hour is 0."""
-    h, m = divmod(total_seconds, 3600)
-    m, s = divmod(m, 60)
-    if h:
-        return f'{h}:{m:02d}:{s:02d}'
-    return f'{m}:{s:02d}'
+def pos_to_linepos(s: str, pos: int) -> tuple[int, int]:
+    r"""Converts a global position in a string to a tuple of the line number and position within that line.
+
+    The line and position are 0-indexed.
+
+    >>> s = 'One\nTwo\nThree\n'
+    >>> for n, char in enumerate(s):
+    ...     lineno, linepos = pos_to_linepos(s, n)
+    ...     assert s[n] == char == s.splitlines(keepends=True)[lineno][linepos]
+
+    :raises IndexError:
+        ``pos`` is out of range for ``s``.
+    """
+    _ = s[pos] # Raises IndexError if the position is out of range
+    line: int = s[:pos].count('\n')
+    line_pos = pos - len('\n'.join(s.splitlines()[:line]))
+    return line, line_pos - (1 if line else 0)
 
 def plural(s: str, n: int) -> str:
     """Returns a string as plural or singular based on the value of ``n``.
