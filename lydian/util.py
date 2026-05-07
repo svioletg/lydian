@@ -1,6 +1,7 @@
 """General-purpose utility/"helper" functions and classes.
 
-This module should not import any other modules from the package, to ensure its contents can be used by any module.
+This module should not import any other modules from the package other than ``errors``, to ensure its contents can be
+used by any module.
 """
 from collections.abc import Callable, Iterable
 from dataclasses import Field, fields, is_dataclass
