@@ -26,7 +26,7 @@ configured prefix accordingly.
 ### Changed
 
 - `-queue` command is now paginated, accepts an optional page index value and shows up to 20 items
-  per page
+  per page (#11)
 - `cogs.voice.MediaItem.from_url` now returns a tuple of `MediaItem` objects instead of one
 - `util.Cache` constructor now accepts a `default_expiration` parameter
   - Must be a `timedelta` object, will be used as the expiration date when calling the `set()` or
