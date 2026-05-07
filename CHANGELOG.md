@@ -27,6 +27,10 @@ configured prefix accordingly.
   - Must be a `timedelta` object, will be used as the expiration date when calling the `set()` or
     `get_or_set()` methods if `expires` is `None`
 
+### Removed
+
+- Remove unused event constant `cogs.voice.EV_PLAYER_STOPPED_BY_COMMAND`
+
 ## [0.3.0] - 2026-05-05
 
 ### Added

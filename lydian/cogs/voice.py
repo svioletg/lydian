@@ -21,8 +21,6 @@ from lydian.const import COLOR_ESCAPE_REGEX, COLOR_INFO, DL_DIR, YTDL_DOWNLOAD_P
 from lydian.errors import AbortCommand, MediaQueueLimitError
 from lydian.util import BasicLock, Cache, format_duration, plural
 
-EV_PLAYER_STOPPED_BY_COMMAND = asyncio.Event()
-"""Set and cleared right after when the voice client's ``.stop()`` method is called from ``-stop``."""
 
 class YTDLLogHandler:
     """Basic class implementing ``debug``, ``info``, and ``warning`` methods to handle YoutubeDL logging.
