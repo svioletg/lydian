@@ -14,6 +14,7 @@ configured prefix accordingly.
 
 - Added bot command `-nowplaying`
 - Added function `util.format_duration()`
+- Added function `util.pos_to_linepos()`
 - Added method `util.Cache.clear()`
 - Added method `cogs.voice.MediaItem.embed()`
 - Added command method `cogs.voice.VoiceCog.nowplaying`

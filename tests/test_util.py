@@ -142,6 +142,12 @@ def test_maybepath() -> None:
     assert util.maybepath('qwertyuiop') is Nothing
     assert isinstance(util.maybepath('pyproject.toml'), Some)
 
+def test_pos_to_linepos() -> None:
+    s: str = 'One\nTwo\nThree\n'
+    for n, char in enumerate(s):
+        lineno, linepos = util.pos_to_linepos(s, n)
+        assert s[n] == char == s.splitlines(keepends=True)[lineno][linepos]  # noqa: PLR1736
+
 @pytest.mark.parametrize(('word', 'singular', 'plural'),
     [
         ('item.s', 'item', 'items'),
