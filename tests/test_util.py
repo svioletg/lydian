@@ -126,7 +126,7 @@ def test_first_where[T](it: Iterable[T], predicate: Callable[[T], bool], expecte
         (3600, '1:00:00'),
     ],
 )
-def format_duration(total_seconds: float, expected: str) -> None:
+def test_format_duration(total_seconds: float, expected: str) -> None:
     assert util.format_duration(total_seconds) == expected
 
 def test_get_dataclass_fields() -> None:
