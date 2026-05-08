@@ -480,11 +480,11 @@ class VoiceCog(commands.Cog):
         for i in items:
             logger.debug(f'Added to media queue: {i}')
 
-        # Start running the queue if nothing is playing, otherwise add this onto the queue
+        # Start running the queue if nothing is playing
         if not self.now_playing:
-            await progress_msg.delete()
             await self.advance_queue(ctx)
-        elif len(items) == 1:
+
+        if len(items) == 1:
             item = items[0]
             await progress_msg.edit(
                 embed=embed_ok(f'{EmojiStr.IN} Queued at position #{len(self.queue)}: {item.title}', item.url),
@@ -572,18 +572,19 @@ class VoiceCog(commands.Cog):
         embed_desc: str
         page_start: int
         page_end: int
+
         if pages == 1:
-            page_start, page_end = 0, len(self.queue)
+            page_start = 0
             queue_slice = tuple(self.queue)
             embed_desc = f'Showing {len(self.queue)} item(s)'
         else:
             page_start, page_end = QUEUE_MAX_PER_PAGE * (page - 1), QUEUE_MAX_PER_PAGE * page
             queue_slice = tuple(self.queue)[page_start:page_end]
             embed_desc = f'Showing items #{page_start + 1} to #{min(page_end, len(self.queue))}' \
-                + f' out of {len(self.queue)}\n(Page {page}/{pages})'
+                + f' out of {len(self.queue)}'
 
         queue_embed = discord.Embed(
-            title='Queue',
+            title='Queue' + (f' (Page {page}/{pages})' if pages > 1 else ''),
             description=embed_desc,
             color=COLOR_INFO,
         )
