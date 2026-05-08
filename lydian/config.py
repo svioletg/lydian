@@ -5,7 +5,7 @@ import sys
 import textwrap
 from argparse import ArgumentParser
 from collections import OrderedDict
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import Field, asdict, dataclass, field, fields, is_dataclass
 from pathlib import Path
 from typing import Any, Literal, Self, cast
@@ -175,15 +175,17 @@ class Config(DataclassUpdateMixin):
 
             # Fall back on the field type as a constructor if no converter is specified, but don't convert if envconv
             # has been explicitly set to None
-            converter = None
+            converter: Callable[[str], Any] | None
             if envconv := fld.metadata.get('envconv'):
+                if not callable(envconv):
+                    raise TypeError(f'Config field "{name}" envconv value must be callable: {envconv!r}')
                 converter = envconv
             elif fld.type is bool:
                 converter = env_to_bool
             else:
                 converter = cast('type', fld.type)
 
-            val = env_val if converter is None else converter(env_val)
+            val = converter(env_val)
 
             if not isinstance(val, cast('type', fld.type)):
                 raise TypeError(f'Invalid type for field "{name}": {val!r}')
