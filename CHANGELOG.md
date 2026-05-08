@@ -18,10 +18,11 @@ configured prefix accordingly.
 - Added function `util.format_duration()`
 - Added function `util.linepos_to_pos()`
 - Added function `util.pos_to_linepos()`
+- Added attribute `cogs.voice.YTDLSource.file`
+- Added property `cogs.voice.MediaItem.duration_str`
 - Added method `util.Cache.clear()`
 - Added method `cogs.voice.MediaItem.embed()`
 - Added command method `cogs.voice.VoiceCog.nowplaying`
-- Added property `cogs.voice.MediaItem.duration_str`
 
 ### Changed
 

@@ -6,6 +6,7 @@ from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass
 from datetime import timedelta
 from math import ceil
+from pathlib import Path
 from typing import Any, ClassVar, Self, cast, override
 
 import discord
@@ -81,6 +82,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.data: dict[str, str] = data
         self.title: str | None = data.get('title')
         self.url: str | None = data.get('url')
+        self.file: Path = Path(ytdl.prepare_filename(data))
 
     @classmethod
     async def from_url(cls, url: str, *, loop: asyncio.AbstractEventLoop | None = None, stream: bool = False) -> Self:
