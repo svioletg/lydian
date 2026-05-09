@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Any
 
+import pytest
 import tomlkit as tm
 
 from lydian.config import Config, LogLevel, env_to_bool
@@ -57,3 +58,31 @@ def test_update_from_environment() -> None:
     inst.update_from_environment(env)
     assert isinstance(inst.logging.log_level, LogLevel)
     assert inst.logging.log_level == 'WARNING'
+
+@pytest.mark.parametrize(('url', 'expected'),
+    [
+        ('https://www.youtube.com/watch?v=hlYquwq_hZ4', True),
+        ('https://music.youtube.com/watch?v=hlYquwq_hZ4', True),
+        ('https://m.youtube.com/watch?v=hlYquwq_hZ4', True),
+        ('https://youtu.be/hlYquwq_hZ4', True),
+        ('https://www.youtube.xyz/watch?v=hlYquwq_hZ4', False),
+        ('https://abc.youtube.com/watch?v=hlYquwq_hZ4', False),
+        ('https://n.youtube.com/watch?v=hlYquwq_hZ4', False),
+        ('https://youtube/hlYquwq_hZ4', False),
+        ('https://kinggizzard.bandcamp.com/track/grow-wings-and-fly', True),
+        ('https://kinggizzard.bandcamp.com/album/phantom-island', True),
+        ('https://kinggizzard.bondcamp.com/track/grow-wings-and-fly', False),
+        ('https://kinggizzard.bondcamp.com/album/phantom-island', False),
+    ],
+)
+def test_verify_input_url(url: str, expected: bool) -> None:
+    conf = Config()
+    conf.media_filter.url = [
+        'r:https://((www|music|m)\\.youtube\\.com|youtu\\.be)/',
+        'https://soundcloud.com/',
+        'https://*.bandcamp.com/',
+    ]
+    conf.media_filter.url_mode = 'whitelist'
+    assert conf.filter_media_url(url) == expected
+    conf.media_filter.url_mode = 'blacklist'
+    assert conf.filter_media_url(url) == (not expected)

@@ -148,6 +148,12 @@ def test_maybepath() -> None:
     assert util.maybepath('qwertyuiop') is Nothing
     assert isinstance(util.maybepath('pyproject.toml'), Some)
 
+def test_partition() -> None:
+    assert util.partition(lambda n: n % 2 == 0, range(10)) == (
+        [0, 2, 4, 6, 8],
+        [1, 3, 5, 7, 9],
+    )
+
 def test_pos_to_linepos() -> None:
     s: str = 'One\nTwo\nThree\n'
     for n, char in enumerate(s):

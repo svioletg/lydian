@@ -58,6 +58,19 @@ def env_to_bool(s: str) -> bool:
     raise ValueError(f"Expected 0, 1, 'false', or 'true' for boolean environment variable: {s!r}")
 
 @dataclass(kw_only=True)
+class MediaFilterConfig(DataclassUpdateMixin):
+    """Configuration for whitelisting or blacklisting input URLs and extractors."""
+
+    extractor_mode: Literal['whitelist', 'blacklist'] = 'blacklist'
+    extractor: list[str] = field(default_factory=list,
+        doc='A list of yt-dlp extractors to allow or disallow.'
+            + ' \nExtractor names: https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md')
+    url_mode: Literal['whitelist', 'blacklist'] = 'blacklist'
+    url: list[str] = field(default_factory=list,
+        doc="A list of expressions to match input URLs against, rejecting ones that don't match if url_mode is "
+            + ' "blacklist", or only allowing those that match if url_mode is "whitelist".')
+
+@dataclass(kw_only=True)
 class VoteSkippingConfig(DataclassUpdateMixin):
     """Configuration for track vote-skipping."""
 
@@ -110,6 +123,7 @@ class Config(DataclassUpdateMixin):
     media_dir_warn_threshold: int = field(default=100_000_000,
         doc='Total size in bytes that downloaded media can take up before a warning is emitted at bot'
         + ' startup. Set to -1 to disable the warning entirely.')
+    media_filter: MediaFilterConfig = field(default_factory=MediaFilterConfig)
     vote_skipping: VoteSkippingConfig = field(default_factory=VoteSkippingConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
 
@@ -203,6 +217,22 @@ class Config(DataclassUpdateMixin):
         with open(fp, 'r', encoding='utf-8') as f:
             loaded: TOMLDocument = tm.load(f)
         self.update(loaded.unwrap(), missing_ok=missing_ok)
+
+    @staticmethod
+    def _match_url_against(pattern: str, url: str) -> bool:
+        regex = pattern.replace('.', '\\.').replace('*', '.*') \
+            if not pattern.startswith('r:') \
+            else pattern.removeprefix('r:')
+        return re.match(regex, url) is not None
+
+    def filter_media_url(self, url: str) -> bool:
+        """Returns whether a given URL should be allowed to be played based on this config object's filters."""
+        if self.media_filter.url_mode == 'whitelist':
+            return any(self._match_url_against(pattern, url) for pattern in self.media_filter.url)
+        elif self.media_filter.url_mode == 'blacklist':
+            return not any(self._match_url_against(pattern, url) for pattern in self.media_filter.url)
+        else:
+            raise ValueError(f'Unexpected media_filter.url_mode value: {self.media_filter.url_mode!r}')
 
 def add_comments_to_toml(toml: str, comment_map: dict[str, dict[str, str]], comment_width: int = 80) -> str:
     """Returns a TOML string with comments added to every key in ``comment_map``.

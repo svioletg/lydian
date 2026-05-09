@@ -8,6 +8,9 @@ debug = false # env: LYDIAN_DEBUG
 # max_queue_length: Maximum number of items that can be added to the media
 #    queue.
 max-queue-length = 100
+# max_playlist_length: Maximum number of items that can be added from a single
+#    playlist link.
+max-playlist-length = 20
 # max_filesize: Maximum filesize in bytes for media that can be downloaded by
 #    the bot.
 max-filesize = 20000000
@@ -19,6 +22,17 @@ media-dir-warn-threshold = 100000000
 [command-aliases]
 join = ["j"]
 leave = ["l"]
+
+[media-filter]
+extractor-mode = "blacklist"
+# extractor: A list of yt-dlp extractors to allow or disallow.  Extractor names:
+#    https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md
+extractor = []
+url-mode = "blacklist"
+# url: A list of expressions to match input URLs against, rejecting ones that
+#    don't match if url_mode is  "blacklist", or only allowing those that match
+#    if url_mode is "whitelist".
+url = []
 
 [vote-skipping]
 enabled = true

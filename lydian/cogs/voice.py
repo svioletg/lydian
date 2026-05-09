@@ -401,10 +401,21 @@ class VoiceCog(commands.Cog):
         else:
             await ctx.send(embed=embed_info('Nothing is playing.'))
 
+    async def _resume_or_start(self, ctx: commands.Context, voice: discord.VoiceClient) -> None:
+        if voice.is_paused():
+            logger.info('Resuming paused player')
+            voice.resume()
+            return
+        if (not voice.is_playing()) and self.stopped_track:
+            # Start running the queue again if stopped
+            await self.advance_queue(ctx, play_now=self.stopped_track)
+            self.stopped_track = None
+            return
+        await ctx.send(embed=embed_info('The player is not paused.', 'Use `-play <URL>` to queue something up.'))
+
     @alias_from_config
     @commands.command(aliases=[])
-    # TODO(svioletg): Once this is merged up into dev, deal with C901 and PLR0911  # noqa: TD003
-    async def play(self, ctx: commands.Context, url: str | None = None) -> None:  # noqa: C901, PLR0911
+    async def play(self, ctx: commands.Context, url: str | None = None) -> None:
         """Plays media, adds media to the queue, or resumes the player if paused.
 
         If the player is paused, the command can be used without any arguments to resume it.
@@ -413,16 +424,7 @@ class VoiceCog(commands.Cog):
 
         # Treat this as a "resume" command if no URL is given
         if not url:
-            if voice.is_paused():
-                logger.info('Resuming paused player')
-                voice.resume()
-                return
-            if (not voice.is_playing()) and self.stopped_track:
-                # Start running the queue again if stopped
-                await self.advance_queue(ctx, play_now=self.stopped_track)
-                self.stopped_track = None
-                return
-            await ctx.send(embed=embed_info('The player is not paused.', 'Use `-play <URL>` to queue something up.'))
+            await self._resume_or_start(ctx, voice)
             return
 
         if len(self.queue) == self.queue.maxlen:

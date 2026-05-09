@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.coAm/en/1.1.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
@@ -13,6 +13,11 @@ configured prefix accordingly.
 ### Added
 
 - Added config key `max-playlist-length` (integer)
+- Added config table `media-filter`
+  - Added key `extractor_mode` (literal: `"whitelist"` or `"blacklist"`)
+  - Added key `extractor` (string list)
+  - Added key `url_mode` (literal: `"whitelist"` or `"blacklist"`)
+  - Added key `url` (string list)
 - Added constant `const.QUEUE_MAX_PER_PAGE`
 - Added bot command `-nowplaying`
 - Added function `util.format_duration()`
@@ -20,8 +25,10 @@ configured prefix accordingly.
 - Added function `util.pos_to_linepos()`
 - Added attribute `cogs.voice.YTDLSource.file`
 - Added property `cogs.voice.MediaItem.duration_str`
-- Added method `util.Cache.clear()`
+- Added static method `config._match_url_against()`
 - Added method `cogs.voice.MediaItem.embed()`
+- Added method `config.filter_media_url()`
+- Added method `util.Cache.clear()`
 - Added command method `cogs.voice.VoiceCog.nowplaying`
 
 ### Changed
@@ -32,10 +39,17 @@ configured prefix accordingly.
 - `util.Cache` constructor now accepts a `default_expiration` parameter
   - Must be a `timedelta` object, will be used as the expiration date when calling the `set()` or
     `get_or_set()` methods if `expires` is `None`
+- `util.setup_logger()` parameter `logs_dir` now accepts `None`, in which case file logging is
+  disabled
 
 ### Removed
 
 - Remove unused event constant `cogs.voice.EV_PLAYER_STOPPED_BY_COMMAND`
+
+### Fixed
+
+- Fix error raised when calling `util.setup_logger()` after its already been called once due to
+  setting the `CONSOLE` log level number
 
 ## [0.3.0] - 2026-05-05
 

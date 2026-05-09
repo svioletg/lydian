@@ -126,7 +126,7 @@ def _stdout_log_filter(record: loguru.Record) -> bool:
 def setup_logger(
         stdout_level: str = 'INFO',
         file_level: str = 'DEBUG',
-        logs_dir: Path = DEFAULT_LOGS_DIR,
+        logs_dir: str | Path | None = DEFAULT_LOGS_DIR,
         *,
         log_in_utc: bool = False,
     ) -> 'loguru.Logger':  # noqa: UP037
@@ -136,7 +136,7 @@ def setup_logger(
 
     :param stdout_level: Minimum level to use for the stdout handler.
     :param file_level: Minimum level to use for the file handler.
-    :param logs_dir: Directory to save log files to.
+    :param logs_dir: Directory to save log files to. ``None`` will disable file logging.
     """
     logger.remove()
 
@@ -147,7 +147,11 @@ def setup_logger(
     logger.level('ERROR', color='<light-red>')
 
     # For echoing console input to log files
-    logger.level('CONSOLE', no=50, color='<normal>')
+    try:
+        # Check if it exists, an error is raised if the no is set in that case
+        _ = logger.level('CONSOLE')
+    except ValueError:
+        logger.level('CONSOLE', no=50, color='<normal>')
 
     msg_format: str = LOG_MSG_FORMAT_UTC if log_in_utc else LOG_MSG_FORMAT
 
@@ -159,15 +163,16 @@ def setup_logger(
         colorize=True,
         diagnose=False,
     )
-    logger.add(
-        logs_dir / LOG_FILE_FORMAT,
-        level=file_level,
-        format=msg_format,
-        diagnose=False,
-        retention=10,
-        delay=True,
-        mode='w',
-    )
+    if logs_dir:
+        logger.add(
+            Path(logs_dir, LOG_FILE_FORMAT),
+            level=file_level,
+            format=msg_format,
+            diagnose=False,
+            retention=10,
+            delay=True,
+            mode='w',
+        )
 
     return logger
 

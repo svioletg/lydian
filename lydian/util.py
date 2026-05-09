@@ -210,15 +210,14 @@ class DataclassUpdateMixin:
                     getattr(self, k).update(v, missing_ok=missing_ok)
                 else:
                     getattr(self, k).update(v)
-            elif isinstance(v, typ):
+            # If the field is a Literal then just because it's the right type doesn't mean it's the right value
+            elif isinstance(v, typ) and not is_literal:
                 setattr(self, k, v)
-            elif converter := fld.metadata.get('converter'):
-                converted = converter(v)
+            else:
+                converted = fld.metadata.get('converter', typ)(v)
                 if is_literal and (converted not in t_args):
                     raise ValueError(f'Expected one of {','.join(repr(i) for i in t_args)}: {converted!r}')
                 setattr(self, k, converted)
-            else:
-                setattr(self, k, typ(v))
 
 class Stopwatch:
     """Tracks time over a period, by default from when the instance is created."""
@@ -345,6 +344,16 @@ def maybepath(fp: str | Path, must_be: Literal['file', 'dir'] | None = None) -> 
             check = lambda fp: fp.exists()  # noqa: E731
 
     return maybe(Path(fp), check)
+
+def partition[T](predicate: Callable[[T], bool], it: Iterable[T]) -> tuple[list[T], list[T]]:
+    """Separates the items of ``it`` into two lists based on whether ``predicate`` returns ``True``.
+
+    The left list contains every item for which ``predicate(i)`` is ``True``, the right list contains the opposite.
+    """
+    yes, no = [], []
+    for i in it:
+        (yes if predicate(i) else no).append(i)
+    return yes, no
 
 def pos_to_linepos(s: str, pos: int) -> tuple[int, int]:
     r"""Converts a global position in a string to a tuple of the line number and position within that line.
