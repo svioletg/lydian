@@ -17,6 +17,7 @@ configured prefix accordingly.
   - Added key `allowed_extractors` (string list)
   - Added key `allowed_urls` (string list)
 - Added constant `const.QUEUE_MAX_PER_PAGE`
+- Added bot command `-move`
 - Added bot command `-nowplaying`
 - Added exception class `errors.FileSizeLimitError`
 - Added function `util.format_duration()`
@@ -26,12 +27,17 @@ configured prefix accordingly.
 - Added attribute `cogs.voice.YTDLSource.file`
 - Added property `cogs.voice.MediaItem.duration_str`
 - Added method `cogs.voice.MediaItem.embed()`
+- Added method `cogs.voice.MediaItem.move()`
+- Added method `cogs.voice.VoiceCog._check_queue_index_arg()`
 - Added method `config.filter_media_url()` (#12)
 - Added method `util.Cache.clear()`
-- Added command method `cogs.voice.VoiceCog.nowplaying`
+- Added command method `cogs.voice.VoiceCog.nowplaying()`
+- Added command method `cogs.voice.VoiceCog.move()`
 
 ### Changed
 
+- `cogs.voice.MediaQueue` is now a subclass of `UserList` rather than a `deque`
+  - Now accepts an `initlist` parameter
 - `-queue` command is now paginated, accepts an optional page index value and shows up to 20 items
   per page (#11)
 - `cogs.voice.MediaItem.from_url` now returns a tuple of `MediaItem` objects instead of one
@@ -50,15 +56,19 @@ configured prefix accordingly.
 
 ### Removed
 
-- Remove unused event constant `cogs.voice.EV_PLAYER_STOPPED_BY_COMMAND`
+- Removed unused event constant `cogs.voice.EV_PLAYER_STOPPED_BY_COMMAND`
+- Removed method `cogs.voice.MediaQueue.appendleft()`
+  - Use `.insert(0, x)` instead; while technically slower than a deque, testing with `timeit` shows
+    inserting to the front of a 10,000 length list still only takes some ~0.0016 seconds, which is
+    more than acceptable
 
 ### Fixed
 
-- Fix error raised when calling `util.setup_logger()` after its already been called once due to
+- Fixed error raised when calling `util.setup_logger()` after its already been called once due to
   setting the `CONSOLE` log level number
 - `util.DataclassUpdateMixin.update()` now properly checks that the value for a `Literal`-typed
   field is correct
-- Fix "playing" message still getting sent if the the set filesize limit is exceeded during yt-dlp extraciton (#14)
+- Fixed "playing" message still getting sent if the the set filesize limit is exceeded during yt-dlp extraciton (#14)
 
 ## [0.3.0] - 2026-05-05
 

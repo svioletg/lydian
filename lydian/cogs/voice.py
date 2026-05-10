@@ -1,6 +1,6 @@
 """Voice-related commands."""
 import asyncio
-from collections import deque
+from collections import UserList
 from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass
 from datetime import timedelta
@@ -204,39 +204,36 @@ class MediaItem:
 
         return self
 
-class MediaQueue(deque[MediaItem]):
+class MediaQueue(UserList[MediaItem]):
     """Queue for keeping track of what media is playing or to be played.
 
     The ``maxlen`` argument is strict, :py:class:`MediaQueueLimitError` will be raised if trying to append to or extend
     the queue would exceed its limit.
     """
 
-    def __init__(self, *, maxlen: int | None = None) -> None:
+    def __init__(self, initlist: Sequence[MediaItem] | None = None, *, maxlen: int | None = None) -> None:
         if maxlen == 0:
             # This just makes it easier to check "self.maxlen" instead of "self.maxlen is not None"
             raise ValueError('MediaQueue maxlen cannot be 0')
-        super().__init__(maxlen=maxlen)
+        if initlist and maxlen and (len(initlist) > maxlen):
+            raise ValueError(f'initlist is too large ({len(initlist)}) for MediaQueue with maxlen {maxlen}')
+        self.maxlen: int | None = maxlen
+        super().__init__(initlist=initlist)
 
     @override
-    def append(self, x: MediaItem) -> None:
+    def append(self, item: MediaItem) -> None:
         if self.maxlen and (len(self) >= self.maxlen):
             raise MediaQueueLimitError('Cannot append to full MediaQueue')
-        super().append(x)
+        super().append(item)
 
     @override
-    def appendleft(self, x: MediaItem) -> None:
-        if self.maxlen and (len(self) >= self.maxlen):
-            raise MediaQueueLimitError('Cannot append to full MediaQueue')
-        super().appendleft(x)
-
-    @override
-    def extend(self, iterable: Iterable[MediaItem]) -> None:
+    def extend(self, other: Iterable[MediaItem]) -> None:
         """Extend the right side of the deque with elements from the iterable.
 
         .. note::
             ``iterable`` will consumed so the length can be checked.
         """
-        sequence: Sequence[MediaItem] = list(iterable)
+        sequence: Sequence[MediaItem] = list(other)
         if self.maxlen and ((len(self) + len(sequence)) > self.maxlen):
                 raise MediaQueueLimitError('Cannot extend MediaQueue, length of iterable would exceed limit')
         super().extend(sequence)
@@ -249,7 +246,6 @@ class MediaQueue(deque[MediaItem]):
         except MediaQueueLimitError:
             pass
 
-    @override
     def extendleft(self, iterable: Iterable[MediaItem]) -> None:
         """Extend the left side of the deque with elements from the iterable.
 
@@ -259,21 +255,31 @@ class MediaQueue(deque[MediaItem]):
         sequence: Sequence[MediaItem] = list(iterable)
         if self.maxlen and ((len(self) + len(sequence)) > self.maxlen):
                 raise MediaQueueLimitError('Cannot extend MediaQueue, length of iterable would exceed limit')
-        super().extendleft(sequence)
+        self.data = [*iterable, *self]
 
     def extendleft_max(self, iterable: Iterable[MediaItem]) -> None:
         """Extend the left side of the deque with elements from the iterable until ``maxlen`` is reached."""
         try:
             for i in iterable:
-                self.appendleft(i)
+                self.insert(0, i)
         except MediaQueueLimitError:
             pass
 
     @override
-    def insert(self, i: int, x: MediaItem) -> None:
+    def insert(self, i: int, item: MediaItem) -> None:
         if self.maxlen and (len(self) >= self.maxlen):
             raise MediaQueueLimitError('Cannot insert into full MediaQueue')
-        super().insert(i, x)
+        super().insert(i, item)
+
+    def move(self, source: int, dest: int) -> None:
+        """Moves an item at index ``source`` to index ``dest``."""
+        if dest >= len(self):
+            raise IndexError(f'dest is out of MediaQueue range: {dest}')
+        self.insert(dest, self.pop(source))
+
+    def popleft(self) -> MediaItem:
+        """Pops the item at the front of the list."""
+        return self.pop(0)
 
 def _assert_voice_client(vc: discord.VoiceProtocol | None) -> discord.VoiceClient:
     """Returns a ``discord.VoiceProtocol | None`` value casted to ``discord.VoiceClient``.
@@ -536,12 +542,28 @@ class VoiceCog(commands.Cog):
         logger.info('Pausing player')
         voice.pause()
 
+    async def _check_queue_index_arg(self, ctx: commands.Context, index: int) -> bool:
+        if not 1 <= index <= len(self.queue):
+            await ctx.send(embed=embed_info('Queue index out of range.'))
+            return False
+        return True
+
+    @alias_from_config
+    @commands.command(aliases=[])
+    async def move(self, ctx: commands.Context, source: int, dest: int) -> None:
+        """Moves an item to a new position in the queue."""
+        if not (await self._check_queue_index_arg(ctx, source) and await self._check_queue_index_arg(ctx, dest)):
+            return
+
+        target = self.queue[source - 1]
+        self.queue.move(source - 1, dest - 1)
+        await ctx.send(embed=embed_info(f'Moved "{target.title}" from position #{source} to #{dest}'))
+
     @alias_from_config
     @commands.command(aliases=[])
     async def remove(self, ctx: commands.Context, index: int) -> None:
         """Removes an item at the given index from the queue."""
-        if not 1 <= index <= len(self.queue):
-            await ctx.send(embed=embed_info('Queue index out of range.'))
+        if not await self._check_queue_index_arg(ctx, index):
             return
 
         self.queue.remove(item := self.queue[index - 1])
