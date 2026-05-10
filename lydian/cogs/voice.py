@@ -25,7 +25,7 @@ from lydian.const import (
     YTDL_DOWNLOAD_PROGRESS_REGEX,
     EmojiStr,
 )
-from lydian.errors import AbortCommand, MediaQueueLimitError
+from lydian.errors import AbortCommand, FileSizeLimitError, MediaQueueLimitError
 from lydian.util import BasicLock, Cache, format_duration
 
 
@@ -37,6 +37,8 @@ class YTDLLogHandler:
     """
 
     def debug(self, msg: str) -> None:  # noqa: D102
+        if 'File is larger than max-filesize' in msg:
+            raise FileSizeLimitError(msg.removeprefix('[download] '))
         if msg.startswith('[debug]'):
             logger.debug('[YoutubeDL] ' + msg)
         else:
@@ -333,7 +335,14 @@ class VoiceCog(commands.Cog):
 
             logger.debug(f'Getting YTDLSource from: {item.url}')
             progress_msg: discord.Message = await ctx.send(embed=embed_info('Downloading...'))
-            source = await YTDLSource.from_url(item.url)
+
+            try:
+                source = await YTDLSource.from_url(item.url, stream=config.stream_media)
+            except FileSizeLimitError as e:
+                await progress_msg.edit(embed=embed_info('File is larger than the set filesize limit.'))
+                logger.info(e)
+                return
+
             await progress_msg.delete()
 
             logger.info(f'Playing: {item}')

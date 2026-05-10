@@ -18,6 +18,7 @@ configured prefix accordingly.
   - Added key `allowed_urls` (string list)
 - Added constant `const.QUEUE_MAX_PER_PAGE`
 - Added bot command `-nowplaying`
+- Added exception class `errors.FileSizeLimitError`
 - Added function `util.format_duration()`
 - Added function `util.linepos_to_pos()`
 - Added function `util.partition()`
@@ -43,6 +44,8 @@ configured prefix accordingly.
   disabled
 - `util.DataclassUpdateMixin.update()` parameter `missing_ok` renamed to `on_missing`, now accepts either a `Callable`
   or one of `'raise'` or `'continue'`
+- yt-dlp extraction exceeding the set filesize limit will now raise `FileSizeLimitError` instead of just getting logged
+  (solves #14)
 
 ### Removed
 
@@ -54,6 +57,7 @@ configured prefix accordingly.
   setting the `CONSOLE` log level number
 - `util.DataclassUpdateMixin.update()` now properly checks that the value for a `Literal`-typed
   field is correct
+- Fix "playing" message still getting sent if the the set filesize limit is exceeded during yt-dlp extraciton (#14)
 
 ## [0.3.0] - 2026-05-05
 

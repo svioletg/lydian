@@ -124,15 +124,19 @@ class Config(DataclassUpdateMixin):
         metadata={'env': 'DEBUG'},
     )
     command_aliases: dict[str, list[str]] = field(default_factory=_default_command_aliases)
-    max_queue_length: int = field(default=100,
-        doc='Maximum number of items that can be added to the media queue.')
+    max_filesize: int = field(default=20_000_000,
+        doc='Maximum filesize in bytes for media that can be downloaded by the bot.'
+        + ' Will have no effect when streaming media (stream-media = true).')
     max_playlist_length: int = field(default=20,
         doc='Maximum number of items that can be added from a single playlist link.')
-    max_filesize: int = field(default=20_000_000,
-        doc='Maximum filesize in bytes for media that can be downloaded by the bot.')
+    max_queue_length: int = field(default=100,
+        doc='Maximum number of items that can be added to the media queue.')
     media_dir_warn_threshold: int = field(default=100_000_000,
         doc='Total size in bytes that downloaded media can take up before a warning is emitted at bot'
         + ' startup. Set to -1 to disable the warning entirely.')
+    stream_media: bool = field(default=True,
+        doc='Whether to stream media instead of downloading it to disk and playing the file.')
+
     media_filter: MediaFilterConfig = field(default_factory=MediaFilterConfig)
     vote_skipping: VoteSkippingConfig = field(default_factory=VoteSkippingConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
