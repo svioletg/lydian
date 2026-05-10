@@ -5,11 +5,13 @@ import os
 import shlex
 import sys
 import traceback
+from datetime import UTC, datetime
 from typing import cast
 
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
+from humanize import precisedelta
 from loguru import logger
 from prompt_toolkit import PromptSession
 from prompt_toolkit.patch_stdout import patch_stdout
@@ -99,10 +101,11 @@ async def thread_bot() -> None:
             return
 
         event_start_console.set()
+        debug_context['bot-start-time'] = datetime.now(UTC)
         await bot.start(token)
 
 # TODO(svioletg): https://github.com/svioletg/lydian-discord-bot/issues/2
-async def thread_console() -> None:
+async def thread_console() -> None:  # noqa: C901
     """Returns the ``Coroutine`` thread for the interactive console."""
     await event_start_console.wait()
 
@@ -137,6 +140,15 @@ async def thread_console() -> None:
             return
 
         command, *args = shlex.split(user_input)
+
+        if command == 'uptime':
+            if args:
+                logger.error('Command "uptime" takes no arguments')
+                continue
+            console.print(
+                f'Bot has been running for {precisedelta(datetime.now(UTC) - debug_context['bot-start-time'])}',
+            )
+            continue
 
         if config.debug and (command == 'debug'):
             if not args:

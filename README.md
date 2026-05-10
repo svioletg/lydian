@@ -19,6 +19,7 @@ Documentation: <https://lydian-discord-bot.readthedocs.io/en/latest/>
 - [Usage: Bot console commands](#usage-bot-console-commands)
   - [`debug read`, `debug readlog`](#debug-read-debug-readlog)
   - [`stop`](#stop)
+  - [`uptime`](#uptime)
 - [Usage: CLI commands](#usage-cli-commands)
   - [`clear-dl`](#clear-dl)
   - [`logs latest`](#logs-latest)
@@ -107,6 +108,12 @@ debug_context['cog.voice.queue'] == MediaQueue([])
 ### `stop`
 
 Attempts to shut the bot down cleanly.
+
+Arguments: N/A
+
+### `uptime`
+
+Prints out how long the bot has been running for.
 
 Arguments: N/A
 

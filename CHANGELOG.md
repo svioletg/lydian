@@ -19,6 +19,8 @@ configured prefix accordingly.
 - Added constant `const.QUEUE_MAX_PER_PAGE`
 - Added bot command `-move`
 - Added bot command `-nowplaying`
+- Added console command `uptime`
+  - Prints how long the bot has been running for
 - Added exception class `errors.FileSizeLimitError`
 - Added function `util.format_duration()`
 - Added function `util.linepos_to_pos()`
