@@ -40,6 +40,7 @@ load_dotenv('.env')
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.voice_states = True
 
 bot = commands.Bot(
     intents=intents,

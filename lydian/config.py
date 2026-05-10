@@ -136,6 +136,12 @@ class Config(DataclassUpdateMixin):
         + ' startup. Set to -1 to disable the warning entirely.')
     stream_media: bool = field(default=True,
         doc='Whether to stream media instead of downloading it to disk and playing the file.')
+    inactivity_timeout: int = field(default=120,
+        doc='How long in seconds the bot can be inactive (not playing anything and the queue is empty) before'
+            + ' disconnecting. Set to -1 to never disconnect for inactivity.')
+    lonely_timeout: int = field(default=120,
+        doc='How long in seconds the bot can be the only user in a voice channel before disconnecting.'
+            + ' Set to -1 to never disconnect in this case.')
 
     media_filter: MediaFilterConfig = field(default_factory=MediaFilterConfig)
     vote_skipping: VoteSkippingConfig = field(default_factory=VoteSkippingConfig)

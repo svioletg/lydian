@@ -10,7 +10,7 @@ from typing import Any, ClassVar, Self, cast, override
 
 import discord
 import yt_dlp
-from discord.ext import commands
+from discord.ext import commands, tasks
 from loguru import logger
 from maybetype import Err, Ok, Result, maybe
 from yt_dlp.utils import DownloadError
@@ -335,7 +335,52 @@ class VoiceCog(commands.Cog):
         Set back to ``None`` when the track is played again.
         """
 
+        # States
+        self.inactive: bool = True
+        """Whether the bot is both not playing any media and the queue is empty.
+
+        For this purpose, the bot being paused still counts as playing media.
+        """
+        self.alone: bool = True
+        """Whether the bot is the only user connected to a voice channel."""
+
+        # Timers/counters
+        self.since_inactive: int = 0
+        """An amount in seconds since the bot stopped playing audio and has had an empty queue."""
+        self.since_alone: int = 0
+        """An amount in seconds that the bot has been the only user in its voice channel."""
+
         self._manual_stop: bool = False
+
+        # Start tasks
+        self.tick_timers.start()
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self,
+            _member: discord.Member,
+            _before: discord.VoiceState,
+            _after: discord.VoiceState,
+        ) -> None:
+        """Called when a member changes their ``VoiceState``."""
+        if not self.bot.voice_clients:
+            return
+        voice = _assert_voice_client(self.bot.voice_clients[0])
+        self.alone = len(voice.channel.members) == 1
+
+    @tasks.loop(seconds=1)
+    async def tick_timers(self) -> None:
+        """Handles increasing or resetting counters."""
+        self.since_inactive += 1 if self.inactive else (-self.since_inactive)
+        self.since_alone += 1 if self.alone else (-self.since_alone)
+
+        if self.bot.voice_clients:
+            voice = _assert_voice_client(self.bot.voice_clients[0])
+            if self.since_inactive >= config.inactivity_timeout:
+                logger.info(f'Bot has been inactive for {self.since_inactive} seconds; disconnecting')
+                await voice.disconnect()
+            elif self.since_alone >= config.lonely_timeout:
+                logger.info(f'Bot has been alone for {self.since_alone} seconds; disconnecting')
+                await voice.disconnect()
 
     async def advance_queue(self, ctx: commands.Context, *, play_now: MediaItem | None = None) -> Exception | None:
         """Plays the next item in the queue, returning any exception caught and handled in the process.

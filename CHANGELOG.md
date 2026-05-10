@@ -13,6 +13,8 @@ configured prefix accordingly.
 ### Added
 
 - Added config key `max-playlist-length` (integer)
+- Added config key `inactivity-timeout` (integer)
+- Added config key `lonely-timeout` (integer)
 - Added config table `media-filter` (#12)
   - Added key `allowed_extractors` (string list)
   - Added key `allowed_urls` (string list)
@@ -29,11 +31,20 @@ configured prefix accordingly.
 - Added function `util.pos_to_linepos()`
 - Added attribute `cogs.voice.MediaItem.user`
 - Added attribute `cogs.voice.YTDLSource.file`
+- Added attributes to `cogs.voice.VoiceCog`:
+  - `inactive`: (`bool`) Whether the bot is "inactive", as in no media is being played and
+    the queue is empty (the bot being paused still counts as playing in this context)
+  - `alone`: (`bool`) Whether the bot is the only user in the voice channel it is connected to
+  - `since_inactive`: (`int`) How many seconds have passed since `inactive` has been `True`
+  - `since_alone`: (`int`) How many seconds have passed since `alone` has been `True`
 - Added property `cogs.voice.MediaItem.duration_str`
 - Added method `cogs.voice.MediaItem.add_embed_field()`
 - Added method `cogs.voice.MediaItem.embed()`
 - Added method `cogs.voice.MediaItem.move()`
 - Added method `cogs.voice.MediaItem.set_user()`
+- Added method `cogs.voice.VoiceCog.on_voice_state_update()` as a listener for the event of the
+  same name
+- Added method `cogs.voice.VoiceCog.tick_timers()`, a task which runs every second
 - Added method `cogs.voice.VoiceCog._check_queue_index_arg()`
 - Added method `cogs.voice.VoiceCog._try_to_queue()`
 - Added method `config.filter_media_url()` (#12)

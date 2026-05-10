@@ -5,19 +5,29 @@ prefix = "-"
 #    README for a full description of what debug mode does:
 #    https://github.com/svioletg/lydian-discord-bot/blob/main/README.md
 debug = false # env: LYDIAN_DEBUG
-# max_queue_length: Maximum number of items that can be added to the media
-#    queue.
-max-queue-length = 100
+# max_filesize: Maximum filesize in bytes for media that can be downloaded by
+#    the bot. Will have no effect when streaming media (stream-media = true).
+max-filesize = 20000000
 # max_playlist_length: Maximum number of items that can be added from a single
 #    playlist link.
 max-playlist-length = 20
-# max_filesize: Maximum filesize in bytes for media that can be downloaded by
-#    the bot.
-max-filesize = 20000000
+# max_queue_length: Maximum number of items that can be added to the media
+#    queue.
+max-queue-length = 100
 # media_dir_warn_threshold: Total size in bytes that downloaded media can take
 #    up before a warning is emitted at bot startup. Set to -1 to disable the
 #    warning entirely.
 media-dir-warn-threshold = 100000000
+# stream_media: Whether to stream media instead of downloading it to disk and
+#    playing the file.
+stream-media = true
+# inactivity_timeout: How long in seconds the bot can be inactive (not playing
+#    anything and the queue is empty) before disconnecting. Set to -1 to never
+#    disconnect for inactivity.
+inactivity-timeout = 120
+# lonely_timeout: How long in seconds the bot can be the only user in a voice
+#    channel before disconnecting. Set to -1 to never disconnect in this case.
+lonely-timeout = 120
 
 [command-aliases]
 join = ["j"]
