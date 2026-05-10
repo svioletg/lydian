@@ -75,14 +75,19 @@ def test_update_from_environment() -> None:
         ('https://kinggizzard.bondcamp.com/album/phantom-island', False),
     ],
 )
-def test_verify_input_url(url: str, expected: bool) -> None:
+def test_filter_media_url(url: str, expected: bool) -> None:
     conf = Config()
-    conf.media_filter.url = [
-        'r:https://((www|music|m)\\.youtube\\.com|youtu\\.be)/',
-        'https://soundcloud.com/',
-        'https://*.bandcamp.com/',
+
+    conf.media_filter.allowed_urls = [
+        r'https://((www|music|m)\.youtube\.com|youtu\.be)/',
+        r'https://soundcloud\.com/',
+        r'https://.*\.bandcamp\.com/',
     ]
-    conf.media_filter.url_mode = 'whitelist'
     assert conf.filter_media_url(url) == expected
-    conf.media_filter.url_mode = 'blacklist'
+
+    conf.media_filter.allowed_urls = [
+        r'-https://((www|music|m)\.youtube\.com|youtu\.be)/',
+        r'-https://soundcloud\.com/',
+        r'-https://.*\.bandcamp\.com/',
+    ]
     assert conf.filter_media_url(url) == (not expected)

@@ -13,21 +13,19 @@ configured prefix accordingly.
 ### Added
 
 - Added config key `max-playlist-length` (integer)
-- Added config table `media-filter`
-  - Added key `extractor_mode` (literal: `"whitelist"` or `"blacklist"`)
-  - Added key `extractor` (string list)
-  - Added key `url_mode` (literal: `"whitelist"` or `"blacklist"`)
-  - Added key `url` (string list)
+- Added config table `media-filter` (#12)
+  - Added key `allowed_extractors` (string list)
+  - Added key `allowed_urls` (string list)
 - Added constant `const.QUEUE_MAX_PER_PAGE`
 - Added bot command `-nowplaying`
 - Added function `util.format_duration()`
 - Added function `util.linepos_to_pos()`
+- Added function `util.partition()`
 - Added function `util.pos_to_linepos()`
 - Added attribute `cogs.voice.YTDLSource.file`
 - Added property `cogs.voice.MediaItem.duration_str`
-- Added static method `config._match_url_against()`
 - Added method `cogs.voice.MediaItem.embed()`
-- Added method `config.filter_media_url()`
+- Added method `config.filter_media_url()` (#12)
 - Added method `util.Cache.clear()`
 - Added command method `cogs.voice.VoiceCog.nowplaying`
 
@@ -36,11 +34,15 @@ configured prefix accordingly.
 - `-queue` command is now paginated, accepts an optional page index value and shows up to 20 items
   per page (#11)
 - `cogs.voice.MediaItem.from_url` now returns a tuple of `MediaItem` objects instead of one
+- `config.Config.update_from_toml()` parameter `missing_ok` renamed to `on_missing`, accepts the values `'raise'`,
+  `'warn'`, or `'continue'`
 - `util.Cache` constructor now accepts a `default_expiration` parameter
   - Must be a `timedelta` object, will be used as the expiration date when calling the `set()` or
     `get_or_set()` methods if `expires` is `None`
 - `util.setup_logger()` parameter `logs_dir` now accepts `None`, in which case file logging is
   disabled
+- `util.DataclassUpdateMixin.update()` parameter `missing_ok` renamed to `on_missing`, now accepts either a `Callable`
+  or one of `'raise'` or `'continue'`
 
 ### Removed
 
@@ -50,6 +52,8 @@ configured prefix accordingly.
 
 - Fix error raised when calling `util.setup_logger()` after its already been called once due to
   setting the `CONSOLE` log level number
+- `util.DataclassUpdateMixin.update()` now properly checks that the value for a `Literal`-typed
+  field is correct
 
 ## [0.3.0] - 2026-05-05
 

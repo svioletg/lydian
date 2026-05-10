@@ -1,6 +1,5 @@
 """Voice-related commands."""
 import asyncio
-import re
 from collections import deque
 from collections.abc import Iterable, Sequence
 from dataclasses import asdict, dataclass
@@ -69,6 +68,7 @@ YTDL_FORMAT_OPTIONS: dict[str, Any] = {
     'default_search': 'auto',
     'max_filesize': config.max_filesize,
     'extract_flat': 'in_playlist',
+    'allowed_extractors': config.media_filter.allowed_extractors,
 }
 
 ytdl = yt_dlp.YoutubeDL(YTDL_FORMAT_OPTIONS)
@@ -432,11 +432,9 @@ class VoiceCog(commands.Cog):
                 f'Limit is currently set to {config.max_queue_length} entries.'))
             return
 
-        # Otherwise, make sure it *is* a URL
-        # We're preventing plain text YouTube searches for now, but it'll be implemented later
-        if not re.match(r'https?://', url):
-            logger.info(f'Got invalid URL: {url}')
-            await ctx.send(embed=embed_info('URL must start with `http://` or `https://`.'))
+        # Filter URL
+        if not config.filter_media_url(url):
+            await ctx.send(embed=embed_info("This URL is not allowed by the bot's configuration."))
             return
 
         logger.info(f'Extracting info from URL: {url}')
@@ -448,7 +446,12 @@ class VoiceCog(commands.Cog):
         except DownloadError as e:
             msg: str = COLOR_ESCAPE_REGEX.sub('', e.msg or '')
             logger.error(f'URL info extraction failed: {msg}')
-            await progress_msg.edit(embed=embed_error('Failed to get URL information', f'{msg}'))
+            if 'No suitable extractor found for URL' in msg:
+                await progress_msg.edit(embed=embed_info(
+                    "No suitable extractor found for this URL with the bot's current configuration.",
+                ))
+            else:
+                await progress_msg.edit(embed=embed_error('Failed to get URL information', f'{msg}'))
             return
 
         # Reject if the items won't fit in the queue

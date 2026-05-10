@@ -178,20 +178,29 @@ class DataclassUpdateMixin:
 
         setattr(self, key, val)
 
-    def update(self, d: dict[str, Any], *, missing_ok: bool = False) -> None:  # noqa: C901
+    def update(self,  # noqa: C901
+            d: dict[str, Any],
+            *,
+            on_missing: Callable[[str], None] | Literal['raise', 'continue'] = 'continue',
+        ) -> None:
         """Updates field values as per ``d``, attempting to convert values to the correct type.
 
-        :param missing_ok: Whether to ignore keys present in ``d`` which have no field in this dataclass.
-            If ``False``, ``KeyError`` is raised.
+        :param on_missing: What to do when encountering a key present in ``d`` that is not present in the dataclass
+            being updated. ``'continue'`` skips the key silently, ``raise`` raises ``KeyError`` with the key value, or
+            if given a ``Callable``, it is called with the key value before skipping the key.
         """
         if not hasattr(self, '__dataclass_fields__'):
             raise AttributeError(
                 f'{self.__class__.__name__} must be mixed into a class that has __dataclass_fields__: {self!r}',
             )
+
         for k, v in d.items():
             k = k.replace('-', '_')  # noqa: PLW2901
             if not (fld := cast('dict[str, Field[Any]]', self.__dataclass_fields__).get(k)):
-                if missing_ok:
+                if callable(on_missing):
+                    on_missing(k)
+                    continue
+                if on_missing == 'continue':
                     continue
                 raise KeyError(k)
 
@@ -207,7 +216,7 @@ class DataclassUpdateMixin:
 
             if hasattr(typ, 'update'):
                 if t_origin is not dict:
-                    getattr(self, k).update(v, missing_ok=missing_ok)
+                    getattr(self, k).update(v, on_missing=on_missing)
                 else:
                     getattr(self, k).update(v)
             # If the field is a Literal then just because it's the right type doesn't mean it's the right value
@@ -350,7 +359,8 @@ def partition[T](predicate: Callable[[T], bool], it: Iterable[T]) -> tuple[list[
 
     The left list contains every item for which ``predicate(i)`` is ``True``, the right list contains the opposite.
     """
-    yes, no = [], []
+    yes: list[T] = []
+    no: list[T] = []
     for i in it:
         (yes if predicate(i) else no).append(i)
     return yes, no

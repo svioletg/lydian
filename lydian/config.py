@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import textwrap
+import warnings
 from argparse import ArgumentParser
 from collections import OrderedDict
 from collections.abc import Callable, Mapping
@@ -16,16 +17,25 @@ from benedict.core import unflatten
 from dotenv import load_dotenv
 from maybetype import maybe
 from tomlkit.exceptions import ConvertError
+from tomlkit.items import InlineTable
 from tomlkit.items import Item as TOMLItem
 from tomlkit.toml_document import TOMLDocument
 
 from lydian.const import CONFIG_PATH, LogLevel
-from lydian.util import DataclassUpdateMixin, get_dataclass_fields
+from lydian.util import DataclassUpdateMixin, get_dataclass_fields, partition
 
 TOML_KEY_REGEX: re.Pattern[str] = re.compile(r'^\[?([\w.-]+)\]?', flags=re.MULTILINE)
 TOML_TABLE_KEY_REGEX: re.Pattern[str] = re.compile(r'\[([\w.-]+)\]', flags=re.MULTILINE)
 
 load_dotenv()
+
+class UnknownConfigKeyWarning(Warning):
+    """Emitted when a key is found in TOML that is not present in the :py:class:`Config` dataclass."""
+
+    @classmethod
+    def emit(cls, key: str, *, stacklevel: int = 2) -> None:
+        """Emit this warning for a key with the standard warning message."""
+        warnings.warn(f'Unrecognized config key in TOML: {key}', cls, stacklevel=stacklevel)
 
 def _toml_encoder(obj: object) -> TOMLItem:
     if isinstance(obj, ZoneInfo):
@@ -61,14 +71,14 @@ def env_to_bool(s: str) -> bool:
 class MediaFilterConfig(DataclassUpdateMixin):
     """Configuration for whitelisting or blacklisting input URLs and extractors."""
 
-    extractor_mode: Literal['whitelist', 'blacklist'] = 'blacklist'
-    extractor: list[str] = field(default_factory=list,
-        doc='A list of yt-dlp extractors to allow or disallow.'
-            + ' \nExtractor names: https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md')
-    url_mode: Literal['whitelist', 'blacklist'] = 'blacklist'
-    url: list[str] = field(default_factory=list,
-        doc="A list of expressions to match input URLs against, rejecting ones that don't match if url_mode is "
-            + ' "blacklist", or only allowing those that match if url_mode is "whitelist".')
+    allowed_extractors: list[str] = field(default_factory=lambda: ['default'],
+        doc='A list of regular expressions which determine what yt-dlp extractors to allow.'
+            + ' "default" will include almost every extractor yt-dlp has available.'
+            + ' Prefix an expression with a hyphen (-) to blacklist it instead.'
+            + '\nExtractor names: https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md')
+    allowed_urls: list[str] = field(default_factory=lambda: ['https://.*'],
+        doc='A list of regular expressions which determine what URLs to allow.'
+            + ' Prefix an expression with a hyphen (-) to blacklist it instead.')
 
 @dataclass(kw_only=True)
 class VoteSkippingConfig(DataclassUpdateMixin):
@@ -137,6 +147,12 @@ class Config(DataclassUpdateMixin):
         inst.update_from_toml(fp)
         return inst
 
+    def filter_media_url(self, url: str) -> bool:
+        """Returns whether a given URL should be allowed to be played based on this config object's filters."""
+        filter_yes, filter_no = partition(lambda s: s[0] != '-', self.media_filter.allowed_urls)
+        return (True if not filter_yes else any(re.match(pattern, url) for pattern in filter_yes)) \
+            and not any(re.match(pattern[1:], url) for pattern in filter_no)
+
     def to_toml(self, fp: str | Path | None = None, *, add_comments: bool = True) -> str:
         """Returns this object converted into a TOML string.
 
@@ -159,7 +175,14 @@ class Config(DataclassUpdateMixin):
         for fld in fields(self):
             toml_key: str = fld.name.replace('_', '-')
 
-            doc.add(toml_key, getattr(self, fld.name))
+            if fld.type is MediaFilterConfig:
+                data: InlineTable = tm.item(asdict(getattr(self, fld.name)))
+                data['allowed_extractors'] = [tm.string(s, literal=True) for s in data['allowed_extractors'].unwrap()]
+                data['allowed_urls'] = [tm.string(s, literal=True) for s in data['allowed_urls'].unwrap()]
+            else:
+                data = getattr(self, fld.name)
+
+            doc.add(toml_key, data)
 
         toml_string: str = doc.as_string() + '\n'
         if add_comments:
@@ -208,31 +231,17 @@ class Config(DataclassUpdateMixin):
 
         self.update(unflatten(update_map, '.'))
 
-    def update_from_toml(self, fp: str | Path, *, missing_ok: bool = True) -> None:
+    def update_from_toml(self, fp: str | Path, *, on_missing: Literal['raise', 'warn', 'continue'] = 'warn') -> None:
         """Update the config using values from a TOML file.
 
-        :param missing_ok: Whether to ignore keys in the TOML that don't correspond to any ``Config`` fields.
-            If ``False``, ``KeyError`` is raised.
+        :param on_missing: Whether to raise, warn, or ignore unrecognized keys.
         """
         with open(fp, 'r', encoding='utf-8') as f:
             loaded: TOMLDocument = tm.load(f)
-        self.update(loaded.unwrap(), missing_ok=missing_ok)
-
-    @staticmethod
-    def _match_url_against(pattern: str, url: str) -> bool:
-        regex = pattern.replace('.', '\\.').replace('*', '.*') \
-            if not pattern.startswith('r:') \
-            else pattern.removeprefix('r:')
-        return re.match(regex, url) is not None
-
-    def filter_media_url(self, url: str) -> bool:
-        """Returns whether a given URL should be allowed to be played based on this config object's filters."""
-        if self.media_filter.url_mode == 'whitelist':
-            return any(self._match_url_against(pattern, url) for pattern in self.media_filter.url)
-        elif self.media_filter.url_mode == 'blacklist':
-            return not any(self._match_url_against(pattern, url) for pattern in self.media_filter.url)
-        else:
-            raise ValueError(f'Unexpected media_filter.url_mode value: {self.media_filter.url_mode!r}')
+        self.update(
+            loaded.unwrap(),
+            on_missing=UnknownConfigKeyWarning.emit if on_missing == 'warn' else on_missing,
+        )
 
 def add_comments_to_toml(toml: str, comment_map: dict[str, dict[str, str]], comment_width: int = 80) -> str:
     """Returns a TOML string with comments added to every key in ``comment_map``.

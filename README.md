@@ -22,6 +22,7 @@ Documentation: <https://lydian-discord-bot.readthedocs.io/en/latest/>
 - [Usage: CLI commands](#usage-cli-commands)
   - [`clear-dl`](#clear-dl)
   - [`logs latest`](#logs-latest)
+- [URL and extractor filtering](#url-and-extractor-filtering)
 - [Debug Mode](#debug-mode)
 
 ## Setup: Lydian
@@ -126,6 +127,34 @@ Arguments: N/A
 Prints the filepath to the most recently created log file.
 
 Arguments: N/A
+
+## URL and extractor filtering
+
+The bot uses regular expressions (commonly "regex") for the user-configured input URL and yt-dlp
+extractor filters. If you're unfamiliar, you can view a quick reference for regex syntax here:
+<https://www.rexegg.com/regex-quickstart.php>
+
+> List of yt-dlp extractors: <https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md>
+
+Add `-` to the beginning of the pattern to make it a blacklisted expression.
+The URL will be matched against the expression from the beginning of the string, so you don't need
+account for anything after it (i.e. no need for ending every expression in `.*` or starting it with
+`^`), but you *will* need to add `.*` to the end of your extractor filters to match anything
+following that expression.
+
+> [!NOTE]
+> When entering these regular expressions into your config TOML, make sure to use **single quotes**
+> to ensure it is treated as a "literal" string.
+
+Examples:
+
+|Regex|Description|
+|-----|-----------|
+|`https://.+\.youtube\.com/`|Matches any YouTube link|
+|`https://music\.youtube\.com/`|Matches only YouTube Music links|
+|`https://youtu\.be/`|Matches shortened "youtu.be" share links|
+|`https://.+\.bandcamp\.com/`|Matches any Bandcamp link|
+|`https://kinggizzard\.bandcamp\.com/`|Matches only one artist's Bandcamp page|
 
 ## Debug Mode
 
