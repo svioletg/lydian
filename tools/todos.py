@@ -1,4 +1,4 @@
-"""Checks for TODO comments in all ``*.py`` files in a directory."""  # noqa: INP001
+"""Checks for TODO comments in all ``*.py`` files in a directory."""
 import re
 import sys
 from argparse import ArgumentParser
