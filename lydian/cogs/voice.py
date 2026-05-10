@@ -12,7 +12,7 @@ import discord
 import yt_dlp
 from discord.ext import commands
 from loguru import logger
-from maybetype import maybe
+from maybetype import Err, Ok, Result, maybe
 from yt_dlp.utils import DownloadError
 
 from lydian.cogs.util import alias_from_config, confirm, embed_error, embed_info, embed_ok
@@ -237,6 +237,9 @@ class MediaQueue(UserList[MediaItem]):
         self.maxlen: int | None = maxlen
         super().__init__(initlist=initlist)
 
+    def __repr__(self) -> str:  # noqa: D105
+        return f'{self.__class__.__name__}({self.data}, maxlen={self.maxlen})'
+
     @override
     def append(self, item: MediaItem) -> None:
         if self.maxlen and (len(self) >= self.maxlen):
@@ -456,14 +459,50 @@ class VoiceCog(commands.Cog):
             return
         await ctx.send(embed=embed_info('The player is not paused.', 'Use `-play <URL>` to queue something up.'))
 
+    async def _try_to_queue(self, ctx: commands.Context, url: str) -> Result[tuple[MediaItem, ...], discord.Embed]:
+        author = _assert_discord_member(ctx.author)
+
+        try:
+            items: tuple[MediaItem, ...] = await asyncio.get_event_loop().run_in_executor(None,
+                lambda: MediaItem.from_url(url, user=author))
+        except DownloadError as e:
+            msg: str = COLOR_ESCAPE_REGEX.sub('', e.msg or '')
+            logger.error(f'URL info extraction failed: {msg}')
+            if 'No suitable extractor found for URL' in msg:
+                return Err(embed_info("No suitable extractor found for this URL with the bot's current configuration."))
+            else:
+                return Err(embed_error('Failed to get URL information', f'{msg}'))
+
+        # Reject if the items won't fit in the queue
+        if config.max_queue_length and (len(self.queue) + len(items) > config.max_queue_length):
+            return Err(embed_info('Playlist is too long to fit in the queue.', f'Limit: {config.max_queue_length}'))
+
+        # If the playlist limit is exceeded, ask to add the max amount
+        if config.max_playlist_length and (len(items) > config.max_playlist_length):
+            can_add: bool | None = await confirm(ctx,
+                embed_info(
+                    f'Playlist is too long (limit of {config.max_playlist_length}).'
+                    + f'\nAdd the first {config.max_playlist_length} items instead?',
+                ),
+                prompt_timeout=120.0,
+            )
+            match can_add:
+                case True:
+                    items = items[:config.max_playlist_length]
+                case False:
+                    return Err(embed_info('Cancelling.'))
+                case _:
+                    return Err(embed_info('Confirmation timed out; cancelling.'))
+
+        return Ok(items)
+
     @alias_from_config
     @commands.command(aliases=[])
-    async def play(self, ctx: commands.Context, url: str | None = None) -> None:  # noqa: C901, PLR0911
+    async def play(self, ctx: commands.Context, url: str | None = None) -> None:  # noqa: C901
         """Plays media, adds media to the queue, or resumes the player if paused.
 
         If the player is paused, the command can be used without any arguments to resume it.
         """
-        author = _assert_discord_member(ctx.author)
         voice = _assert_voice_client(ctx.voice_client)
 
         # Treat this as a "resume" command if no URL is given
@@ -484,46 +523,12 @@ class VoiceCog(commands.Cog):
         logger.info(f'Extracting info from URL: {url}')
         progress_msg: discord.Message = await ctx.send(embed=embed_info('Getting media info...', url))
 
-        try:
-            items: tuple[MediaItem, ...] = await asyncio.get_event_loop().run_in_executor(None,
-                lambda: MediaItem.from_url(url, user=author))
-        except DownloadError as e:
-            msg: str = COLOR_ESCAPE_REGEX.sub('', e.msg or '')
-            logger.error(f'URL info extraction failed: {msg}')
-            if 'No suitable extractor found for URL' in msg:
-                await progress_msg.edit(embed=embed_info(
-                    "No suitable extractor found for this URL with the bot's current configuration.",
-                ))
-            else:
-                await progress_msg.edit(embed=embed_error('Failed to get URL information', f'{msg}'))
+        result = await self._try_to_queue(ctx, url)
+        if not result:
+            await progress_msg.edit(embed=result.unwrap_err())
             return
 
-        # Reject if the items won't fit in the queue
-        if config.max_queue_length and (len(self.queue) + len(items) > config.max_queue_length):
-            await progress_msg.edit(
-                embed=embed_info('Playlist is too long to fit in the queue.', f'Limit: {config.max_queue_length}'),
-            )
-            return
-
-        # If the playlist limit is exceeded, ask to add the max amount
-        if config.max_playlist_length and (len(items) > config.max_playlist_length):
-            can_add: bool | None = await confirm(ctx,
-                embed_info(
-                    f'Playlist is too long (limit of {config.max_playlist_length}).'
-                    + f'\nAdd the first {config.max_playlist_length} items instead?',
-                ),
-                prompt_timeout=120.0,
-            )
-            match can_add:
-                case True:
-                    items = items[:config.max_playlist_length]
-                case False:
-                    await progress_msg.delete()
-                    return
-                case _:
-                    await progress_msg.delete()
-                    await ctx.send('Timed out.')
-                    return
+        items: tuple[MediaItem, ...] = result.unwrap()
 
         self.queue.extend(items)
 
@@ -548,6 +553,9 @@ class VoiceCog(commands.Cog):
         else:
             if just_started:
                 items = items[1:]
+            if not items:
+                await progress_msg.delete()
+                return
             end_pos: int = len(self.queue)
             start_pos: int = end_pos - len(items)
             await progress_msg.edit(

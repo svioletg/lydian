@@ -35,6 +35,7 @@ configured prefix accordingly.
 - Added method `cogs.voice.MediaItem.move()`
 - Added method `cogs.voice.MediaItem.set_user()`
 - Added method `cogs.voice.VoiceCog._check_queue_index_arg()`
+- Added method `cogs.voice.VoiceCog._try_to_queue()`
 - Added method `config.filter_media_url()` (#12)
 - Added method `util.Cache.clear()`
 - Added command method `cogs.voice.VoiceCog.nowplaying()`
