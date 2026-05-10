@@ -415,7 +415,7 @@ class VoiceCog(commands.Cog):
 
     @alias_from_config
     @commands.command(aliases=[])
-    async def play(self, ctx: commands.Context, url: str | None = None) -> None:
+    async def play(self, ctx: commands.Context, url: str | None = None) -> None:  # noqa: C901, PLR0911
         """Plays media, adds media to the queue, or resumes the player if paused.
 
         If the player is paused, the command can be used without any arguments to resume it.
