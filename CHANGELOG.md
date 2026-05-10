@@ -35,6 +35,7 @@ configured prefix accordingly.
 - `-queue` command is now paginated, accepts an optional page index value and shows up to 20 items
   per page (#11)
 - `cogs.voice.MediaItem.from_url` now returns a tuple of `MediaItem` objects instead of one
+- `cogs.voice.VoiceCog.advance_queue()` now returns `Exception | None`
 - `config.Config.update_from_toml()` parameter `missing_ok` renamed to `on_missing`, accepts the values `'raise'`,
   `'warn'`, or `'continue'`
 - `util.Cache` constructor now accepts a `default_expiration` parameter

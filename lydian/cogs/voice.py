@@ -302,8 +302,8 @@ class VoiceCog(commands.Cog):
 
         self._manual_stop: bool = False
 
-    async def advance_queue(self, ctx: commands.Context, *, play_now: MediaItem | None = None) -> None:
-        """Plays the next item in the queue.
+    async def advance_queue(self, ctx: commands.Context, *, play_now: MediaItem | None = None) -> Exception | None:
+        """Plays the next item in the queue, returning any exception caught and handled in the process.
 
         Returns immediately if the queue is empty.
         If the bot is paused or playing audio, it will be stopped and the current media is skipped.
@@ -317,7 +317,7 @@ class VoiceCog(commands.Cog):
         :param play_now: A ``MediaItem`` to play right now instead of the next item in the queue.
         """
         if self.queue_advance_lock:
-            return
+            return None
 
         with self.queue_advance_lock:
             voice = _assert_voice_client(ctx.voice_client)
@@ -326,7 +326,7 @@ class VoiceCog(commands.Cog):
                 voice.stop()
 
             if (not self.queue) and (not play_now):
-                return
+                return None
 
             item = play_now or self.queue.popleft()
 
@@ -341,7 +341,7 @@ class VoiceCog(commands.Cog):
             except FileSizeLimitError as e:
                 await progress_msg.edit(embed=embed_info('File is larger than the set filesize limit.'))
                 logger.info(e)
-                return
+                return e
 
             await progress_msg.delete()
 
@@ -350,6 +350,8 @@ class VoiceCog(commands.Cog):
             self.now_playing = item
 
             await ctx.send(embed=item.embed(f'{EmojiStr.PLAY} Playing: '))
+
+            return None
 
     def on_player_stop(self, ctx: commands.Context, exc: Exception | None) -> None:
         """Callback for the voice client's ``.play()`` method ``after`` callback.
@@ -497,15 +499,22 @@ class VoiceCog(commands.Cog):
             logger.debug(f'Added to media queue: {i}')
 
         # Start running the queue if nothing is playing
+        just_started: bool = False
         if not self.now_playing:
-            await self.advance_queue(ctx)
+            just_started = True
+            exc = await self.advance_queue(ctx)
+            if exc:
+                await progress_msg.delete()
+                return
 
-        if len(items) == 1:
+        if (len(items) == 1) and not just_started:
             item = items[0]
             await progress_msg.edit(
                 embed=embed_ok(f'{EmojiStr.IN} Queued at position #{len(self.queue)}: {item.title}', item.url),
             )
         else:
+            if just_started:
+                items = items[1:]
             end_pos: int = len(self.queue)
             start_pos: int = end_pos - len(items)
             await progress_msg.edit(
