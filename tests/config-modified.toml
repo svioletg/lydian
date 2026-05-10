@@ -1,7 +1,6 @@
 # discord-vc-bot configuration
 
 prefix = "$"
-auto-remove = [".m4a", ".mp3", ".mp4", ".ogg", ".opus", ".wav", ".webm"]
 
 [vote-skipping]
 enabled = true
