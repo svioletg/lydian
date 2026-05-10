@@ -40,8 +40,11 @@ def test_media_queue_maxlen() -> None:
 def test_media_queue_move() -> None:
     queue = MediaQueue()
     queue.extend(MediaItem(str(n), str(n)) for n in range(100))
-    queue.move(50, 20)
     assert queue[20].title == '20'
+    queue.move(50, 20)
+    assert queue[20].title == '50'
+    queue.move(20, 50)
+    assert queue[50].title == '50'
     with pytest.raises(IndexError):
         queue.move(200, 0)
     with pytest.raises(IndexError):
