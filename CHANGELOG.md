@@ -22,14 +22,18 @@ configured prefix accordingly.
 - Added console command `uptime`
   - Prints how long the bot has been running for
 - Added exception class `errors.FileSizeLimitError`
+- Added function `cogs.voice._assert_discord_member`
 - Added function `util.format_duration()`
 - Added function `util.linepos_to_pos()`
 - Added function `util.partition()`
 - Added function `util.pos_to_linepos()`
+- Added attribute `cogs.voice.MediaItem.user`
 - Added attribute `cogs.voice.YTDLSource.file`
 - Added property `cogs.voice.MediaItem.duration_str`
+- Added method `cogs.voice.MediaItem.add_embed_field()`
 - Added method `cogs.voice.MediaItem.embed()`
 - Added method `cogs.voice.MediaItem.move()`
+- Added method `cogs.voice.MediaItem.set_user()`
 - Added method `cogs.voice.VoiceCog._check_queue_index_arg()`
 - Added method `config.filter_media_url()` (#12)
 - Added method `util.Cache.clear()`
@@ -38,11 +42,13 @@ configured prefix accordingly.
 
 ### Changed
 
-- `cogs.voice.MediaQueue` is now a subclass of `UserList` rather than a `deque`
-  - Now accepts an `initlist` parameter
 - `-queue` command is now paginated, accepts an optional page index value and shows up to 20 items
   per page (#11)
+- `cogs.voice.MediaQueue` is now a subclass of `UserList` rather than a `deque`
+  - Now accepts an `initlist` parameter
+- `cogs.voice.MediaItem` embeds now show the user that queued it, if one is set
 - `cogs.voice.MediaItem.from_url` now returns a tuple of `MediaItem` objects instead of one
+- `cogs.voice.MediaItem.from_url` now takes an optional `user` parameter
 - `cogs.voice.VoiceCog.advance_queue()` now returns `Exception | None`
 - `config.Config.update_from_toml()` parameter `missing_ok` renamed to `on_missing`, accepts the values `'raise'`,
   `'warn'`, or `'continue'`

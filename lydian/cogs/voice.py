@@ -2,7 +2,7 @@
 import asyncio
 from collections import UserList
 from collections.abc import Iterable, Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import timedelta
 from math import ceil
 from pathlib import Path
@@ -116,16 +116,16 @@ class MediaItem:
     """The item's duration in seconds."""
     thumbnail_url: str | None = None
 
+    # Non-media-related
+    user: discord.Member | None = None
+    """The discord user who requested this item, if any."""
+
     @property
     def duration_str(self) -> str | None:
         """Return a formatted string of the duration if present."""
         if not self.duration:
             return None
         return format_duration(ceil(self.duration))
-
-    def __copy__(self) -> Self:
-        """Returns a new ``MediaItem`` with this instance's field values."""
-        return self.__class__(**asdict(self))
 
     @classmethod
     def from_ytdl_extracted(cls, info: dict[str, Any]) -> Self:
@@ -142,12 +142,13 @@ class MediaItem:
         )
 
     @classmethod
-    def from_url(cls, url: str, *, cache: bool = True) -> tuple[Self, ...]:
+    def from_url(cls, url: str, *, user: discord.Member | None = None, cache: bool = True) -> tuple[Self, ...]:
         """Returns a tuple of ``MediaItem`` objects created from the info extracted from ``url`` by yt-dlp.
 
         If multiple entries are extracted from ``url``, the resulting ``MediaItem`` objects will only have the
         ``title`` and ``url`` fields filled.
 
+        :param user: A ``discord.Member`` object to set as the ``user`` attribute for every returned item.
         :param cache: If ``True``, cached info will be used instead of requesting the information for ``url`` again if
             the URL exists in the cache and is not expired, otherwise the result of this extraction will be cached.
             If ``False``, the cache is not used.
@@ -156,21 +157,30 @@ class MediaItem:
             if cache \
             else ytdl.extract_info(url, download=False)
         return tuple(
-            cls.from_ytdl_extracted(cached) \
+            cls.from_ytdl_extracted(cached).set_user(user) \
                 if cache and (cached := cls._url_info_cache.get(entry.get('original_url', entry['url']))) \
-                else cls.from_ytdl_extracted(entry) \
+                else cls.from_ytdl_extracted(entry).set_user(user) \
             for entry in info.get('entries', [info])
         )
 
-    def copy(self) -> Self:
-        """Returns a new ``MediaItem`` with this instance's field values."""
-        return self.__copy__()
+    def add_embed_field(self, embed: discord.Embed, title_prefix: str = '', *, inline: bool = False) -> discord.Embed:
+        """Adds this item as a field to a ``discord.Embed`` object, then returns it back."""
+        return embed.add_field(
+            name=f'{title_prefix}{self.title}',
+            value=
+                (f'Queued by {self.user.mention}\n' if self.user else '')
+                + (f'({self.duration_str}) ' if self.duration else '') + self.url,
+            inline=inline,
+        )
 
     def embed(self, title_prefix: str = '') -> discord.Embed:
         """Returns a ``discord.Embed`` for this item."""
         return discord.Embed(
             title=title_prefix + self.title,
-            description=(f'({self.duration_str}) ' if self.duration else '') + self.url,
+            description=
+                (f'Queued by {self.user.mention}\n' if self.user else '')
+                + (f'({self.duration_str}) ' if self.duration else '')
+                + self.url,
             color=COLOR_INFO,
         ).set_thumbnail(url=self.thumbnail_url)
 
@@ -188,7 +198,7 @@ class MediaItem:
         if store_cache:
             self._url_info_cache.set(self.url, new_info)
 
-        return self.from_ytdl_extracted(new_info)
+        return self.from_ytdl_extracted(new_info).set_user(self.user)
 
     def refresh(self, *, store_cache: bool = True) -> Self:
         """Re-extracts information from this object's ``url`` and updates fields with the info accordingly.
@@ -199,9 +209,16 @@ class MediaItem:
         :param store_cache: Whether to store the resulting extracted information into the cache. Note that the cache is
             not used to retrieve any information for this method, it will *always* make a request.
         """
-        for k, v in asdict(self.refresh_copy(store_cache=store_cache)).items():
+        for k, v in self.refresh_copy(store_cache=store_cache).__dict__.items():
             setattr(self, k, v)
 
+        return self
+
+    def set_user(self, user: discord.Member | None = None) -> Self:
+        """Sets the ``user`` attribute and returns a reference to this instance."""
+        if (user is not None) and not isinstance(user, discord.Member):
+            raise TypeError(f'Expected discord.Member object or None for set_user: {user!r}')
+        self.user = user
         return self
 
 class MediaQueue(UserList[MediaItem]):
@@ -281,6 +298,15 @@ class MediaQueue(UserList[MediaItem]):
         """Pops the item at the front of the list."""
         return self.pop(0)
 
+def _assert_discord_member(user: discord.User | discord.Member) -> discord.Member:
+    """Returns a ``discord.User | discord.Member`` value casted to ``discord.Member``.
+
+    Raises ``TypeError`` if ``user`` is not a ``discord.Member``.
+    """
+    if not isinstance(user, discord.Member):
+        raise TypeError(f'Expected discord.Member instance: {user!r}')
+    return user
+
 def _assert_voice_client(vc: discord.VoiceProtocol | None) -> discord.VoiceClient:
     """Returns a ``discord.VoiceProtocol | None`` value casted to ``discord.VoiceClient``.
 
@@ -311,7 +337,7 @@ class VoiceCog(commands.Cog):
     async def advance_queue(self, ctx: commands.Context, *, play_now: MediaItem | None = None) -> Exception | None:
         """Plays the next item in the queue, returning any exception caught and handled in the process.
 
-        Returns immediately if the queue is empty.
+        Returns immediately if the queue is empty and ``play_now`` is ``None``.
         If the bot is paused or playing audio, it will be stopped and the current media is skipped.
 
         .. important::
@@ -437,6 +463,7 @@ class VoiceCog(commands.Cog):
 
         If the player is paused, the command can be used without any arguments to resume it.
         """
+        author = _assert_discord_member(ctx.author)
         voice = _assert_voice_client(ctx.voice_client)
 
         # Treat this as a "resume" command if no URL is given
@@ -459,7 +486,7 @@ class VoiceCog(commands.Cog):
 
         try:
             items: tuple[MediaItem, ...] = await asyncio.get_event_loop().run_in_executor(None,
-                lambda: MediaItem.from_url(url))
+                lambda: MediaItem.from_url(url, user=author))
         except DownloadError as e:
             msg: str = COLOR_ESCAPE_REGEX.sub('', e.msg or '')
             logger.error(f'URL info extraction failed: {msg}')
@@ -637,27 +664,13 @@ class VoiceCog(commands.Cog):
         )
 
         if self.now_playing:
-            queue_embed.add_field(
-                name=f'Now playing: {self.now_playing.title}',
-                value=(f'({self.now_playing.duration_str}) ' if self.now_playing.duration else '') \
-                    + self.now_playing.url,
-                inline=False,
-            )
+            self.now_playing.add_embed_field(queue_embed, 'Now playing: ')
 
         if self.stopped_track:
-            queue_embed.add_field(
-                name=f'Stopped: {self.stopped_track.title}',
-                value=(f'({self.stopped_track.duration_str}) ' if self.stopped_track.duration else '') \
-                    + self.stopped_track.url,
-                inline=False,
-            )
+            self.stopped_track.add_embed_field(queue_embed, 'Stopped: ')
 
         for n, item in enumerate(queue_slice, start=page_start + 1):
-            queue_embed.add_field(
-                name=f'#{n}. {item.title}',
-                value=(f'({item.duration_str}) ' if item.duration else '') + item.url,
-                inline=False,
-            )
+            item.add_embed_field(queue_embed, f'#{n}. ')
 
         await ctx.send(embed=queue_embed)
 
