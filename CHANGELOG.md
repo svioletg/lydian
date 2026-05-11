@@ -13,8 +13,8 @@ configured prefix accordingly.
 ### Added
 
 - Added config key `max-playlist-length` (integer)
-- Added config key `inactivity-timeout` (integer)
-- Added config key `lonely-timeout` (integer)
+- Added config key `inactivity-timeout` (integer) (#17)
+- Added config key `lonely-timeout` (integer) (#17)
 - Added config table `media-filter` (#12)
   - Added key `allowed_extractors` (string list)
   - Added key `allowed_urls` (string list)
