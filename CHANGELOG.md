@@ -18,6 +18,8 @@ configured prefix accordingly.
 
 - Renamed `cogs.voice.VoiceCog.since_alone` to `time_alone`
 - Renamed `cogs.voice.VoiceCog.since_inactive` to `time_inactive`
+- Output of console command `debug read` now shows `repr()` of the value instead of its `str()`
+  representation
 
 ### Fixed
 
