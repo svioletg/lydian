@@ -10,6 +10,11 @@ configured prefix accordingly.
 
 ## [Unreleased]
 
+### Changed
+
+- Renamed `cogs.voice.VoiceCog.since_alone` to `time_alone`
+- Renamed `cogs.voice.VoiceCog.since_inactive` to `time_inactive`
+
 ### Fixed
 
 - Fixed `const.DATA_DIR` being set incorrectly due to checking `CONFIG_PATH.parent.exists()` when

@@ -336,19 +336,19 @@ class VoiceCog(commands.Cog):
         """
 
         # States
+        self.alone: bool = False
+        """Whether the bot is the only user connected to a voice channel."""
         self.inactive: bool = False
         """Whether the bot is both not playing any media and the queue is empty.
 
         For this purpose, the bot being paused still counts as playing media. The bot connecting to a voice channel
         without having been in one previously will also set this to ``False``.
         """
-        self.alone: bool = False
-        """Whether the bot is the only user connected to a voice channel."""
 
         # Timers/counters
-        self.since_inactive: int = 0
+        self.time_inactive: int = 0
         """An amount in seconds since the bot stopped playing audio and has had an empty queue."""
-        self.since_alone: int = 0
+        self.time_alone: int = 0
         """An amount in seconds that the bot has been the only user in its voice channel."""
 
         self._manual_stop: bool = False
@@ -376,17 +376,18 @@ class VoiceCog(commands.Cog):
     @tasks.loop(seconds=1)
     async def tick_timers(self) -> None:
         """Handles increasing or resetting counters."""
-        self.since_inactive += 1 if self.inactive else (-self.since_inactive)
-        self.since_alone += 1 if self.alone else (-self.since_alone)
+        self.time_inactive += 1 if self.inactive else (-self.time_inactive)
+        self.time_alone += 1 if self.alone else (-self.time_alone)
 
         if self.bot.voice_clients:
             voice = _assert_voice_client(self.bot.voice_clients[0])
+            # Handle auto disconnect timers
             self.inactive = (not self.queue) and (not voice.is_playing()) and (not voice.is_paused())
-            if self.since_inactive >= config.inactivity_timeout:
-                logger.info(f'Bot has been inactive for {self.since_inactive} seconds; disconnecting')
+            if (config.inactivity_timeout > -1) and self.time_inactive >= config.inactivity_timeout:
+                logger.info(f'Bot has been inactive for {self.time_inactive} seconds; disconnecting')
                 await voice.disconnect()
-            elif self.since_alone >= config.lonely_timeout:
-                logger.info(f'Bot has been alone for {self.since_alone} seconds; disconnecting')
+            elif (config.lonely_timeout > -1) and self.time_alone >= config.lonely_timeout:
+                logger.info(f'Bot has been alone for {self.time_alone} seconds; disconnecting')
                 await voice.disconnect()
 
     async def advance_queue(self, ctx: commands.Context, *, play_now: MediaItem | None = None) -> Exception | None:
