@@ -303,6 +303,12 @@ def dirsize_counted(source_dir: str | Path) -> tuple[int, dict[Literal['dir', 'f
 
     return total_bytes, count
 
+def expect[T](value: T | None) -> T:
+    """Returns ``value``, raising ``ValueError`` if ``None``."""
+    if value is None:
+        raise ValueError('None')
+    return value
+
 def get_dataclass_fields(dc: object, parents: list[str] | None = None) -> dict[str, Field]:
     """Returns a dictionary of field names (dotted if the field is a dataclass) to field objects for a dataclass.
 

@@ -26,7 +26,7 @@ from lydian.const import (
     EmojiStr,
 )
 from lydian.errors import AbortCommand, FileSizeLimitError, MediaQueueLimitError
-from lydian.util import BasicLock, Cache, format_duration
+from lydian.util import BasicLock, Cache, expect, format_duration
 
 
 class YTDLLogHandler:
@@ -336,12 +336,13 @@ class VoiceCog(commands.Cog):
         """
 
         # States
-        self.inactive: bool = True
+        self.inactive: bool = False
         """Whether the bot is both not playing any media and the queue is empty.
 
-        For this purpose, the bot being paused still counts as playing media.
+        For this purpose, the bot being paused still counts as playing media. The bot connecting to a voice channel
+        without having been in one previously will also set this to ``False``.
         """
-        self.alone: bool = True
+        self.alone: bool = False
         """Whether the bot is the only user connected to a voice channel."""
 
         # Timers/counters
@@ -357,13 +358,18 @@ class VoiceCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_voice_state_update(self,
-            _member: discord.Member,
-            _before: discord.VoiceState,
-            _after: discord.VoiceState,
+            member: discord.Member,
+            before: discord.VoiceState,
+            after: discord.VoiceState,
         ) -> None:
         """Called when a member changes their ``VoiceState``."""
         if not self.bot.voice_clients:
             return
+        bot_joined: bool = (member.id == expect(self.bot.user).id) \
+            and (before.channel is None) \
+            and (after.channel is not None)
+        if bot_joined:
+            self.inactive = False
         voice = _assert_voice_client(self.bot.voice_clients[0])
         self.alone = len(voice.channel.members) == 1
 
@@ -375,6 +381,7 @@ class VoiceCog(commands.Cog):
 
         if self.bot.voice_clients:
             voice = _assert_voice_client(self.bot.voice_clients[0])
+            self.inactive = (not self.queue) and (not voice.is_playing()) and (not voice.is_paused())
             if self.since_inactive >= config.inactivity_timeout:
                 logger.info(f'Bot has been inactive for {self.since_inactive} seconds; disconnecting')
                 await voice.disconnect()
@@ -468,7 +475,7 @@ class VoiceCog(commands.Cog):
 
     @alias_from_config
     @commands.command(aliases=[])
-    async def join(self, ctx: commands.Context) -> None:
+    async def join(self, _ctx: commands.Context) -> None:
         """Joins the current voice channel."""
         # The auto_join hook covers this
 
@@ -759,6 +766,7 @@ class VoiceCog(commands.Cog):
             return
 
         logger.info(f'Joining voice channel: {channel}')
+        self.inactive = False
         await channel.connect()
 
     @leave.before_invoke

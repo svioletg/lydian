@@ -25,6 +25,7 @@ configured prefix accordingly.
   - Prints how long the bot has been running for
 - Added exception class `errors.FileSizeLimitError`
 - Added function `cogs.voice._assert_discord_member`
+- Added function `util.expect()`
 - Added function `util.format_duration()`
 - Added function `util.linepos_to_pos()`
 - Added function `util.partition()`
