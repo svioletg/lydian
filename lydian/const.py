@@ -28,7 +28,7 @@ CONFIG_PATH      : Path = Path.cwd() / 'lydian-config.toml'
 
 :meta hide-value:
 """
-DATA_DIR         : Path = (CONFIG_PATH.parent / 'lydian-data') if CONFIG_PATH.parent.exists() else DEFAULT_DATA_DIR
+DATA_DIR         : Path = (CONFIG_PATH.parent / 'lydian-data') if CONFIG_PATH.exists() else DEFAULT_DATA_DIR
 """Data directory as relative to the user's configuration file if it exists, or :py:data:`DEFAULT_DATA_DIR`."""
 TMP_DIR          : Path = DATA_DIR / 'tmp'
 LOGS_DIR         : Path = DATA_DIR / 'logs'
