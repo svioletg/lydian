@@ -1,6 +1,6 @@
 [project]
 name = "lydian-discord-bot"
-version = "0.3.0"
+version = "0.4.0"
 description = "A Discord music bot."
 authors = [
     { name = "Seth 'Violet' Gibbs" },
@@ -10,11 +10,14 @@ license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "discord-py[voice]>=2.7.1",
+    "davey>=0.1.5",
+    "discord-py>=2.7.1",
     "emoji>=2.15.0",
+    "humanize>=4.15.0",
     "loguru>=0.7.3",
     "prompt-toolkit>=3.0.52",
     "py-maybetype==0.11.0",
+    "pynacl>=1.6.2,<1.7",
     "python-benedict>=0.36.0",
     "python-dotenv>=1.2.2",
     "rich>=15.0.0",
@@ -50,6 +53,7 @@ Issues = "https://github.com/svioletg/lydian-discord-bot/issues"
 
 [project.scripts]
 lydian = "lydian.bot:main"
+lydian-cli = "lydian.cli:cli"
 lydian-manage = "lydian.cli:cli"
 
 [build-system]
@@ -58,3 +62,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["lydian"]
+
+[tool.pytest]
+filterwarnings = [
+    "error",
+    "ignore:'asyncio.iscoroutinefunction' is deprecated"
+]

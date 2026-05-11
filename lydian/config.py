@@ -2,9 +2,10 @@
 import os
 import re
 import sys
-import textwrap
+import warnings
+from argparse import ArgumentParser
 from collections import OrderedDict
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import Field, asdict, dataclass, field, fields, is_dataclass
 from pathlib import Path
 from typing import Any, Literal, Self, cast
@@ -15,16 +16,25 @@ from benedict.core import unflatten
 from dotenv import load_dotenv
 from maybetype import maybe
 from tomlkit.exceptions import ConvertError
+from tomlkit.items import InlineTable
 from tomlkit.items import Item as TOMLItem
 from tomlkit.toml_document import TOMLDocument
 
 from lydian.const import CONFIG_PATH, LogLevel
-from lydian.util import DataclassUpdateMixin, get_dataclass_fields
+from lydian.util import DataclassUpdateMixin, get_dataclass_fields, partition, wrap_paragraphs
 
 TOML_KEY_REGEX: re.Pattern[str] = re.compile(r'^\[?([\w.-]+)\]?', flags=re.MULTILINE)
 TOML_TABLE_KEY_REGEX: re.Pattern[str] = re.compile(r'\[([\w.-]+)\]', flags=re.MULTILINE)
 
 load_dotenv()
+
+class UnknownConfigKeyWarning(Warning):
+    """Emitted when a key is found in TOML that is not present in the :py:class:`Config` dataclass."""
+
+    @classmethod
+    def emit(cls, key: str, *, stacklevel: int = 2) -> None:
+        """Emit this warning for a key with the standard warning message."""
+        warnings.warn(f'Unrecognized config key in TOML: {key}', cls, stacklevel=stacklevel)
 
 def _toml_encoder(obj: object) -> TOMLItem:
     if isinstance(obj, ZoneInfo):
@@ -39,6 +49,7 @@ tm.register_encoder(_toml_encoder)  # ty:ignore[invalid-argument-type]
 
 def _default_command_aliases() -> dict[str, list[str]]:
     return {
+        'help': ['h'],
         'join': ['j'],
         'leave': ['l'],
     }
@@ -55,6 +66,19 @@ def env_to_bool(s: str) -> bool:
     if s in ['1', 'true']:
         return True
     raise ValueError(f"Expected 0, 1, 'false', or 'true' for boolean environment variable: {s!r}")
+
+@dataclass(kw_only=True)
+class MediaFilterConfig(DataclassUpdateMixin):
+    """Configuration for whitelisting or blacklisting input URLs and extractors."""
+
+    allowed_extractors: list[str] = field(default_factory=lambda: ['default'],
+        doc='A list of regular expressions which determine what yt-dlp extractors to allow.'
+            + ' "default" will include almost every extractor yt-dlp has available.'
+            + ' Prefix an expression with a hyphen (-) to blacklist it instead.'
+            + '\nExtractor names: https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md')
+    allowed_urls: list[str] = field(default_factory=lambda: ['https://.*'],
+        doc='A list of regular expressions which determine what URLs to allow.'
+            + ' Prefix an expression with a hyphen (-) to blacklist it instead.')
 
 @dataclass(kw_only=True)
 class VoteSkippingConfig(DataclassUpdateMixin):
@@ -100,13 +124,26 @@ class Config(DataclassUpdateMixin):
         metadata={'env': 'DEBUG'},
     )
     command_aliases: dict[str, list[str]] = field(default_factory=_default_command_aliases)
+    max_filesize: int = field(default=20_000_000,
+        doc='Maximum filesize in bytes for media that can be downloaded by the bot.'
+        + ' Will have no effect when streaming media (stream-media = true).')
+    max_playlist_length: int = field(default=20,
+        doc='Maximum number of items that can be added from a single playlist link.')
     max_queue_length: int = field(default=100,
         doc='Maximum number of items that can be added to the media queue.')
-    max_filesize: int = field(default=20_000_000,
-        doc='Maximum filesize in bytes for media that can be downloaded by the bot.')
     media_dir_warn_threshold: int = field(default=100_000_000,
         doc='Total size in bytes that downloaded media can take up before a warning is emitted at bot'
         + ' startup. Set to -1 to disable the warning entirely.')
+    stream_media: bool = field(default=True,
+        doc='Whether to stream media instead of downloading it to disk and playing the file.')
+    inactivity_timeout: int = field(default=120,
+        doc='How long in seconds the bot can be inactive (not playing anything and the queue is empty) before'
+            + ' disconnecting. Set to -1 to never disconnect for inactivity.')
+    lonely_timeout: int = field(default=120,
+        doc='How long in seconds the bot can be the only user in a voice channel before disconnecting.'
+            + ' Set to -1 to never disconnect in this case.')
+
+    media_filter: MediaFilterConfig = field(default_factory=MediaFilterConfig)
     vote_skipping: VoteSkippingConfig = field(default_factory=VoteSkippingConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
 
@@ -120,10 +157,18 @@ class Config(DataclassUpdateMixin):
         inst.update_from_toml(fp)
         return inst
 
-    def to_toml(self, fp: str | Path | None = None) -> str:
+    def filter_media_url(self, url: str) -> bool:
+        """Returns whether a given URL should be allowed to be played based on this config object's filters."""
+        filter_yes, filter_no = partition(lambda s: s[0] != '-', self.media_filter.allowed_urls)
+        return (True if not filter_yes else any(re.match(pattern, url) for pattern in filter_yes)) \
+            and not any(re.match(pattern[1:], url) for pattern in filter_no)
+
+    def to_toml(self, fp: str | Path | None = None, *, add_comments: bool = True) -> str:
         """Returns this object converted into a TOML string.
 
         If ``fp`` is not ``None``, the TOML string will also be written to the file at that path.
+
+        :param add_comments: Whether to write comments for specified keys.
         """
         doc: tm.TOMLDocument = tm.document()
         doc.add(tm.comment('discord-vc-bot configuration'))
@@ -140,9 +185,18 @@ class Config(DataclassUpdateMixin):
         for fld in fields(self):
             toml_key: str = fld.name.replace('_', '-')
 
-            doc.add(toml_key, getattr(self, fld.name))
+            if fld.type is MediaFilterConfig:
+                data: InlineTable = tm.item(asdict(getattr(self, fld.name)))
+                data['allowed_extractors'] = [tm.string(s, literal=True) for s in data['allowed_extractors'].unwrap()]
+                data['allowed_urls'] = [tm.string(s, literal=True) for s in data['allowed_urls'].unwrap()]
+            else:
+                data = getattr(self, fld.name)
 
-        toml_string: str = add_comments_to_toml(doc.as_string(), comments) + '\n'
+            doc.add(toml_key, data)
+
+        toml_string: str = doc.as_string() + '\n'
+        if add_comments:
+            toml_string = add_comments_to_toml(toml_string, comments)
 
         if fp:
             Path(fp).write_text(toml_string, encoding='utf-8')
@@ -168,15 +222,17 @@ class Config(DataclassUpdateMixin):
 
             # Fall back on the field type as a constructor if no converter is specified, but don't convert if envconv
             # has been explicitly set to None
-            converter = None
+            converter: Callable[[str], Any] | None
             if envconv := fld.metadata.get('envconv'):
+                if not callable(envconv):
+                    raise TypeError(f'Config field "{name}" envconv value must be callable: {envconv!r}')
                 converter = envconv
             elif fld.type is bool:
                 converter = env_to_bool
             else:
                 converter = cast('type', fld.type)
 
-            val = env_val if converter is None else converter(env_val)
+            val = converter(env_val)
 
             if not isinstance(val, cast('type', fld.type)):
                 raise TypeError(f'Invalid type for field "{name}": {val!r}')
@@ -185,15 +241,17 @@ class Config(DataclassUpdateMixin):
 
         self.update(unflatten(update_map, '.'))
 
-    def update_from_toml(self, fp: str | Path, *, missing_ok: bool = True) -> None:
+    def update_from_toml(self, fp: str | Path, *, on_missing: Literal['raise', 'warn', 'continue'] = 'warn') -> None:
         """Update the config using values from a TOML file.
 
-        :param missing_ok: Whether to ignore keys in the TOML that don't correspond to any ``Config`` fields.
-            If ``False``, ``KeyError`` is raised.
+        :param on_missing: Whether to raise, warn, or ignore unrecognized keys.
         """
         with open(fp, 'r', encoding='utf-8') as f:
             loaded: TOMLDocument = tm.load(f)
-        self.update(loaded.unwrap(), missing_ok=missing_ok)
+        self.update(
+            loaded.unwrap(),
+            on_missing=UnknownConfigKeyWarning.emit if on_missing == 'warn' else on_missing,
+        )
 
 def add_comments_to_toml(toml: str, comment_map: dict[str, dict[str, str]], comment_width: int = 80) -> str:
     """Returns a TOML string with comments added to every key in ``comment_map``.
@@ -226,20 +284,22 @@ def add_comments_to_toml(toml: str, comment_map: dict[str, dict[str, str]], comm
         if comment_inline := comment_map[key].get('inline'):
             toml_lines[lineno + line_offset] = toml_lines[lineno + line_offset] + f' # {comment_inline}'
         if comment_pre := comment_map[key].get('pre'):
-            comment: list[str] = textwrap.wrap(
+            comment: list[str] = wrap_paragraphs(
                 comment_pre,
                 width=comment_width,
                 initial_indent='# ',
                 subsequent_indent='#    ',
+                indent_mode='single',
             )
             toml_lines = toml_lines[:lineno + line_offset] + comment + toml_lines[lineno + line_offset:]
             line_offset += len(comment)
         if comment_post := comment_map[key].get('post'):
-            comment: list[str] = textwrap.wrap(
+            comment: list[str] = wrap_paragraphs(
                 comment_post,
                 width=comment_width,
                 initial_indent='# ',
                 subsequent_indent='#    ',
+                indent_mode='single',
             )
             toml_lines = toml_lines[:1 + lineno + line_offset] + comment + toml_lines[1 + lineno + line_offset:]
             line_offset += len(comment)
@@ -253,13 +313,24 @@ config.update_from_environment(os.environ)
 
 def main() -> int:
     """Write the default configuration as TOML to a given file path."""
-    toml: str = Config().to_toml()
-    if len(sys.argv) < 2:  # noqa: PLR2004
+    parser = ArgumentParser()
+    parser.add_argument('-o', '--out', type=Path,
+        help='A file to write the default config to. Written to stdout if not given.')
+    parser.add_argument('--no-comments', action='store_true',
+        help='Adds no comments to the output TOML.')
+
+    args = parser.parse_args()
+    dest: Path | None = args.out
+    add_comments: bool = not args.no_comments
+
+    toml: str = Config().to_toml(add_comments=add_comments)
+
+    if not dest:
         print(toml)  # noqa: T201
         return 0
-    fp: Path = Path(sys.argv[1])
-    fp.write_text(toml, 'utf-8')
-    print(f'Default configuration written to: {fp}')  # noqa: T201
+
+    dest.write_text(toml, 'utf-8')
+    print(f'Default configuration written to: {dest}')  # noqa: T201
     return 0
 
 if __name__ == '__main__':

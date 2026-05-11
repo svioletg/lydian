@@ -13,7 +13,10 @@ def tmpdir() -> Path:
 
 def pytest_sessionstart(session: pytest.Session) -> None:  # noqa: ARG001
     create_directories()
-    (TESTS_DIR / 'tmp').mkdir(exist_ok=True)
+    tests_tmp: Path = (TESTS_DIR / 'tmp')
+    if tests_tmp.is_dir():
+        shutil.rmtree(tests_tmp)
+    tests_tmp.mkdir()
 
 def pytest_sessionfinish(session: pytest.Session) -> None:  # noqa: ARG001
     if os.environ.get('PYTEST_KEEP_TMP') != '1':

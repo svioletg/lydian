@@ -5,10 +5,13 @@ import os
 import shlex
 import sys
 import traceback
+from datetime import UTC, datetime
+from typing import cast
 
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
+from humanize import precisedelta
 from loguru import logger
 from prompt_toolkit import PromptSession
 from prompt_toolkit.patch_stdout import patch_stdout
@@ -37,12 +40,15 @@ load_dotenv('.env')
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.voice_states = True
 
 bot = commands.Bot(
     intents=intents,
     command_prefix=config.prefix,
     log_handler=logging.FileHandler(filename=LOGS_DIR / 'discord.log', encoding='utf-8', mode='w'),
 )
+
+debug_context['bot'] = bot
 
 event_start_console = asyncio.Event()
 
@@ -63,7 +69,7 @@ async def on_command_error(ctx: commands.Context, exc: Exception) -> None:
     if isinstance(exc, (commands.errors.CommandNotFound, AbortCommand)):
         return
 
-    if isinstance(exc, commands.CommandInvokeError):
+    if isinstance(exc, commands.errors.CommandInvokeError):
         # Will clutter up the traceback, just use the exception this was raised from
         exc = exc.original
 
@@ -110,6 +116,7 @@ async def thread_bot() -> None:
             return
 
         event_start_console.set()
+        debug_context['bot-start-time'] = datetime.now(UTC)
         await bot.start(token)
 
 # TODO(svioletg): https://github.com/svioletg/lydian-discord-bot/issues/2
@@ -136,24 +143,33 @@ async def thread_console() -> None:  # noqa: C901
 
         if user_input == 'stop':
             logger.info('Stopping...')
+
+            # Make sure the bot doesn't try to download any more items in queue,
+            # .close() will trigger on_player_stop()
+            vc = cast('VoiceCog', bot.cogs['VoiceCog'])
+            vc.queue_advance_lock.state = True
+            vc.queue.clear()
+
             await bot.close()
             logger.info('Bot connection closed')
             return
 
         command, *args = shlex.split(user_input)
 
+        if command == 'uptime':
+            if args:
+                logger.error('Command "uptime" takes no arguments')
+                continue
+            console.print(
+                f'Bot has been running for {precisedelta(datetime.now(UTC) - debug_context['bot-start-time'])}',
+            )
+            continue
+
         if config.debug and (command == 'debug'):
             if not args:
                 logger.error('Expected sub-command after "debug"')
                 continue
             command, *args = args
-
-            if command == 'list':
-                if args:
-                    logger.error('Expected no arguments to console command "list"')
-                    continue
-                console.print(debug_context)
-                continue
 
             if (command in ('read', 'readlog')):
                 print_fn = logger.debug if command == 'readlog' else console.print
@@ -224,5 +240,8 @@ async def async_main() -> int:
     return 0
 
 @logger.catch(onerror=lambda _: sys.exit(1))
-def main() -> int:  # noqa: D103
+def main() -> None:  # noqa: D103
+    if len(sys.argv) > 1:
+        console.print('[err]ERROR: lydian takes 0 arguments[/]')
+        sys.exit(1)
     sys.exit(asyncio.run(async_main()))

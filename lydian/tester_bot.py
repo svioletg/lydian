@@ -22,6 +22,20 @@ testbot = commands.Bot(intents=intents, command_prefix=',')
 async def on_ready() -> None:  # noqa: D103
     logger.info(f'Test bot logged in as {testbot.user}')
 
+TEST_PLAY_LINKS_SINGLE: list[str] = [
+    'https://thecaretaker.bandcamp.com/track/a1-its-just-a-burning-memory',
+    'https://thecaretaker.bandcamp.com/track/a2-we-dont-have-many-days',
+    'https://thecaretaker.bandcamp.com/track/a3-late-afternoon-drifting',
+    'https://thecaretaker.bandcamp.com/track/a4-childishly-fresh-eyes',
+    'https://thecaretaker.bandcamp.com/track/a5-slightly-bewildered',
+]
+
+TEST_PLAY_LINKS_MULTI: list[tuple[str, int]] = [
+    ('https://tobyfox.bandcamp.com/album/undertale-demo-ost', 16),
+    ('https://tobyfox.bandcamp.com/album/deltarune-chapters-3-4-ost', 78),
+    ('https://thecaretaker.bandcamp.com/album/an-empty-bliss-beyond-this-world', 15),
+]
+
 class Commands(commands.Cog):  # noqa: D101
     def __init__(self, bot: discord.client.Bot) -> None:
         self.bot: discord.client.Bot = bot
@@ -42,7 +56,10 @@ async def async_main() -> None:  # noqa: D103
         await testbot.add_cog(Commands(testbot))
 
         debug_context['testbot'] = testbot
-        await testbot.start(os.environ.get('LYDIAN_TESTBOT_TOKEN', ''))
+        # os.environ.get('LYDIAN_TESTBOT_TOKEN', '') would raise an exception about an improper token,
+        # which is correct, but doing this would instead raise a KeyError which makes the root cause
+        # of "you don't have a test bot token set" more apparent
+        await testbot.start(os.environ['LYDIAN_TESTBOT_TOKEN'])
 
 def main() -> None:  # noqa: D103
     setup_logger(stdout_level='DEBUG', logs_dir=LOGS_DIR, log_in_utc=False)

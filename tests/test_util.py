@@ -1,13 +1,15 @@
 from collections.abc import Callable, Iterable
 from dataclasses import Field, dataclass, field
-from datetime import tzinfo
-from typing import Any
+from datetime import UTC, datetime, timedelta, tzinfo
+from pathlib import Path
+from typing import Any, Literal
 
 import pytest
-from maybetype import Nothing, Some
+from maybetype import Nothing, Some, maybe
 
 from lydian import util
 from lydian.errors import AssuranceError
+from lydian.util import BasicLock, Cache
 from tests import ReadOnlyDict
 
 NESTED_DICT_RO: ReadOnlyDict[str, Any] = ReadOnlyDict({'a': 1, 'b': {'a': 2, 'b': {'a': 3}}, 'c': 4})
@@ -29,6 +31,84 @@ def test_assure() -> None:
     with pytest.raises(AssuranceError):
         util.assure(False)  # noqa: FBT003
 
+def test_basic_lock() -> None:
+    lock = BasicLock()
+    assert not lock
+    with lock:
+        assert lock
+    assert not lock
+
+    named_lock = BasicLock('NamedLock')
+    assert str(named_lock) == 'NamedLock(False)'
+
+    inverted_lock = BasicLock(default_state=True)
+    assert inverted_lock
+    with inverted_lock:
+        assert not inverted_lock
+    assert inverted_lock
+
+def test_cached_object_init() -> None:
+    assert util.CachedObject(1).expires is None
+
+    obj_expired = util.CachedObject(1, dt := datetime(2025, 1, 1, tzinfo=UTC))
+    assert obj_expired.expires == dt
+    assert obj_expired.is_expired()
+
+    # Works for now but remember to update test in about 80 years
+    obj_not_expired = util.CachedObject(1, dt := datetime(3000, 1, 1, tzinfo=UTC))
+    assert obj_not_expired.expires == dt
+    assert not obj_not_expired.is_expired()
+
+    assert maybe(util.CachedObject(1, timedelta(days=1)).expires).unwrap().day \
+        == (datetime.now(UTC) + timedelta(days=1)).day
+
+def test_cache() -> None:
+    cache: Cache[int, str] = Cache()
+    assert cache.get(1) is None
+    cache.set(1, 'one')
+    assert cache.get(1) == 'one'
+    cache.set(1, 'one', datetime(2025, 1, 1, tzinfo=UTC))
+    assert cache.get(1) is None
+    cache.set(1, 'one', timedelta(days=1))
+    assert cache.get(1) == 'one'
+    cache.remove(1)
+    assert cache.get(1) is None
+
+    cache = Cache()
+    assert cache.get_or_set(1, lambda: 'one') == 'one'
+    assert cache.get(1) == 'one'
+    cache.remove(1)
+    assert cache.get_or_set(1, lambda: 'one', timedelta(days=1)) == 'one'
+    with pytest.raises(ValueError, match='must be a future date'):
+        cache.get_or_set(1, lambda: 'one', datetime(2025, 1, 1, tzinfo=UTC))
+
+def test_dirsize(tmpdir: Path) -> None:
+    def write_dummy(size: int, dest: Path) -> Path:
+        with open(dest, 'wb') as f:
+            f.write(b'\x00' * size)
+        return dest
+
+    source_dir: Path = tmpdir / 'dirsize'
+    source_dir.mkdir()
+    (source_dir / 'a').mkdir()
+    (source_dir / 'b').mkdir()
+
+    file_size: int = 1000
+    files_per: int = 3
+
+    expected_count: dict[Literal['dir', 'file'], int] = {
+        'dir': 2,
+        'file': 3 * files_per,
+    }
+    expected_size: int = (expected_count['dir'] * 4096) + (expected_count['file'] * file_size)
+
+    for d in '.ab':
+        for f in 'xyz':
+            write_dummy(1000, source_dir / d / f)
+
+    assert util.dirsize(source_dir) == expected_size
+    assert util.dirsize_counted(source_dir) == (expected_size, expected_count)
+
 @pytest.mark.parametrize(('it', 'predicate', 'expected'),
     [
         (range(10), lambda n: n > 5, 6),  # noqa: PLR2004
@@ -37,6 +117,17 @@ def test_assure() -> None:
 )
 def test_first_where[T](it: Iterable[T], predicate: Callable[[T], bool], expected: T | None) -> None:
     assert util.first_where(it, predicate) == expected
+
+@pytest.mark.parametrize(('total_seconds', 'expected'),
+    [
+        (59, '0:59'),
+        (60, '1:00'),
+        (3599, '59:59'),
+        (3600, '1:00:00'),
+    ],
+)
+def test_format_duration(total_seconds: float, expected: str) -> None:
+    assert util.format_duration(total_seconds) == expected
 
 def test_get_dataclass_fields() -> None:
     dc = Dataclass()
@@ -47,9 +138,38 @@ def test_get_dataclass_fields() -> None:
     assert dc_fields['d.x'].default == dc.d.x
     assert dc_fields['d.y'].default_factory() == dc.d.y  # ty:ignore[call-non-callable]
 
+def test_linepos_to_pos() -> None:
+    s: str = 'One\nTwo\nThree\n'
+    for lineno, ln in enumerate(s.splitlines(keepends=True)):
+        for linepos, char in enumerate(ln):
+            assert s[util.linepos_to_pos(s, lineno, linepos)] == char
+
 def test_maybepath() -> None:
     assert util.maybepath('qwertyuiop') is Nothing
     assert isinstance(util.maybepath('pyproject.toml'), Some)
+
+def test_partition() -> None:
+    assert util.partition(lambda n: n % 2 == 0, range(10)) == (
+        [0, 2, 4, 6, 8],
+        [1, 3, 5, 7, 9],
+    )
+
+def test_pos_to_linepos() -> None:
+    s: str = 'One\nTwo\nThree\n'
+    for n, char in enumerate(s):
+        lineno, linepos = util.pos_to_linepos(s, n)
+        assert s[n] == char == s.splitlines(keepends=True)[lineno][linepos]  # noqa: PLR1736
+
+@pytest.mark.parametrize(('word', 'singular', 'plural'),
+    [
+        ('item.s', 'item', 'items'),
+        ('octop.us.i', 'octopus', 'octopi'),
+        ('m.ouse.ice', 'mouse', 'mice'),
+    ],
+)
+def test_plural(word: str, singular: str, plural: str) -> None:
+    assert util.plural(word, 0) == util.plural(word, 2) == plural
+    assert util.plural(word, 1) == singular
 
 @pytest.mark.parametrize(('timestamp', 'format_str', 'tz', 'expected'),
     [
@@ -76,3 +196,8 @@ def test_strftimestamp(
         kwargs['tz'] = tz
 
     assert util.strftimestamp(timestamp, **kwargs) == expected
+
+def test_wrap_paragraphs() -> None:
+    text = 'Lorem ipsum\ndolor sit amet, consectetur adipiscing elit.'
+    expected = 'Lorem ipsum\ndolor sit amet,\nconsectetur\nadipiscing elit.'
+    assert '\n'.join(util.wrap_paragraphs(text, width=20)) == expected

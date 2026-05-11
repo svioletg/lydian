@@ -28,14 +28,14 @@ CONFIG_PATH      : Path = Path.cwd() / 'lydian-config.toml'
 
 :meta hide-value:
 """
-DATA_DIR         : Path = (CONFIG_PATH.parent / 'lydian-data') if CONFIG_PATH.parent.exists() else DEFAULT_DATA_DIR
+DATA_DIR         : Path = (CONFIG_PATH.parent / 'lydian-data') if CONFIG_PATH.exists() else DEFAULT_DATA_DIR
 """Data directory as relative to the user's configuration file if it exists, or :py:data:`DEFAULT_DATA_DIR`."""
 TMP_DIR          : Path = DATA_DIR / 'tmp'
 LOGS_DIR         : Path = DATA_DIR / 'logs'
 DL_DIR           : Path = DATA_DIR / 'dl'
 """Directory for storing media downloaded by youtube-dl."""
 
-LOG_MSG_FORMAT_UTC: str = '<level>[{time:YYYY-MM-DD HH:mm:ss!UTC}] [{module}::{function}/{level}]: {message}</level>'
+LOG_MSG_FORMAT_UTC: str = '<level>[{time:YYYY-MM-DD HH:mm:ssZZ!UTC}] [{name}::{function}/{level}]: {message}</level>'
 LOG_MSG_FORMAT: str = LOG_MSG_FORMAT_UTC.replace('!UTC', '')
 LOG_FILE_FORMAT: str = '{time:YYYY-MM-DDTHHmmssZZ}.log'
 LOG_FILE_PATTERN: re.Pattern[str] = re.compile(
@@ -49,7 +49,13 @@ COLOR_OK: int = 0x00ff00
 COLOR_WARN: int = 0xffcc00
 COLOR_ERROR: int = 0xff0000
 
+# Compiled regex
+COLOR_ESCAPE_REGEX: re.Pattern[str] = re.compile(r'\x1b\[.*?m')
 YTDL_DOWNLOAD_PROGRESS_REGEX: re.Pattern[str] = re.compile(r'\[download\].+ETA')
+
+# Other values
+DEFAULT_DISCORD_PROMPT_TIMEOUT: float = 60.0
+QUEUE_MAX_PER_PAGE: int = 20
 
 class ConsoleHighlighter(Highlighter):
     """Custom highlighter class for the ``rich`` console."""
@@ -62,16 +68,20 @@ class EmojiStr(StrEnum):
     """Strings for emoji commonly used by the bot."""
 
     # General
-    INFO = emojize(':information:', language='alias')
-    OK = emojize(':white_check_mark:', language='alias')
-    WARN = emojize(':warning:', language='alias')
-    ERROR = emojize(':x:', language='alias')
+    INFO    = emojize(':information:', language='alias')
+    OK      = emojize(':white_check_mark:', language='alias')
+    WARN    = emojize(':warning:', language='alias')
+    ERROR   = emojize(':x:', language='alias')
+    CONFIRM = emojize(':heavy_check_mark:', language='alias')
+    CANCEL  = emojize(':heavy_multiplication_x:', language='alias')
 
     # Media
-    PLAY = emojize(':arrow_forward:', language='alias')
+    PLAY  = emojize(':arrow_forward:', language='alias')
     PAUSE = emojize(':pause_button:', language='alias')
-    STOP = emojize(':stop_button:', language='alias')
-    SKIP = emojize(':fast_forward:', language='alias')
+    STOP  = emojize(':stop_button:', language='alias')
+    SKIP  = emojize(':fast_forward:', language='alias')
+    IN    = emojize(':inbox_tray:', language='alias')
+    OUT   = emojize(':outbox_tray:', language='alias')
 
 class LogLevel(StrEnum):  # noqa: D101
     TRACE = 'TRACE'
@@ -116,7 +126,7 @@ def _stdout_log_filter(record: loguru.Record) -> bool:
 def setup_logger(
         stdout_level: str = 'INFO',
         file_level: str = 'DEBUG',
-        logs_dir: Path = DEFAULT_LOGS_DIR,
+        logs_dir: str | Path | None = DEFAULT_LOGS_DIR,
         *,
         log_in_utc: bool = False,
     ) -> 'loguru.Logger':  # noqa: UP037
@@ -126,7 +136,7 @@ def setup_logger(
 
     :param stdout_level: Minimum level to use for the stdout handler.
     :param file_level: Minimum level to use for the file handler.
-    :param logs_dir: Directory to save log files to.
+    :param logs_dir: Directory to save log files to. ``None`` will disable file logging.
     """
     logger.remove()
 
@@ -137,7 +147,11 @@ def setup_logger(
     logger.level('ERROR', color='<light-red>')
 
     # For echoing console input to log files
-    logger.level('CONSOLE', no=50, color='<normal>')
+    try:
+        # Check if it exists, an error is raised if the no is set in that case
+        _ = logger.level('CONSOLE')
+    except ValueError:
+        logger.level('CONSOLE', no=50, color='<normal>')
 
     msg_format: str = LOG_MSG_FORMAT_UTC if log_in_utc else LOG_MSG_FORMAT
 
@@ -149,15 +163,16 @@ def setup_logger(
         colorize=True,
         diagnose=False,
     )
-    logger.add(
-        logs_dir / LOG_FILE_FORMAT,
-        level=file_level,
-        format=msg_format,
-        diagnose=False,
-        retention=10,
-        delay=True,
-        mode='w',
-    )
+    if logs_dir:
+        logger.add(
+            Path(logs_dir, LOG_FILE_FORMAT),
+            level=file_level,
+            format=msg_format,
+            diagnose=False,
+            retention=10,
+            delay=True,
+            mode='w',
+        )
 
     return logger
 

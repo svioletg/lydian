@@ -19,8 +19,11 @@ Documentation: <https://lydian-discord-bot.readthedocs.io/en/latest/>
 - [Usage: Bot console commands](#usage-bot-console-commands)
   - [`debug read`, `debug readlog`](#debug-read-debug-readlog)
   - [`stop`](#stop)
+  - [`uptime`](#uptime)
 - [Usage: CLI commands](#usage-cli-commands)
+  - [`clear-dl`](#clear-dl)
   - [`logs latest`](#logs-latest)
+- [URL and extractor filtering](#url-and-extractor-filtering)
 - [Debug Mode](#debug-mode)
 
 ## Setup: Lydian
@@ -46,8 +49,16 @@ pip install -U git+https://github.com/svioletg/lydian-discord-bot.git
 Follow the instructions here: <https://discordpy.readthedocs.io/en/stable/discord.html>
 
 You must provide your bot's token via the `LYDIAN_TOKEN` environment variable. The recommended way
-to do this is by creating a file called exactly `.env` in the directory you'll run the bot from, and
+to do this is by creating a text file called `.env` in the directory you'll run the bot from, and
 write in `LYDIAN_TOKEN=<token>` where `<token>` should be replaced with your real bot token.
+
+> [!NOTE]
+> Make sure that the file is named *exactly* `.env`, and not `.env.txt` or anything else. If you're
+> using Windows or macOS, file extensions may be hidden in your file browser by default.
+> - [Showing file extensions on
+>   Windows](https://support.microsoft.com/en-us/windows/common-file-name-extensions-in-windows-da4a4430-8e76-89c5-59f7-1cdbbc75cb01)
+> - [Showing file extensions on
+>   macOS](https://support.apple.com/guide/mac-help/show-or-hide-filename-extensions-on-mac-mchlp2304/mac)
 
 ## Usage: Running the bot
 
@@ -55,8 +66,8 @@ Use the `lydian` command to start running the bot. Lydian will check for a file 
 `lydian-config.toml` in your current working directory (the directory you ran the command from), and
 will exit with an error if one is not present. If it does see this file, it will begin to use that
 directory for storing data related to the bot like logs and downloaded media. You should make a
-folder somewhere on your PC, for example named `lydian`, make a new file called `lydian-config.toml`
-(ensure the file extension really *is* `.toml`), then run `lydian` in that folder.
+folder somewhere on your PC, for example named `lydian`, make a new file called
+`lydian-config.toml`, then run `lydian` in that folder.
 
 The bot can be stopped either by using the `stop` command, or hitting Ctrl+C while focused on the
 window.
@@ -100,16 +111,60 @@ Attempts to shut the bot down cleanly.
 
 Arguments: N/A
 
+### `uptime`
+
+Prints out how long the bot has been running for.
+
+Arguments: N/A
+
 ## Usage: CLI commands
 
-Lydian provides some utilities under the `lydian-manage` command. Run `lydian-manage --help` to view
-them.
+Lydian provides some utilities under the `lydian-cli` or `lydian-manage` commands. Either can be
+used, they will behave exactly the same.
+
+### `clear-dl`
+
+Prints the total size being taken up by the downloaded media directory and asks if the user would
+like to delete its contents.
+
+Arguments: N/A
 
 ### `logs latest`
 
 Prints the filepath to the most recently created log file.
 
 Arguments: N/A
+
+## URL and extractor filtering
+
+The bot uses regular expressions (commonly "regex") for the user-configured input URL and yt-dlp
+extractor filters. If you're unfamiliar, you can view a quick reference for regex syntax here:
+<https://www.rexegg.com/regex-quickstart.php>
+
+> List of yt-dlp extractors: <https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md>
+
+Add `-` to the beginning of the pattern to make it a blacklisted expression.
+The URL will be matched against the expression from the beginning of the string, so you don't need
+account for anything after it (i.e. no need for ending every expression in `.*` or starting it with
+`^`), but you *will* need to add `.*` to the end of your extractor filters to match anything
+following that expression.
+
+> [!NOTE]
+> When entering these regular expressions into your config TOML, make sure to use **single quotes**
+> to ensure it is treated as a "literal" string.
+>
+> Dots (`.`) are special character in regex, so make sure to escape any literal dots with a
+> backslash.
+
+Examples:
+
+|Regex|Description|
+|-----|-----------|
+|`https://.+\.youtube\.com/`|Matches any YouTube link|
+|`https://music\.youtube\.com/`|Matches only YouTube Music links|
+|`https://youtu\.be/`|Matches shortened "youtu.be" share links|
+|`https://.+\.bandcamp\.com/`|Matches any Bandcamp link|
+|`https://kinggizzard\.bandcamp\.com/`|Matches only one artist's Bandcamp page|
 
 ## Debug Mode
 
