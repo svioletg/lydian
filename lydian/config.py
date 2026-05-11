@@ -50,6 +50,7 @@ tm.register_encoder(_toml_encoder)  # ty:ignore[invalid-argument-type]
 
 def _default_command_aliases() -> dict[str, list[str]]:
     return {
+        'help': ['h'],
         'join': ['j'],
         'leave': ['l'],
     }
