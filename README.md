@@ -152,6 +152,9 @@ following that expression.
 > [!NOTE]
 > When entering these regular expressions into your config TOML, make sure to use **single quotes**
 > to ensure it is treated as a "literal" string.
+>
+> Dots (`.`) are special character in regex, so make sure to escape any literal dots with a
+> backslash.
 
 Examples:
 
