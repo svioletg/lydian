@@ -2,7 +2,6 @@
 import os
 import re
 import sys
-import textwrap
 import warnings
 from argparse import ArgumentParser
 from collections import OrderedDict
@@ -22,7 +21,7 @@ from tomlkit.items import Item as TOMLItem
 from tomlkit.toml_document import TOMLDocument
 
 from lydian.const import CONFIG_PATH, LogLevel
-from lydian.util import DataclassUpdateMixin, get_dataclass_fields, partition
+from lydian.util import DataclassUpdateMixin, get_dataclass_fields, partition, wrap_paragraphs
 
 TOML_KEY_REGEX: re.Pattern[str] = re.compile(r'^\[?([\w.-]+)\]?', flags=re.MULTILINE)
 TOML_TABLE_KEY_REGEX: re.Pattern[str] = re.compile(r'\[([\w.-]+)\]', flags=re.MULTILINE)
@@ -285,20 +284,22 @@ def add_comments_to_toml(toml: str, comment_map: dict[str, dict[str, str]], comm
         if comment_inline := comment_map[key].get('inline'):
             toml_lines[lineno + line_offset] = toml_lines[lineno + line_offset] + f' # {comment_inline}'
         if comment_pre := comment_map[key].get('pre'):
-            comment: list[str] = textwrap.wrap(
+            comment: list[str] = wrap_paragraphs(
                 comment_pre,
                 width=comment_width,
                 initial_indent='# ',
                 subsequent_indent='#    ',
+                indent_mode='single',
             )
             toml_lines = toml_lines[:lineno + line_offset] + comment + toml_lines[lineno + line_offset:]
             line_offset += len(comment)
         if comment_post := comment_map[key].get('post'):
-            comment: list[str] = textwrap.wrap(
+            comment: list[str] = wrap_paragraphs(
                 comment_post,
                 width=comment_width,
                 initial_indent='# ',
                 subsequent_indent='#    ',
+                indent_mode='single',
             )
             toml_lines = toml_lines[:1 + lineno + line_offset] + comment + toml_lines[1 + lineno + line_offset:]
             line_offset += len(comment)

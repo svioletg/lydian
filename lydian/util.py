@@ -3,6 +3,7 @@
 This module should not import any other modules from the package other than ``errors``, to ensure its contents can be
 used by any module.
 """
+import textwrap
 from collections.abc import Callable, Iterable
 from dataclasses import Field, fields, is_dataclass
 from datetime import UTC, datetime, timedelta, tzinfo
@@ -422,3 +423,26 @@ def strftimestamp(
     """Format a Unix timestamp to the given format string, converting its timezone to ``tz`` if given a value."""
     tz: tzinfo = ZoneInfo(tz) if isinstance(tz, str) else tz
     return datetime.fromtimestamp(timestamp, tz=UTC).astimezone(tz).strftime(format_str)
+
+def wrap_paragraphs(
+        text: str,
+        width: int,
+        *,
+        initial_indent: str = '',
+        subsequent_indent: str = '',
+        indent_mode: Literal['multi', 'single'] = 'multi',
+    ) -> list[str]:
+    """Returns lines of ``text`` wrapped to fit ``width`` length each, preserving original newlines.
+
+    :param indent_mode: Whether to apply ``initial_indent`` and ``subsequent_indent`` to each paragraph individually
+        (``'multi'``) or apply ``subsequent_indent`` to every following line regardless of line breaks (``'single'``).
+    """
+    wrapped_paras: list[list[str]] = []
+    for n, paragraph in enumerate(text.splitlines()):
+        wrapped_paras.append(textwrap.wrap(
+            paragraph,
+            width=width,
+            initial_indent=(subsequent_indent if n > 0 and indent_mode == 'single' else initial_indent),
+            subsequent_indent=subsequent_indent,
+        ))
+    return [ln for lines in wrapped_paras for ln in lines]

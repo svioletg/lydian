@@ -196,3 +196,8 @@ def test_strftimestamp(
         kwargs['tz'] = tz
 
     assert util.strftimestamp(timestamp, **kwargs) == expected
+
+def test_wrap_paragraphs() -> None:
+    text = 'Lorem ipsum\ndolor sit amet, consectetur adipiscing elit.'
+    expected = 'Lorem ipsum\ndolor sit amet,\nconsectetur\nadipiscing elit.'
+    assert '\n'.join(util.wrap_paragraphs(text, width=20)) == expected

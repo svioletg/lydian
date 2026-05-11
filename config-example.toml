@@ -30,6 +30,7 @@ inactivity-timeout = 120
 lonely-timeout = 120
 
 [command-aliases]
+help = ["h"]
 join = ["j"]
 leave = ["l"]
 
@@ -37,7 +38,8 @@ leave = ["l"]
 # allowed_extractors: A list of regular expressions which determine what yt-dlp
 #    extractors to allow. "default" will include almost every extractor yt-dlp
 #    has available. Prefix an expression with a hyphen (-) to blacklist it
-#    instead. Extractor names: https://github.com/yt-dlp/yt-
+#    instead.
+#    Extractor names: https://github.com/yt-dlp/yt-
 #    dlp/blob/master/supportedsites.md
 allowed_extractors = ['default']
 # allowed_urls: A list of regular expressions which determine what URLs to

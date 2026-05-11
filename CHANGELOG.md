@@ -10,6 +10,10 @@ configured prefix accordingly.
 
 ## [Unreleased]
 
+### Added
+
+- Added function `util.wrap_paragraphs()`
+
 ### Changed
 
 - Renamed `cogs.voice.VoiceCog.since_alone` to `time_alone`
