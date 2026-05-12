@@ -505,7 +505,7 @@ class VoiceCog(commands.Cog):
             if 'No suitable extractor found for URL' in msg:
                 return Err(embed_info("No suitable extractor found for this URL with the bot's current configuration."))
             else:
-                return Err(embed_error('Failed to get URL information', f'{msg}'))
+                return Err(embed_error('Failed to get URL information', f'From yt-dlp: {msg}'))
 
         # Reject if the items won't fit in the queue
         if config.max_queue_length and (len(self.queue) + len(items) > config.max_queue_length):
