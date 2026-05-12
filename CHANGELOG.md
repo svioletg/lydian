@@ -23,6 +23,7 @@ configured prefix accordingly.
   continuously checked and run in order, so two `-play` requests aren't handled at the same time
   (#6)
 - Renamed `cogs.voice.VoiceCog.tick_timers()` to `task_tick_timers()`
+- `-clear` now removes the stopped track as well
 
 ## [0.4.1] - 2026-05-12
 

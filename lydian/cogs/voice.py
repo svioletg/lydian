@@ -779,6 +779,7 @@ class VoiceCog(commands.Cog):
     async def clear_queue(self, ctx: commands.Context) -> None:
         """Clears the queue."""
         self.queue.clear()
+        self.stopped_track = None
         await ctx.send(embed=embed_ok('Cleared the queue.'))
 
     #endregion COMMANDS
