@@ -21,6 +21,7 @@ from lydian.cogs.debug import DebugCog
 from lydian.cogs.general import GeneralCog
 from lydian.cogs.util import embed_error
 from lydian.cogs.voice import VoiceCog
+from lydian.cogs.voice import background_tasks as voice_background_tasks
 from lydian.config import config
 from lydian.const import (
     CONFIG_PATH,
@@ -216,6 +217,10 @@ async def async_main() -> int:
         (asyncio.create_task(thread_bot()), asyncio.create_task(thread_console())),
         return_when=asyncio.FIRST_COMPLETED,
     )
+
+    for task in voice_background_tasks:
+        if (internal := task.get_task()) and internal.done():
+            _ = internal.exception()
 
     for task in pending:
         task.cancel()

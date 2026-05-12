@@ -28,6 +28,7 @@ from lydian.const import (
 from lydian.errors import AbortCommand, FileSizeLimitError, MediaQueueLimitError
 from lydian.util import BasicLock, Cache, expect, format_duration
 
+background_tasks: list[tasks.Loop] = []
 
 class YTDLLogHandler:
     """Basic class implementing ``debug``, ``info``, and ``warning`` methods to handle YoutubeDL logging.
@@ -359,8 +360,12 @@ class VoiceCog(commands.Cog):
         """Tuples of context objects and URLs that are waiting to be processed by :py:meth:`play`."""
 
         # Start tasks
-        self.tick_timers.start()
-        self.handle_play_requests.start()
+        self.task_tick_timers.start()
+        self.task_handle_play_requests.start()
+
+        background_tasks.extend(attr for name in dir(self) if isinstance(attr := getattr(self, name), tasks.Loop))
+
+    #region LISTENERS
 
     @commands.Cog.listener()
     async def on_voice_state_update(self,
@@ -379,8 +384,12 @@ class VoiceCog(commands.Cog):
         voice = _assert_voice_client(self.bot.voice_clients[0])
         self.alone = len(voice.channel.members) == 1
 
+    #endregion LISTENERS
+
+    #region TASKS
+
     @tasks.loop(seconds=1)
-    async def tick_timers(self) -> None:
+    async def task_tick_timers(self) -> None:
         """Handles increasing or resetting counters."""
         self.time_inactive += 1 if self.inactive else (-self.time_inactive)
         self.time_alone += 1 if self.alone else (-self.time_alone)
@@ -395,6 +404,131 @@ class VoiceCog(commands.Cog):
             elif (config.lonely_timeout > -1) and self.time_alone >= config.lonely_timeout:
                 logger.info(f'Bot has been alone for {self.time_alone} seconds; disconnecting')
                 await voice.disconnect()
+
+    @tasks.loop(seconds=5)
+    async def task_handle_play_requests(self) -> None:  # noqa: C901
+        """Continuously checks for any queued calls to ``-play`` and handles them one at a time, in order."""
+        if not self.bot.user:
+            return
+        first_loop: bool = True
+        while True:
+            if not first_loop:
+                self._play_calls.task_done()
+            ctx, url = await self._play_calls.get()
+            first_loop = False
+            if (remaining := self._play_calls.qsize()):
+                logger.debug(f'{remaining} more queued call(s) after this')
+
+            if len(self.queue) == self.queue.maxlen:
+                await ctx.send(embed=embed_info('Queue is full.',
+                    f'Limit is currently set to {config.max_queue_length} entries.'))
+                continue
+
+            # Filter URL
+            if not config.filter_media_url(url):
+                await ctx.send(embed=embed_info("This URL is not allowed by the bot's configuration."))
+                continue
+
+            logger.info(f'Extracting info from URL: {url}')
+            progress_msg: discord.Message = await ctx.send(embed=embed_info('Getting media info...', url))
+
+            result = await self._try_to_queue(ctx, url)
+            if not result:
+                await progress_msg.edit(embed=result.unwrap_err())
+                continue
+
+            items: tuple[MediaItem, ...] = result.unwrap()
+
+            self.queue.extend(items)
+
+            logger.info(f'Added {len(items)} item(s) to the media queue')
+            for i in items:
+                logger.debug(f'Added to media queue: {i}')
+
+            # Start running the queue if nothing is playing
+            just_started: bool = False
+            if not self.now_playing:
+                just_started = True
+                exc = await self.advance_queue(ctx)
+                if exc:
+                    await progress_msg.delete()
+                    continue
+
+            if (len(items) == 1) and not just_started:
+                item = items[0]
+                await progress_msg.edit(
+                    embed=embed_ok(f'{EmojiStr.IN} Queued at position #{len(self.queue)}: {item.title}', item.url),
+                )
+            else:
+                if just_started:
+                    items = items[1:]
+                if not items:
+                    await progress_msg.delete()
+                    continue
+                end_pos: int = len(self.queue)
+                start_pos: int = end_pos - len(items)
+                await progress_msg.edit(
+                    embed=embed_ok(
+                        f'{EmojiStr.IN} Queued {len(items)} items from position #{start_pos + 1} to #{end_pos}',
+                    ),
+                )
+
+    @task_tick_timers.error
+    @task_handle_play_requests.error
+    async def on_task_exception(self, exc: BaseException) -> Any:  # noqa: ANN401 ; error decorator expects Any return type
+        """Handles unhandled exceptions raised in background tasks."""
+        logger.opt(exception=exc).error('Unhandled exception in background task')
+
+    #endregion TASKS
+
+    async def _resume_or_start(self, ctx: commands.Context, voice: discord.VoiceClient) -> None:
+        if voice.is_paused():
+            logger.info('Resuming paused player')
+            voice.resume()
+            return
+        if (not voice.is_playing()) and self.stopped_track:
+            # Start running the queue again if stopped
+            await self.advance_queue(ctx, play_now=self.stopped_track)
+            self.stopped_track = None
+            return
+        await ctx.send(embed=embed_info('The player is not paused.', 'Use `-play <URL>` to queue something up.'))
+
+    async def _try_to_queue(self, ctx: commands.Context, url: str) -> Result[tuple[MediaItem, ...], discord.Embed]:
+        author = _assert_discord_member(ctx.author)
+
+        try:
+            items: tuple[MediaItem, ...] = await asyncio.get_event_loop().run_in_executor(None,
+                lambda: MediaItem.from_url(url, user=author))
+        except DownloadError as e:
+            msg: str = COLOR_ESCAPE_REGEX.sub('', e.msg or '')
+            logger.error(f'URL info extraction failed: {msg}')
+            if 'No suitable extractor found for URL' in msg:
+                return Err(embed_info("No suitable extractor found for this URL with the bot's current configuration."))
+            else:
+                return Err(embed_error('Failed to get URL information', f'{msg}'))
+
+        # Reject if the items won't fit in the queue
+        if config.max_queue_length and (len(self.queue) + len(items) > config.max_queue_length):
+            return Err(embed_info('Playlist is too long to fit in the queue.', f'Limit: {config.max_queue_length}'))
+
+        # If the playlist limit is exceeded, ask to add the max amount
+        if config.max_playlist_length and (len(items) > config.max_playlist_length):
+            can_add: bool | None = await confirm(ctx,
+                embed_info(
+                    f'Playlist is too long (limit of {config.max_playlist_length}).'
+                    + f'\nAdd the first {config.max_playlist_length} items instead?',
+                ),
+                prompt_timeout=120.0,
+            )
+            match can_add:
+                case True:
+                    items = items[:config.max_playlist_length]
+                case False:
+                    return Err(embed_info('Cancelling.'))
+                case _:
+                    return Err(embed_info('Confirmation timed out; cancelling.'))
+
+        return Ok(items)
 
     async def advance_queue(self, ctx: commands.Context, *, play_now: MediaItem | None = None) -> Exception | None:
         """Plays the next item in the queue, returning any exception caught and handled in the process.
@@ -505,123 +639,6 @@ class VoiceCog(commands.Cog):
             await ctx.send(embed=self.now_playing.embed(f'{EmojiStr.PLAY} Playing: '))
         else:
             await ctx.send(embed=embed_info('Nothing is playing.'))
-
-    async def _resume_or_start(self, ctx: commands.Context, voice: discord.VoiceClient) -> None:
-        if voice.is_paused():
-            logger.info('Resuming paused player')
-            voice.resume()
-            return
-        if (not voice.is_playing()) and self.stopped_track:
-            # Start running the queue again if stopped
-            await self.advance_queue(ctx, play_now=self.stopped_track)
-            self.stopped_track = None
-            return
-        await ctx.send(embed=embed_info('The player is not paused.', 'Use `-play <URL>` to queue something up.'))
-
-    async def _try_to_queue(self, ctx: commands.Context, url: str) -> Result[tuple[MediaItem, ...], discord.Embed]:
-        author = _assert_discord_member(ctx.author)
-
-        try:
-            items: tuple[MediaItem, ...] = await asyncio.get_event_loop().run_in_executor(None,
-                lambda: MediaItem.from_url(url, user=author))
-        except DownloadError as e:
-            msg: str = COLOR_ESCAPE_REGEX.sub('', e.msg or '')
-            logger.error(f'URL info extraction failed: {msg}')
-            if 'No suitable extractor found for URL' in msg:
-                return Err(embed_info("No suitable extractor found for this URL with the bot's current configuration."))
-            else:
-                return Err(embed_error('Failed to get URL information', f'{msg}'))
-
-        # Reject if the items won't fit in the queue
-        if config.max_queue_length and (len(self.queue) + len(items) > config.max_queue_length):
-            return Err(embed_info('Playlist is too long to fit in the queue.', f'Limit: {config.max_queue_length}'))
-
-        # If the playlist limit is exceeded, ask to add the max amount
-        if config.max_playlist_length and (len(items) > config.max_playlist_length):
-            can_add: bool | None = await confirm(ctx,
-                embed_info(
-                    f'Playlist is too long (limit of {config.max_playlist_length}).'
-                    + f'\nAdd the first {config.max_playlist_length} items instead?',
-                ),
-                prompt_timeout=120.0,
-            )
-            match can_add:
-                case True:
-                    items = items[:config.max_playlist_length]
-                case False:
-                    return Err(embed_info('Cancelling.'))
-                case _:
-                    return Err(embed_info('Confirmation timed out; cancelling.'))
-
-        return Ok(items)
-
-    @tasks.loop(seconds=5)
-    async def handle_play_requests(self) -> None:  # noqa: C901
-        """Continuously checks for any queued calls to ``-play`` and handles them one at a time, in order."""
-        if not self.bot.user:
-            return
-        first_loop: bool = True
-        while True:
-            if not first_loop:
-                self._play_calls.task_done()
-            ctx, url = await self._play_calls.get()
-            first_loop = False
-            if (remaining := self._play_calls.qsize()):
-                logger.debug(f'{remaining} more queued call(s) after this')
-
-            if len(self.queue) == self.queue.maxlen:
-                await ctx.send(embed=embed_info('Queue is full.',
-                    f'Limit is currently set to {config.max_queue_length} entries.'))
-                continue
-
-            # Filter URL
-            if not config.filter_media_url(url):
-                await ctx.send(embed=embed_info("This URL is not allowed by the bot's configuration."))
-                continue
-
-            logger.info(f'Extracting info from URL: {url}')
-            progress_msg: discord.Message = await ctx.send(embed=embed_info('Getting media info...', url))
-
-            result = await self._try_to_queue(ctx, url)
-            if not result:
-                await progress_msg.edit(embed=result.unwrap_err())
-                continue
-
-            items: tuple[MediaItem, ...] = result.unwrap()
-
-            self.queue.extend(items)
-
-            logger.info(f'Added {len(items)} item(s) to the media queue')
-            for i in items:
-                logger.debug(f'Added to media queue: {i}')
-
-            # Start running the queue if nothing is playing
-            just_started: bool = False
-            if not self.now_playing:
-                just_started = True
-                exc = await self.advance_queue(ctx)
-                if exc:
-                    await progress_msg.delete()
-                    continue
-
-            if (len(items) == 1) and not just_started:
-                item = items[0]
-                await progress_msg.edit(
-                    embed=embed_ok(f'{EmojiStr.IN} Queued at position #{len(self.queue)}: {item.title}', item.url),
-                )
-            else:
-                if just_started:
-                    items = items[1:]
-                if not items:
-                    await progress_msg.delete()
-                    continue
-                end_pos: int = len(self.queue)
-                start_pos: int = end_pos - len(items)
-                await progress_msg.edit(
-                    embed=embed_ok(
-                        f'{EmojiStr.IN} Queued {len(items)} items from position #{start_pos + 1} to #{end_pos}',
-                    ),
-                )
 
     @alias_from_config
     @commands.command(aliases=[])

@@ -13,7 +13,7 @@ configured prefix accordingly.
 ### Added
 
 - Added function `util.wrap_paragraphs()`
-- Added method `cogs.voice.VoiceCog.handle_play_requests()`
+- Added method `cogs.voice.VoiceCog.task_handle_play_requests()`
 
 ### Changed
 
@@ -21,6 +21,8 @@ configured prefix accordingly.
   representation
 - Calls to `-play` now have their context object and URL string put into a queue which is
   continuously checked and run in order, so two `-play` requests aren't handled at the same time
+  (#6)
+- Renamed `cogs.voice.VoiceCog.tick_timers()` to `task_tick_timers()`
 
 ## [0.4.1] - 2026-05-12
 
