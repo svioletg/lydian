@@ -8,11 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
 configured prefix accordingly.
 
-## [0.4.1] - 2026-05-12
-
-### Added
-
-- Added package dependency `urllib3>=2.7.0,<3.0` to address CVE-2026-44431 and CVE-2026-44432
+## [Unreleased]
 
 ### Added
 
@@ -21,12 +17,21 @@ configured prefix accordingly.
 
 ### Changed
 
-- Renamed `cogs.voice.VoiceCog.since_alone` to `time_alone`
-- Renamed `cogs.voice.VoiceCog.since_inactive` to `time_inactive`
 - Output of console command `debug read` now shows `repr()` of the value instead of its `str()`
   representation
 - Calls to `-play` now have their context object and URL string put into a queue which is
   continuously checked and run in order, so two `-play` requests aren't handled at the same time
+
+## [0.4.1] - 2026-05-12
+
+### Added
+
+- Added package dependency `urllib3>=2.7.0,<3.0` to address CVE-2026-44431 and CVE-2026-44432
+
+### Changed
+
+- Renamed `cogs.voice.VoiceCog.since_alone` to `time_alone`
+- Renamed `cogs.voice.VoiceCog.since_inactive` to `time_inactive`
 
 ### Fixed
 
