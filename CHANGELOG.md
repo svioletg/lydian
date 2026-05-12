@@ -10,6 +10,10 @@ configured prefix accordingly.
 
 ## [Unreleased]
 
+### Added
+
+- Added package dependency `urllib3>=2.7.0,<3.0` to address CVE-2026-44431 and CVE-2026-44432
+
 ### Changed
 
 - Renamed `cogs.voice.VoiceCog.since_alone` to `time_alone`
