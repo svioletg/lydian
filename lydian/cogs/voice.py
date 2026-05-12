@@ -324,6 +324,8 @@ class VoiceCog(commands.Cog):
 
     def __init__(self, bot: discord.client.Bot) -> None:
         self.bot: discord.client.Bot = bot
+
+        # Media
         self.queue = MediaQueue(maxlen=config.max_queue_length)
         self.queue_advance_lock = BasicLock('QueueAdvanceLock')
         """Whether the queue is allowed to be advanced right now. Used as a lock for :py:meth:`advance_queue`."""
@@ -351,10 +353,14 @@ class VoiceCog(commands.Cog):
         self.time_alone: int = 0
         """An amount in seconds that the bot has been the only user in its voice channel."""
 
+        # Internal
         self._manual_stop: bool = False
+        self._play_calls: asyncio.Queue[tuple[commands.Context, str]] = asyncio.Queue()
+        """Tuples of context objects and URLs that are waiting to be processed by :py:meth:`play`."""
 
         # Start tasks
         self.tick_timers.start()
+        self.handle_play_requests.start()
 
     @commands.Cog.listener()
     async def on_voice_state_update(self,
@@ -549,9 +555,77 @@ class VoiceCog(commands.Cog):
 
         return Ok(items)
 
+    @tasks.loop(seconds=5)
+    async def handle_play_requests(self) -> None:  # noqa: C901
+        """Continuously checks for any queued calls to ``-play`` and handles them one at a time, in order."""
+        if not self.bot.user:
+            return
+        first_loop: bool = True
+        while True:
+            if not first_loop:
+                self._play_calls.task_done()
+            ctx, url = await self._play_calls.get()
+            first_loop = False
+            if (remaining := self._play_calls.qsize()):
+                logger.debug(f'{remaining} more queued call(s) after this')
+
+            if len(self.queue) == self.queue.maxlen:
+                await ctx.send(embed=embed_info('Queue is full.',
+                    f'Limit is currently set to {config.max_queue_length} entries.'))
+                continue
+
+            # Filter URL
+            if not config.filter_media_url(url):
+                await ctx.send(embed=embed_info("This URL is not allowed by the bot's configuration."))
+                continue
+
+            logger.info(f'Extracting info from URL: {url}')
+            progress_msg: discord.Message = await ctx.send(embed=embed_info('Getting media info...', url))
+
+            result = await self._try_to_queue(ctx, url)
+            if not result:
+                await progress_msg.edit(embed=result.unwrap_err())
+                continue
+
+            items: tuple[MediaItem, ...] = result.unwrap()
+
+            self.queue.extend(items)
+
+            logger.info(f'Added {len(items)} item(s) to the media queue')
+            for i in items:
+                logger.debug(f'Added to media queue: {i}')
+
+            # Start running the queue if nothing is playing
+            just_started: bool = False
+            if not self.now_playing:
+                just_started = True
+                exc = await self.advance_queue(ctx)
+                if exc:
+                    await progress_msg.delete()
+                    continue
+
+            if (len(items) == 1) and not just_started:
+                item = items[0]
+                await progress_msg.edit(
+                    embed=embed_ok(f'{EmojiStr.IN} Queued at position #{len(self.queue)}: {item.title}', item.url),
+                )
+            else:
+                if just_started:
+                    items = items[1:]
+                if not items:
+                    await progress_msg.delete()
+                    continue
+                end_pos: int = len(self.queue)
+                start_pos: int = end_pos - len(items)
+                await progress_msg.edit(
+                    embed=embed_ok(
+                        f'{EmojiStr.IN} Queued {len(items)} items from position #{start_pos + 1} to #{end_pos}',
+                    ),
+                )
+
     @alias_from_config
     @commands.command(aliases=[])
-    async def play(self, ctx: commands.Context, url: str | None = None) -> None:  # noqa: C901
+    async def play(self, ctx: commands.Context, url: str | None = None) -> None:
         """Plays media, adds media to the queue, or resumes the player if paused.
 
         If the player is paused, the command can be used without any arguments to resume it.
@@ -563,59 +637,7 @@ class VoiceCog(commands.Cog):
             await self._resume_or_start(ctx, voice)
             return
 
-        if len(self.queue) == self.queue.maxlen:
-            await ctx.send(embed=embed_info('Queue is full.',
-                f'Limit is currently set to {config.max_queue_length} entries.'))
-            return
-
-        # Filter URL
-        if not config.filter_media_url(url):
-            await ctx.send(embed=embed_info("This URL is not allowed by the bot's configuration."))
-            return
-
-        logger.info(f'Extracting info from URL: {url}')
-        progress_msg: discord.Message = await ctx.send(embed=embed_info('Getting media info...', url))
-
-        result = await self._try_to_queue(ctx, url)
-        if not result:
-            await progress_msg.edit(embed=result.unwrap_err())
-            return
-
-        items: tuple[MediaItem, ...] = result.unwrap()
-
-        self.queue.extend(items)
-
-        logger.info(f'Added {len(items)} item(s) to the media queue')
-        for i in items:
-            logger.debug(f'Added to media queue: {i}')
-
-        # Start running the queue if nothing is playing
-        just_started: bool = False
-        if not self.now_playing:
-            just_started = True
-            exc = await self.advance_queue(ctx)
-            if exc:
-                await progress_msg.delete()
-                return
-
-        if (len(items) == 1) and not just_started:
-            item = items[0]
-            await progress_msg.edit(
-                embed=embed_ok(f'{EmojiStr.IN} Queued at position #{len(self.queue)}: {item.title}', item.url),
-            )
-        else:
-            if just_started:
-                items = items[1:]
-            if not items:
-                await progress_msg.delete()
-                return
-            end_pos: int = len(self.queue)
-            start_pos: int = end_pos - len(items)
-            await progress_msg.edit(
-                embed=embed_ok(
-                    f'{EmojiStr.IN} Queued {len(items)} items from position #{start_pos + 1} to #{end_pos}',
-                ),
-            )
+        await self._play_calls.put((ctx, url))
 
     @alias_from_config
     @commands.command(aliases=[])

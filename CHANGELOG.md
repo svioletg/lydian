@@ -13,6 +13,7 @@ configured prefix accordingly.
 ### Added
 
 - Added function `util.wrap_paragraphs()`
+- Added method `cogs.voice.VoiceCog.handle_play_requests()`
 
 ### Changed
 
@@ -20,6 +21,8 @@ configured prefix accordingly.
 - Renamed `cogs.voice.VoiceCog.since_inactive` to `time_inactive`
 - Output of console command `debug read` now shows `repr()` of the value instead of its `str()`
   representation
+- Calls to `-play` now have their context object and URL string put into a queue which is
+  continuously checked and run in order, so two `-play` requests aren't handled at the same time
 
 ### Fixed
 
