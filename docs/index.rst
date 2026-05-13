@@ -10,8 +10,9 @@ lydian-discord-bot documentation
    reference/bot
    reference/cli
    reference/config
-   reference/errors
    reference/const
+   reference/errors
+   reference/perms
    reference/util
    cogs.debug module <reference/cogs/debug>
    cogs.general module <reference/cogs/general>

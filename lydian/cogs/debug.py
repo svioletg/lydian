@@ -1,10 +1,12 @@
 """Debugging or testing commands for development purposes."""
+import discord
 from discord import Embed
 from discord.ext import commands
 from loguru import logger
 
 from lydian.cogs.util import confirm, embed_error, embed_info, embed_ok, embed_warn
 from lydian.config import config
+from lydian.const import debug_context
 
 
 def debug_enabled(_ctx: commands.Context) -> bool:
@@ -72,3 +74,11 @@ class DebugCog(commands.Cog):
             embed.add_field(name=f'non-inline embed #{n + 1}', value='value', inline=False)
 
         await ctx.send(embed=embed)
+
+    @commands.command(checks=[debug_enabled])
+    async def captureuser(self, ctx: commands.Context) -> None:
+        """Stores the ``Member`` object of the command author to the debug dict under key ``'capture.user'``."""
+        if not isinstance(ctx.author, discord.Member):
+            raise TypeError(f'Expected type discord.Member: {ctx.author!r}')
+        debug_context['capture.user'] = ctx.author
+        await ctx.send(embed=embed_ok(''))

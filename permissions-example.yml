@@ -1,0 +1,4 @@
+commands:
+  .default:
+    whitelist: no
+    roles:

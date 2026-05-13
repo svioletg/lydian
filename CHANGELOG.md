@@ -12,8 +12,18 @@ configured prefix accordingly.
 
 ### Added
 
+- Added debug-only bot command `-captureuser`
+  - Stores the `discord.Member` object of the command author to the `debug_context` dictionary
+- Added module `perms`
+- Added function `bot.on_message()` as a Discord event listener of the same name
+- Added functions to `tests/conftest.py`:
+  - `mock_discord_role()`
+  - `mock_get_role()`
+  - `mock_discord_member()`
+- Added command function `cogs.debug.captureuser()`
 - Added function `util.wrap_paragraphs()`
 - Added method `cogs.voice.VoiceCog.task_handle_play_requests()`
+- Added test file `test_perms.py`
 
 ### Changed
 

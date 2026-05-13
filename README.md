@@ -26,6 +26,7 @@ Documentation: <https://lydian-discord-bot.readthedocs.io/en/latest/>
   - [`clear-dl`](#clear-dl)
   - [`logs latest`](#logs-latest)
 - [URL and extractor filtering](#url-and-extractor-filtering)
+- [Permissions](#permissions)
 - [Debug Mode](#debug-mode)
 
 ## Setup: Lydian
@@ -167,6 +168,85 @@ Examples:
 |`https://youtu\.be/`|Matches shortened "youtu.be" share links|
 |`https://.+\.bandcamp\.com/`|Matches any Bandcamp link|
 |`https://kinggizzard\.bandcamp\.com/`|Matches only one artist's Bandcamp page|
+
+## Permissions
+
+Role-based permissions are handled separately from `lydian-config.toml`, in an optional
+YAML file called `permissions.yml` kept in the same directory as the TOML config. YAML is slightly
+more complex than TOML, but its usage here should be relatively straightforward. You can read about
+it at [yaml.info](https://www.yaml.info/learn/index.html).
+
+> [!NOTE]
+> If `permissions.yml` is not found, no permissions are applied; i.e. all commands will be available
+> to any user.
+>
+> Just like the config, permission rules are only loaded once when the bot starts up. If you make
+> any changes to `permissions.yml` you want reflected, you'll need to stop the bot and start it
+> again.
+
+The basics to know as far as we're concerned are:
+
+1. Instead of `key = value`, YAML uses a colon, e.g. `key: value`.
+2. Boolean values can be either `true`/`false` or `yes`/`no`
+3. YAML lists are written with hyphens, basically acting as bullet points for each item.
+
+    ```yaml
+    list:
+      - "item 1"
+      - "item 2"
+    ```
+
+4. YAML key values can contain more keys, creating nested tables ("mappings") indicated by
+   indentation
+
+    ```yaml
+    top-category:
+      subcategory-1:
+        a: 1
+        b: "two"
+        c: true
+      subcategory-2:
+        a: 4
+        b: "five"
+        c: false
+    ```
+
+`commands` is a mapping of command names to a list (`roles`) and a `whitelist` key. `roles` accepts
+a list of either role names (as a string) or role IDs (as an integer). Using IDs is recommended
+since role names can change, while an ID will always point to the same role—you can use comments
+(any text written after `#` on a line) to make a note of the role's name by its ID. An empty list
+can be given by giving the key and no value, e.g. `roles:`.
+
+`whitelist` can be either `true` or `false`: if `true` (whitelisting), only either those with any of
+the listed roles can use this command, if `false` (blacklisting) only those *without* the listed
+roles can use this command.
+
+`commands` also contains the `.default` key, which **must be present** and determines what
+permissions to use when a command has either no roles or users specified.
+
+Example:
+
+```yaml
+commands:
+  .default:
+    whitelist: false
+    roles:
+  remove:
+    whitelist: true
+    roles:
+      - 'mod'
+  skip:
+    whitelist: true
+    roles:
+      - 1500575589361520640 # "Can Skip" role
+```
+
+This indicates:
+
+- `-remove` can only be used by users with a role named `mod`
+- `-skip` can only be used by users that have a role with the ID `1500575589361520640`
+- For all other commands that aren't listed here, `.default` is used, in which any user regardless
+  of roles can use them
 
 ## Debug Mode
 

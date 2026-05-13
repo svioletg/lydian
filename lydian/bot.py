@@ -40,6 +40,7 @@ from lydian.util import dirsize
 load_dotenv('.env')
 
 intents = discord.Intents.default()
+intents.messages = True
 intents.message_content = True
 intents.voice_states = True
 
@@ -52,6 +53,16 @@ bot = commands.Bot(
 debug_context['bot'] = bot
 
 event_start_console = asyncio.Event()
+
+@bot.event
+async def on_message(message: discord.Message) -> None:
+    """Called when a message is created and sent."""
+    if message.author.bot:
+        return
+    # TODO(svioletg): Implement permissions
+    # https://github.com/svioletg/lydian-discord-bot/issues/9
+    ctx = await bot.get_context(message)
+    await bot.invoke(ctx)
 
 @bot.event
 async def on_error(event: str, *_: object, **__: object) -> None:
