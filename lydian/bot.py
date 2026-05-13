@@ -6,7 +6,7 @@ import shlex
 import sys
 import traceback
 from datetime import UTC, datetime
-from typing import cast
+from typing import Any, cast
 
 import discord
 from discord.ext import commands
@@ -185,7 +185,8 @@ async def thread_console() -> None:  # noqa: C901
                 # Can't be ast.literal_eval, we explicitly need access to some outside variables
                 # This is only accessible in debug mode and will be warned about in multiple places
                 try:
-                    print_fn(f'{expr} == {eval(expr, {'config': config, 'dbg': debug_context})!r}')  # noqa: S307
+                    eval_globals: dict[str, Any] = {'config': config, 'perms': perms, 'dbg': debug_context}
+                    print_fn(f'{expr} == {eval(expr, eval_globals)!r}')  # noqa: S307
                 except Exception as e:  # noqa: BLE001
                     logger.error(f'{e.__class__.__name__}: {e}')
                 continue

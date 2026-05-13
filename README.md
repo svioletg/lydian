@@ -92,9 +92,9 @@ Lydian implements a basic console that can accept some limited commands while th
 > shouldn't be an issue.
 
 Prints the result of an expression to stdout, or logs it as a DEBUG-level log if using `readlog`.
-`read` and `readlog` have access to the `config` object, and a `dbg` dictionary which stores
-references to various things specifically for debugging or development usage, as well as Python's
-built-ins.
+`read` and `readlog` have access to the `config` object, `perms` object, and a `dbg` dictionary
+which stores references to various things specifically for debugging or development usage, as well
+as Python's built-ins.
 
 Arguments:
   - expression (string)

@@ -38,6 +38,7 @@ configured prefix accordingly.
 - `-clear` now removes the stopped track as well
 - `config.Config.from_toml()` and `config.Config.update_from_toml()` both now expect a
   TOML-formatted string instead of a file path
+- Debug command `debug read` can now access the new global `perms` object
 
 ## [0.4.1] - 2026-05-12
 
