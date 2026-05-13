@@ -17,6 +17,7 @@ configured prefix accordingly.
   - Stores the `discord.Member` object of the command author to the `debug_context` dictionary
 - Added module `perms`
 - Added constant `const.PERMISSIONS_PATH`
+- Added constant `const.DOTENV_PATH`
 - Added function `bot.on_message()` as a Discord event listener of the same name
 - Added functions to `tests/conftest.py`:
   - `mock_discord_role()`
@@ -39,6 +40,8 @@ configured prefix accordingly.
 - `config.Config.from_toml()` and `config.Config.update_from_toml()` both now expect a
   TOML-formatted string instead of a file path
 - Debug command `debug read` can now access the new global `perms` object
+- Running the `lydian` command without a `lydian-config.toml` present will now offer to create
+  `.env` and enter your token in addition to creating the TOML and `permissions.yml` files
 
 ## [0.4.1] - 2026-05-12
 

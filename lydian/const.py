@@ -23,6 +23,11 @@ DEFAULT_DATA_DIR : Path = PACKAGE_DIR / 'lydian-data'
 """Points to a ``lydian-data`` directory under the package's installation directory."""
 DEFAULT_TMP_DIR  : Path = DEFAULT_DATA_DIR.parent / 'tmp'
 DEFAULT_LOGS_DIR : Path = DEFAULT_DATA_DIR / 'logs'
+DOTENV_PATH      : Path = Path.cwd() / '.env'
+"""Points to a ``.env`` file under the current working directory.
+
+:meta hide-value:
+"""
 CONFIG_PATH      : Path = Path.cwd() / 'lydian-config.toml'
 """Points to a ``lydian-config.toml`` file under the current working directory.
 

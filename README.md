@@ -15,8 +15,8 @@ Documentation: <https://lydian-discord-bot.readthedocs.io/en/latest/>
 
 ## Contents <!-- omit in toc -->
 
-- [Setup: Lydian](#setup-lydian)
 - [Setup: Discord](#setup-discord)
+- [Setup: Lydian](#setup-lydian)
 - [Usage: Running the bot](#usage-running-the-bot)
 - [Usage: Bot console commands](#usage-bot-console-commands)
   - [`debug read`, `debug readlog`](#debug-read-debug-readlog)
@@ -28,6 +28,18 @@ Documentation: <https://lydian-discord-bot.readthedocs.io/en/latest/>
 - [URL and extractor filtering](#url-and-extractor-filtering)
 - [Permissions](#permissions)
 - [Debug Mode](#debug-mode)
+
+## Setup: Discord
+
+Follow the instructions here: <https://discordpy.readthedocs.io/en/stable/discord.html>
+
+The bot permissions you'll need to tick are:
+
+- Read Messages/View Channels
+- Send Messages
+- Embed Links
+- Connect
+- Speak
 
 ## Setup: Lydian
 
@@ -47,10 +59,6 @@ running this same command with `-U` added after `install`.
 pip install -U git+https://github.com/svioletg/lydian-discord-bot.git
 ```
 
-## Setup: Discord
-
-Follow the instructions here: <https://discordpy.readthedocs.io/en/stable/discord.html>
-
 You must provide your bot's token via the `LYDIAN_TOKEN` environment variable. The recommended way
 to do this is by creating a text file called `.env` in the directory you'll run the bot from, and
 write in `LYDIAN_TOKEN=<token>` where `<token>` should be replaced with your real bot token.
@@ -65,15 +73,15 @@ write in `LYDIAN_TOKEN=<token>` where `<token>` should be replaced with your rea
 
 ## Usage: Running the bot
 
-Use the `lydian` command to start running the bot. Lydian will check for a file named
-`lydian-config.toml` in your current working directory (the directory you ran the command from), and
-will exit with an error if one is not present. If it does see this file, it will begin to use that
-directory for storing data related to the bot like logs and downloaded media. You should make a
-folder somewhere on your PC, for example named `lydian`, make a new file called
-`lydian-config.toml`, then run `lydian` in that folder.
+Use the `lydian` command to start running the bot. If `lydian-config.toml` is not in your current
+directory, you'll be asked if you want to create the necessary files automatically. If it *is*
+present, the bot should start up normally. You should make a folder somewhere on your PC, for
+example named `lydian`, then when Lydian installed, run the `lydian` command in that directory to
+set it up.
 
-The bot can be stopped either by using the `stop` command, or hitting Ctrl+C while focused on the
-window.
+The bot can be stopped either by using the `stop` command or hitting Ctrl+D while focused on the
+window, after which the bot will try to shut itself down cleanly. If this isn't working for some
+reason, you should be able to hit Ctrl+C to send a keyboard interrupt and forcibly stop the process.
 
 ## Usage: Bot console commands
 

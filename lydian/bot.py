@@ -6,6 +6,7 @@ import shlex
 import sys
 import traceback
 from datetime import UTC, datetime
+from getpass import getpass
 from typing import Any, cast
 
 import discord
@@ -25,8 +26,11 @@ from lydian.cogs.voice import background_tasks as voice_background_tasks
 from lydian.config import config
 from lydian.const import (
     CONFIG_PATH,
+    DATA_DIR,
     DL_DIR,
+    DOTENV_PATH,
     LOGS_DIR,
+    PERMISSIONS_PATH,
     PROJECT_VERSION,
     clear_tmp_dir,
     console,
@@ -35,7 +39,7 @@ from lydian.const import (
     setup_logger,
 )
 from lydian.errors import AbortCommand
-from lydian.perms import perms
+from lydian.perms import PERMISSIONS_DEFAULT, perms
 from lydian.util import dirsize
 
 load_dotenv('.env')
@@ -193,15 +197,31 @@ async def thread_console() -> None:  # noqa: C901
 
         logger.warning(f'Unrecognized console input: {user_input}')
 
+def prompt_bot_setup() -> bool:
+    """Prompts the user to setup Lydian in the current working directory and returns whether the user confirmed."""
+    if Confirm.ask('Do you want to setup Lydian in this directory?'):
+        if not CONFIG_PATH.exists():
+            CONFIG_PATH.touch()
+            console.print(f'Created file: {CONFIG_PATH}')
+        if not PERMISSIONS_PATH.exists():
+            PERMISSIONS_DEFAULT.to_yaml(PERMISSIONS_PATH)
+            console.print(f'Created file: {PERMISSIONS_PATH}')
+        if not DATA_DIR.exists():
+            DATA_DIR.mkdir()
+            console.print(f'Created directory: {DATA_DIR}')
+        if not DOTENV_PATH.exists():
+            console.print('No .env file found; creating one now.')
+            token: str = getpass('Enter or paste your bot token: ', echo_char='*')
+            DOTENV_PATH.write_text(f'LYDIAN_TOKEN={token.strip()}\n')
+            console.print(f'Created file: {DOTENV_PATH}')
+        return True
+    return False
+
 async def async_main() -> int:
     """Initializes the logger and starts the bot."""
     if not CONFIG_PATH.exists():
-        console.print('lydian-config.toml must be present in the current directory to run the bot.')
-        console.print('If this file is found, a "lydian-data" directory will be created here if it does not exist.')
-        if Confirm.ask('Create this file now?'):
-            CONFIG_PATH.touch()
-            console.print(f'Created empty file at: {CONFIG_PATH}')
-        return 0
+        console.print('"lydian-config.toml" not found in this directory.')
+        return 1 if prompt_bot_setup() else 0
 
     setup_logger(
         'DEBUG' if config.debug else config.logging.log_level,
