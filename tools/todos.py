@@ -48,10 +48,12 @@ def find_todos(source_dir: str | Path, *, recursive: bool = False) -> list[Todo]
         for m in TODO_REGEX.finditer(ftext):
             header: str = m.group('header')
             author: str | None = m.group('author')
+            span = m.span()
+            span = (span[0] + len(m.group(0).split('#')[0]), span[1])
             todos.append(Todo(
                 header,
                 fp,
-                m.span(),
+                span,
                 author=author,
                 issues=[im.group(0) for im in ISSUE_REGEX.finditer(m.group(0))] \
                     + [DEFAULT_ISSUE_LINK_TMPL.format(s.lstrip('0')) for s in re.findall(r'#(\d+)', m.group(0))],
