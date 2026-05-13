@@ -221,8 +221,16 @@ can be given by giving the key and no value, e.g. `roles:`.
 the listed roles can use this command, if `false` (blacklisting) only those *without* the listed
 roles can use this command.
 
-`commands` also contains the `.default` key, which **must be present** and determines what
-permissions to use when a command has either no roles or users specified.
+`commands` also accepts a `.default` key with the same structure described above, which defines
+fallback rules to use when a command does not have any rules defined. The default rules are...
+
+```yaml
+  .default:
+    whitelist: no
+    roles:
+```
+
+...meaning any user with any or no roles can use any command without defined permissions.
 
 Example:
 

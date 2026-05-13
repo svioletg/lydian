@@ -8,6 +8,7 @@ from typing import ClassVar, Self
 import discord
 import strictyaml as yaml
 
+from lydian.const import PERMISSIONS_PATH
 from lydian.util import DataclassUpdateMixin
 
 
@@ -15,7 +16,7 @@ from lydian.util import DataclassUpdateMixin
 class CommandPermissions(DataclassUpdateMixin):
     """Represents permission rules for an individual bot command."""
 
-    whitelist: bool = False
+    whitelist: bool
     roles: list[str | int] = field(default_factory=list)
 
     def can_invoke(self, user: discord.Member) -> bool:
@@ -28,7 +29,7 @@ class CommandPermissions(DataclassUpdateMixin):
         return user_in_rules if self.whitelist else not user_in_rules
 
 def _default_command_permissions_dict() -> dict[str, CommandPermissions]:
-    return {'.default': CommandPermissions()}
+    return {'.default': CommandPermissions(whitelist=False)}
 
 @dataclass
 class Permissions(DataclassUpdateMixin):
@@ -49,7 +50,7 @@ class Permissions(DataclassUpdateMixin):
         inst = cls()
 
         document: yaml.YAML = yaml.load(yaml_str, cls._yaml_schema)
-        inst.commands = {
+        inst.commands = inst.commands | {
             command.data:CommandPermissions(**rules.data)
             for command, rules in document['commands'].items()
         }
@@ -80,6 +81,10 @@ class Permissions(DataclassUpdateMixin):
             Path(fp).write_text(yaml_str, 'utf-8')
 
         return yaml_str
+
+PERMISSIONS_DEFAULT = Permissions()
+
+perms = Permissions.from_yaml(PERMISSIONS_PATH.read_text('utf-8')) if PERMISSIONS_PATH.exists() else Permissions()
 
 def main() -> int:
     """Write the default permissions as YAML to a given file path."""

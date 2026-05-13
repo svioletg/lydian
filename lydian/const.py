@@ -28,6 +28,11 @@ CONFIG_PATH      : Path = Path.cwd() / 'lydian-config.toml'
 
 :meta hide-value:
 """
+PERMISSIONS_PATH : Path = Path.cwd() / 'permissions.yml'
+"""Points to a ``permissions.yml`` file under the current working directory.
+
+:meta hide-value:
+"""
 DATA_DIR         : Path = (CONFIG_PATH.parent / 'lydian-data') if CONFIG_PATH.exists() else DEFAULT_DATA_DIR
 """Data directory as relative to the user's configuration file if it exists, or :py:data:`DEFAULT_DATA_DIR`."""
 TMP_DIR          : Path = DATA_DIR / 'tmp'

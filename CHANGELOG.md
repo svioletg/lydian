@@ -12,9 +12,11 @@ configured prefix accordingly.
 
 ### Added
 
+- Added ability to restrict command usage to users with or without certain roles (#9)
 - Added debug-only bot command `-captureuser`
   - Stores the `discord.Member` object of the command author to the `debug_context` dictionary
 - Added module `perms`
+- Added constant `const.PERMISSIONS_PATH`
 - Added function `bot.on_message()` as a Discord event listener of the same name
 - Added functions to `tests/conftest.py`:
   - `mock_discord_role()`

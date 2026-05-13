@@ -19,7 +19,7 @@ from rich.prompt import Confirm
 
 from lydian.cogs.debug import DebugCog
 from lydian.cogs.general import GeneralCog
-from lydian.cogs.util import embed_error
+from lydian.cogs.util import embed_error, embed_info
 from lydian.cogs.voice import VoiceCog
 from lydian.cogs.voice import background_tasks as voice_background_tasks
 from lydian.config import config
@@ -35,6 +35,7 @@ from lydian.const import (
     setup_logger,
 )
 from lydian.errors import AbortCommand
+from lydian.perms import perms
 from lydian.util import dirsize
 
 load_dotenv('.env')
@@ -59,9 +60,13 @@ async def on_message(message: discord.Message) -> None:
     """Called when a message is created and sent."""
     if message.author.bot:
         return
-    # TODO(svioletg): Implement permissions
-    # https://github.com/svioletg/lydian-discord-bot/issues/9
     ctx = await bot.get_context(message)
+    if ctx.command:
+        if not isinstance(message.author, discord.Member):
+            return
+        if not perms.can_invoke(ctx.command.name, message.author):
+            await ctx.send(embed=embed_info('You do not have the permissions needed for this command.'))
+            return
     await bot.invoke(ctx)
 
 @bot.event
