@@ -118,7 +118,6 @@ async def thread_bot() -> None:
             logger.error(f'No bot token found, please set the {target_env_var} environment variable')
             return
 
-        # TODO(svioletg): #19
         event_start_console.set()
         debug_context['bot-start-time'] = datetime.now(UTC)
         await bot.start(token)
