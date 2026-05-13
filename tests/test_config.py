@@ -44,7 +44,7 @@ def test_env_to_bool() -> None:
 def test_update_from_toml() -> None:
     inst = Config()
 
-    inst.update_from_toml(TESTS_DIR / 'config-modified.toml')
+    inst.update_from_toml((TESTS_DIR / 'config-modified.toml').read_text('utf-8'))
     assert inst.prefix == '$'
     assert inst.vote_skipping.threshold_type == 'exact'
     assert inst.vote_skipping.exact == 2  # noqa: PLR2004

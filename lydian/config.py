@@ -148,13 +148,13 @@ class Config(DataclassUpdateMixin):
     logging: LoggingConfig = field(default_factory=LoggingConfig)
 
     @classmethod
-    def from_toml(cls, fp: str | Path) -> Self:
-        """Creates a config object from a TOML file.
+    def from_toml(cls, toml_str: str) -> Self:
+        """Creates a config object from a TOML string.
 
         Shortcut for creating the instance then using :py:meth:`update_from_toml`.
         """
         inst = cls()
-        inst.update_from_toml(fp)
+        inst.update_from_toml(toml_str)
         return inst
 
     def filter_media_url(self, url: str) -> bool:
@@ -241,13 +241,12 @@ class Config(DataclassUpdateMixin):
 
         self.update(unflatten(update_map, '.'))
 
-    def update_from_toml(self, fp: str | Path, *, on_missing: Literal['raise', 'warn', 'continue'] = 'warn') -> None:
-        """Update the config using values from a TOML file.
+    def update_from_toml(self, toml_str: str, *, on_missing: Literal['raise', 'warn', 'continue'] = 'warn') -> None:
+        """Update the config using values from a TOML string.
 
         :param on_missing: Whether to raise, warn, or ignore unrecognized keys.
         """
-        with open(fp, 'r', encoding='utf-8') as f:
-            loaded: TOMLDocument = tm.load(f)
+        loaded: TOMLDocument = tm.parse(toml_str)
         self.update(
             loaded.unwrap(),
             on_missing=UnknownConfigKeyWarning.emit if on_missing == 'warn' else on_missing,
@@ -308,7 +307,7 @@ def add_comments_to_toml(toml: str, comment_map: dict[str, dict[str, str]], comm
 
 CONFIG_DEFAULT = Config()
 
-config = Config() if not (CONFIG_PATH.exists()) else Config.from_toml(CONFIG_PATH)
+config = Config() if not CONFIG_PATH.exists() else Config.from_toml(CONFIG_PATH.read_text('utf-8'))
 config.update_from_environment(os.environ)
 
 def main() -> int:

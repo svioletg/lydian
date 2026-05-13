@@ -84,7 +84,7 @@ class Permissions(DataclassUpdateMixin):
 
 PERMISSIONS_DEFAULT = Permissions()
 
-perms = Permissions.from_yaml(PERMISSIONS_PATH.read_text('utf-8')) if PERMISSIONS_PATH.exists() else Permissions()
+perms = Permissions() if not PERMISSIONS_PATH.exists() else Permissions.from_yaml(PERMISSIONS_PATH.read_text('utf-8'))
 
 def main() -> int:
     """Write the default permissions as YAML to a given file path."""
