@@ -21,7 +21,7 @@ from tomlkit.items import Item as TOMLItem
 from tomlkit.toml_document import TOMLDocument
 
 from lydian.const import CONFIG_PATH, LogLevel
-from lydian.util import DataclassUpdateMixin, get_dataclass_fields, partition, wrap_paragraphs
+from lydian.util import DataclassUpdateMixin, FromStr, get_dataclass_fields, partition, wrap_paragraphs
 
 TOML_KEY_REGEX: re.Pattern[str] = re.compile(r'^\[?([\w.-]+)\]?', flags=re.MULTILINE)
 TOML_TABLE_KEY_REGEX: re.Pattern[str] = re.compile(r'\[([\w.-]+)\]', flags=re.MULTILINE)
@@ -47,13 +47,6 @@ def _toml_encoder(obj: object) -> TOMLItem:
 
 tm.register_encoder(_toml_encoder)  # ty:ignore[invalid-argument-type]
 
-def _default_command_aliases() -> dict[str, list[str]]:
-    return {
-        'help': ['h'],
-        'join': ['j'],
-        'leave': ['l'],
-    }
-
 def env_to_bool(s: str) -> bool:
     """Returns an environment variable value parsed to a ``bool``.
 
@@ -66,6 +59,13 @@ def env_to_bool(s: str) -> bool:
     if s in ['1', 'true']:
         return True
     raise ValueError(f"Expected 0, 1, 'false', or 'true' for boolean environment variable: {s!r}")
+
+def _default_command_aliases() -> dict[str, list[str]]:
+    return {
+        'help': ['h'],
+        'join': ['j'],
+        'leave': ['l'],
+    }
 
 @dataclass(kw_only=True)
 class MediaFilterConfig(DataclassUpdateMixin):
@@ -95,7 +95,7 @@ class LoggingConfig(DataclassUpdateMixin):
 
     log_level: LogLevel = field(default=LogLevel.INFO, metadata={
         'env': 'LOG_LEVEL',
-        'envconv': lambda s: LogLevel(s.upper()),
+        'converter': lambda s: LogLevel(s.upper()),
     })
     utc: bool = field(default=True,
         doc="Whether to show log timestamps in UTC. If false, they are shown in your system's local time.",
@@ -110,9 +110,11 @@ class Config(DataclassUpdateMixin):
 
     A field's ``metadata`` will be checked for the following keys under certain circumstances:
 
-    - ``env``: Environment variable name (without the ``LYDIAN_`` prefix) corresponding to this field
-    - ``envconv``: Function which takes ``str`` and returns the field's type, used to convert string values when
-      updating configuration from enviornment variables; has no effect if ``env`` is not present
+    - ``converter``: A function which takes the value parsed from TOML and returns the field's type, allowing for things
+        like filesize fields taking strings (e.g. "10 MB") and converting them to an ``int`` of bytes.
+    - ``env``: Environment variable name (without the ``LYDIAN_`` prefix) corresponding to this field. Config fields
+        can only be set by the environment when this key is present. Setting this key will require ``parser`` to be set
+        as well, which in this case should take a ``str`` and return the expected value.
     """
 
     prefix: str = '-'
@@ -126,7 +128,8 @@ class Config(DataclassUpdateMixin):
     command_aliases: dict[str, list[str]] = field(default_factory=_default_command_aliases)
     max_filesize: int = field(default=20_000_000,
         doc='Maximum filesize in bytes for media that can be downloaded by the bot.'
-        + ' Will have no effect when streaming media (stream-media = true).')
+        + ' Will have no effect when streaming media (stream-media = true).',
+        metadata={'converter': FromStr.filesize})
     max_playlist_length: int = field(default=20,
         doc='Maximum number of items that can be added from a single playlist link.')
     max_queue_length: int = field(default=100,
@@ -220,13 +223,10 @@ class Config(DataclassUpdateMixin):
             if not (env_val := env.get(f'LYDIAN_{fld.metadata['env']}')):
                 continue
 
-            # Fall back on the field type as a constructor if no converter is specified, but don't convert if envconv
-            # has been explicitly set to None
             converter: Callable[[str], Any] | None
-            if envconv := fld.metadata.get('envconv'):
-                if not callable(envconv):
-                    raise TypeError(f'Config field "{name}" envconv value must be callable: {envconv!r}')
-                converter = envconv
+            if converter := fld.metadata.get('converter'):
+                if not callable(converter):
+                    raise TypeError(f'Config field "{name}" parser must be callable: {converter!r}')
             elif fld.type is bool:
                 converter = env_to_bool
             else:

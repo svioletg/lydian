@@ -3,14 +3,16 @@
 This module should not import any other modules from the package other than ``errors``, to ensure its contents can be
 used by any module.
 """
+import re
 import textwrap
 from collections.abc import Callable, Iterable
 from dataclasses import Field, fields, is_dataclass
 from datetime import UTC, datetime, timedelta, tzinfo
+from math import floor
 from pathlib import Path
 from time import perf_counter_ns
 from types import TracebackType
-from typing import Any, Literal, cast, get_args, get_origin
+from typing import Any, ClassVar, Literal, cast, get_args, get_origin
 from zoneinfo import ZoneInfo
 
 from maybetype import Maybe, maybe
@@ -228,6 +230,45 @@ class DataclassUpdateMixin:
                 if is_literal and (converted not in t_args):
                     raise ValueError(f'Expected one of {','.join(repr(i) for i in t_args)}: {converted!r}')
                 setattr(self, k, converted)
+
+class FromStr:
+    """Provides various methods for converting string values of an expected pattern to other types."""
+
+    filesize_units: ClassVar[dict[str, int]] = {
+        'b': 1,
+        'kb': 1000,
+        'kib': 1024,
+        'mb': 1000 * 1000,
+        'mib': 1024 * 1024,
+        'gb': 1000 * 1000 * 1000,
+        'gib': 1024 * 1024 * 1024,
+    }
+
+    filesize_regex: ClassVar[re.Pattern[str]] = re.compile(
+        r'^(?P<n>[\d,]+\.?\d+) ?(?P<unit>b|[kmg]i?b)$',
+        flags=re.IGNORECASE,
+    )
+
+    @classmethod
+    def filesize(cls, value: str | int) -> int:
+        """Parses a filesize string into an ``int`` representing bytes, or returns the value if given ``int``.
+
+        The calculated bytes will be floored to ``int``.
+        Any of the following units can be given with or without a space after the number, and are case-insensitive:
+
+        - ``b``: Bytes
+        - ``kb``: Kilobytes
+        - ``kib``: Kibibytes
+        - ``mb``: Megabytes
+        - ``mib``: Mebibytes
+        - ``gb``: Gigabytes
+        - ``gib``: Gibibytes
+        """
+        if isinstance(value, int):
+            return value
+        if not (m := cls.filesize_regex.match(value)):
+            raise ValueError(f'Filesize string does not match expected pattern: {value!r}')
+        return floor(float(m.group('n').replace(',', '')) * cls.filesize_units[m.group('unit').lower()])
 
 class Stopwatch:
     """Tracks time over a period, by default from when the instance is created."""

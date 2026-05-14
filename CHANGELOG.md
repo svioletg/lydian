@@ -18,6 +18,7 @@ configured prefix accordingly.
 - Added module `perms`
 - Added constant `const.PERMISSIONS_PATH`
 - Added constant `const.DOTENV_PATH`
+- Added class `util.FromStr`
 - Added function `bot.on_message()` as a Discord event listener of the same name
 - Added functions to `tests/conftest.py`:
   - `mock_discord_role()`
@@ -27,6 +28,7 @@ configured prefix accordingly.
 - Added function `util.wrap_paragraphs()`
 - Added method `cogs.voice.VoiceCog.task_handle_play_requests()`
 - Added test file `test_perms.py`
+- Added test file `test_util_fromstr.py`
 
 ### Changed
 
@@ -42,6 +44,10 @@ configured prefix accordingly.
 - Debug command `debug read` can now access the new global `perms` object
 - Running the `lydian` command without a `lydian-config.toml` present will now offer to create
   `.env` and enter your token in addition to creating the TOML and `permissions.yml` files
+- `config.Config` fields' `metadata` dictionary now expected the `converter` key in place of
+  `envcov`, and will be used more generally
+- Config key `max-filesize` now additionally accepts a string of a value and unit, like `"50 MB"` or
+  `1gb`
 
 ## [0.4.1] - 2026-05-12
 
