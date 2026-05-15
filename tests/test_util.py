@@ -138,6 +138,10 @@ def test_get_dataclass_fields() -> None:
     assert dc_fields['d.x'].default == dc.d.x
     assert dc_fields['d.y'].default_factory() == dc.d.y  # ty:ignore[call-non-callable]
 
+def test_join_trailing() -> None:
+    assert util.join_trailing('abc', ' ') == 'a b c '
+    assert util.join_trailing('a', ' ') == 'a'
+
 def test_linepos_to_pos() -> None:
     s: str = 'One\nTwo\nThree\n'
     for lineno, ln in enumerate(s.splitlines(keepends=True)):

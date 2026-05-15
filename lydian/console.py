@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import AsyncMock
 
+from benedict import benedict
 from discord.ext import commands
 from humanize import precisedelta
 from loguru import logger
@@ -15,7 +16,7 @@ from prompt_toolkit.patch_stdout import patch_stdout
 from lydian.config import config
 from lydian.const import console, debug_context
 from lydian.perms import perms
-from lydian.util import wrap_paragraphs
+from lydian.util import join_trailing, wrap_paragraphs
 
 if TYPE_CHECKING:
     from lydian.cogs.voice import VoiceCog
@@ -32,15 +33,15 @@ class ConsoleCommand:
             name: str | None = None,
             *,
             group: str | tuple[str, ...] = (),
-            help: str | None = None,  # noqa: A002
+            doc: str | None = None,
         ) -> None:
         """Initializes a new ``ConsoleCommand``.
 
         :param func: The function to wrap as a command.
         :param name: A name to give this command, defaulting to the function's name minus any group prefix.
         :param group: A single group or tuple of nested group names to put this command under.
-        :param help: The string shown when using the ``help`` command on this command. Defaults to ``func``'s
-            docstring.
+        :param doc: A string to use to describe this command for the ``help`` command. Will use ``func``'s docstring if
+            not given.
         """
         self.func = func
         self.group = group if isinstance(group, tuple) else (group,)
@@ -48,11 +49,29 @@ class ConsoleCommand:
             cast('str', func.__name__) if not self.group else  # ty:ignore[unresolved-attribute]
             cast('str', func.__name__).removeprefix('_'.join(self.group) + '_')  # ty:ignore[unresolved-attribute]
         )
-        self.help: str | None = help or func.__doc__
+        self.doc: str | None = doc or func.__doc__
+
+    def __repr__(self) -> str:  # noqa: D105
+        return f'ConsoleCommand({self.func}, name={self.name!r}, group={self.group!r})'
 
     def __call__(self, *args: object, **kwargs: object) -> None:
         """Calls the wrapped function after parsing ``args`` from potentially string values."""
+        # TODO(svioletg): Parse arguments depending on signature and annotations
+        # https://github.com/svioletg/lydian-discord-bot/issues/2
         self.func(*args, **kwargs)
+
+    @property
+    def help(self) -> str:
+        """Returns the string printed when using the ``help`` command on this command (or showing all)."""
+        return f'{join_trailing(self.group, ' ')}{self.name}\n' + '\n'.join(wrap_paragraphs(
+            self.doc or '(no description)',
+            80,
+            initial_indent='    ',
+            subsequent_indent='    ',
+        ))
+
+    # TODO(svioletg): Add method to create CLI-style command signature from function signature
+    # https://github.com/svioletg/lydian-discord-bot/issues/2
 
 def command(name: str | None = None, **kwargs: Any) -> Callable[Callable[..., None], ConsoleCommand]:  # noqa: ANN401
     """Decorates a function into a :py:class:`CommandFunc`, intended for use on :py:class:`BotConsole` methods."""
@@ -74,7 +93,7 @@ class BotConsole:
         self.prompt = prompt
 
         # Can't get ty to properly work with a recursive value type here so we're just using Any for now, see docstring
-        self.commands: dict[str, Any] = {}
+        self.commands: benedict[str, Any] = benedict(keypath_separator=' ')
         """A map of command or group names to either a ``CommandFunc`` or another dictionary just like this one."""
 
         for name in dir(self):
@@ -87,9 +106,6 @@ class BotConsole:
                     self.commands[part] = {}
                 depth = self.commands[part]
             depth[func.name] = func
-
-    # TODO(svioletg): Add method to create CLI-style command signature from function signature
-    # https://github.com/svioletg/lydian-discord-bot/issues/2
 
     def parse_input(self, user_input: str) -> Result[tuple[ConsoleCommand, list[str]], str]:
         """Returns an ``Ok`` of the :py:class:`ConsoleCommand` and parsed arguments, or an error message."""
@@ -149,16 +165,13 @@ class BotConsole:
     def help(self, command: str | None = None) -> None:
         """Prints information on all commands if no argument is given, or describes a given command."""
         help_str: str = ''
-        if not command:
-            for name, func in self.commands.items():
-                # TODO(svioletg): Need to support groups
-                wrapped_help: str = '\n'.join(wrap_paragraphs(
-                    func.help or '(no description)',
-                    80,
-                    initial_indent='    ',
-                    subsequent_indent='    ',
-                ))
-                help_str += f'{name}\n{wrapped_help}\n\n'
+        if command:
+            help_str = cast('ConsoleCommand', self.commands[command]).help
+        else:
+            for k in self.commands.keypaths():
+                if not isinstance(v := self.commands[k], ConsoleCommand):
+                    continue
+                help_str += v.help + '\n'
 
         console.print(help_str.strip())
 
