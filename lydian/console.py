@@ -1,8 +1,9 @@
 """Holds the :py:class:`BotConsole` class to handle console command while running the bot."""
+import inspect
 import shlex
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Protocol, cast
 from unittest.mock import AsyncMock
 
 from benedict import benedict
@@ -19,7 +20,14 @@ from lydian.perms import perms
 from lydian.util import join_trailing, wrap_paragraphs
 
 if TYPE_CHECKING:
+    from ty_extensions import Intersection
+
     from lydian.cogs.voice import VoiceCog
+
+class Named(Protocol):
+    """Protocol for types which have a ``__name__`` string attribute."""
+
+    __name__: str
 
 class ConsoleCommand:
     """A wrapper object for functions meant as :py:class:`BotConsole` commands.
@@ -43,16 +51,18 @@ class ConsoleCommand:
         :param doc: A string to use to describe this command for the ``help`` command. Will use ``func``'s docstring if
             not given.
         """
-        self.func = func
+        self.func = cast('Intersection[Callable[..., None], Named]', func)
+        self.signature: inspect.Signature = inspect.signature(func)
         self.group = group if isinstance(group, tuple) else (group,)
         self.name = name or (
-            cast('str', func.__name__) if not self.group else  # ty:ignore[unresolved-attribute]
-            cast('str', func.__name__).removeprefix('_'.join(self.group) + '_')  # ty:ignore[unresolved-attribute]
+            self.func.__name__ if not self.group else
+            self.func.__name__.removeprefix('_'.join(self.group) + '_')
         )
         self.doc: str | None = doc or func.__doc__
 
     def __repr__(self) -> str:  # noqa: D105
-        return f'ConsoleCommand({self.func}, name={self.name!r}, group={self.group!r})'
+        return f'ConsoleCommand[{self.func.__name__}{str(self.signature).removesuffix(' -> None')}]' \
+            + f'(name={self.name!r}, group={self.group!r})'
 
     def __call__(self, *args: object, **kwargs: object) -> None:
         """Calls the wrapped function after parsing ``args`` from potentially string values."""
@@ -106,6 +116,15 @@ class BotConsole:
                     self.commands[part] = {}
                 depth = self.commands[part]
             depth[func.name] = func
+
+        self.commandlist: list[ConsoleCommand] = [
+            v
+            for k in self.commands.keypaths()
+            if isinstance(v := self.commands[k], ConsoleCommand)
+        ]
+
+    def __repr__(self) -> str:  # noqa: D105
+        return f'BotConsole({self.bot!r}, prompt={self.prompt!r})'
 
     def parse_input(self, user_input: str) -> Result[tuple[ConsoleCommand, list[str]], str]:
         """Returns an ``Ok`` of the :py:class:`ConsoleCommand` and parsed arguments, or an error message."""
@@ -202,3 +221,5 @@ class BotConsole:
         console.print(f'Bot has been running for {precisedelta(datetime.now(UTC) - debug_context['bot-start-time'])}')
 
     #endregion COMMANDS
+
+shell = BotConsole(None)
