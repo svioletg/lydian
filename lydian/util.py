@@ -382,7 +382,7 @@ def get_dataclass_fields(dc: object, parents: list[str] | None = None) -> dict[s
 
 def join_trailing(s: Iterable[str], sep: str) -> str:
     """Same as ``str.join()``, but adds an additional ``sep`` at the end if any joining was performed."""
-    return (joined := sep.join(s)) + ('' if s == joined else sep)
+    return sep.join(seq := list(s)) + (sep if len(seq) > 1 else '')
 
 def linepos_to_pos(s: str, lineno: int, linepos: int) -> int:
     """Converts a 0-indexed line number and position to a global position in a string."""

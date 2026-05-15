@@ -52,7 +52,17 @@ class ConsoleCommand:
             not given.
         """
         self.func = cast('Intersection[Callable[..., None], Named]', func)
-        self.signature: inspect.Signature = inspect.signature(func)
+        self.func_sig: inspect.Signature = inspect.signature(func)
+
+        # Ensure command functions parameters are positional-only or keyword-only
+        #
+        # This helps ease work later and there generally isn't a use for
+        # positional-or-keyword parameters in a command context
+        for param in self.func_sig.parameters.values():
+            if param.kind is inspect.Parameter.POSITIONAL_OR_KEYWORD:
+                raise TypeError('Command function parameters must be positional-only or keyword-only:'
+                    + f' {param!r} in {self.func}')
+
         self.group = group if isinstance(group, tuple) else (group,)
         self.name = name or (
             self.func.__name__ if not self.group else
@@ -61,7 +71,7 @@ class ConsoleCommand:
         self.doc: str | None = doc or func.__doc__
 
     def __repr__(self) -> str:  # noqa: D105
-        return f'ConsoleCommand[{self.func.__name__}{str(self.signature).removesuffix(' -> None')}]' \
+        return f'ConsoleCommand[{self.func.__name__}{str(self.func_sig).removesuffix(' -> None')}]' \
             + f'(name={self.name!r}, group={self.group!r})'
 
     def __call__(self, *args: object, **kwargs: object) -> None:
@@ -70,18 +80,37 @@ class ConsoleCommand:
         # https://github.com/svioletg/lydian-discord-bot/issues/2
         self.func(*args, **kwargs)
 
+    # TODO(svioletg): Add method to create CLI-style command signature from function signature
+    # https://github.com/svioletg/lydian-discord-bot/issues/2
+    @property
+    def signature(self) -> str:
+        """A CLI-style command signature created from the wrapped function's signature."""
+        parts: list[str] = [join_trailing(self.group, ' ') + self.name]
+        for param in self.func_sig.parameters.values():
+            if param.name == 'self':
+                continue
+            name: str = param.name
+            if param.default is inspect.Parameter.empty:
+                # Required parameter
+                name = f'<{name}>'
+            elif param.annotation is bool:
+                # Flag parameter
+                name = f'[--{name}]' if param.default is False else f'[--no-{name}]'
+            else:
+                # Optional parameter
+                name = f'[{name}]'
+            parts.append(name)
+        return ' '.join(parts)
+
     @property
     def help(self) -> str:
         """Returns the string printed when using the ``help`` command on this command (or showing all)."""
-        return f'{join_trailing(self.group, ' ')}{self.name}\n' + '\n'.join(wrap_paragraphs(
+        return f'{self.signature}\n' + '\n'.join(wrap_paragraphs(
             self.doc or '(no description)',
             80,
             initial_indent='    ',
             subsequent_indent='    ',
         ))
-
-    # TODO(svioletg): Add method to create CLI-style command signature from function signature
-    # https://github.com/svioletg/lydian-discord-bot/issues/2
 
 def command(name: str | None = None, **kwargs: Any) -> Callable[Callable[..., None], ConsoleCommand]:  # noqa: ANN401
     """Decorates a function into a :py:class:`CommandFunc`, intended for use on :py:class:`BotConsole` methods."""
@@ -181,7 +210,7 @@ class BotConsole:
     #region COMMANDS
 
     @command()
-    def help(self, command: str | None = None) -> None:
+    def help(self, command: str | None = None, /) -> None:
         """Prints information on all commands if no argument is given, or describes a given command."""
         help_str: str = ''
         if command:
@@ -195,7 +224,7 @@ class BotConsole:
         console.print(help_str.strip())
 
     @command(group='debug')
-    def debug_read(self, expr: str, *, log: bool = False) -> None:
+    def debug_read(self, expr: str, /, *, log: bool = False) -> None:
         """Prints the result of an expression to stdout.
 
         The expression will have access to Python's built-ins, the global "config" and "perms" objects, and a "dbg"
@@ -216,7 +245,7 @@ class BotConsole:
             logger.error(f'{e.__class__.__name__}: {e}')
 
     @command()
-    def uptime(self) -> None:
+    def uptime(self, /) -> None:
         """Prints how long the bot has been running for."""
         console.print(f'Bot has been running for {precisedelta(datetime.now(UTC) - debug_context['bot-start-time'])}')
 
