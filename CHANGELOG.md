@@ -15,6 +15,7 @@ configured prefix accordingly.
 - Added ability to restrict command usage to users with or without certain roles (#9)
 - Added debug-only bot command `-captureuser`
   - Stores the `discord.Member` object of the command author to the `debug_context` dictionary
+- Added module `console`
 - Added module `perms`
 - Added constant `const.PERMISSIONS_PATH`
 - Added constant `const.DOTENV_PATH`
