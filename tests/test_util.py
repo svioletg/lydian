@@ -141,6 +141,7 @@ def test_get_dataclass_fields() -> None:
 def test_join_trailing() -> None:
     assert util.join_trailing('abc', ' ') == 'a b c '
     assert util.join_trailing('a', ' ') == 'a'
+    assert util.join_trailing('a', ' ', trail_single=True) == 'a '
 
 def test_linepos_to_pos() -> None:
     s: str = 'One\nTwo\nThree\n'
