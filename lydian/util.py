@@ -12,7 +12,7 @@ from math import floor
 from pathlib import Path
 from time import perf_counter_ns
 from types import TracebackType
-from typing import Any, ClassVar, Literal, cast, get_args, get_origin
+from typing import Annotated, Any, ClassVar, Literal, cast, get_args, get_origin
 from zoneinfo import ZoneInfo
 
 from maybetype import Maybe, maybe
@@ -380,9 +380,21 @@ def get_dataclass_fields(dc: object, parents: list[str] | None = None) -> dict[s
 
     return field_dict
 
-def join_trailing(s: Iterable[str], sep: str) -> str:
-    """Same as ``str.join()``, but adds an additional ``sep`` at the end if any joining was performed."""
-    return sep.join(seq := list(s)) + (sep if len(seq) > 1 else '')
+def is_annotated(typ: object) -> bool:
+    """Returns whether ``typ``'s type origin is ``typing.Annotated``.
+
+    .. note::
+        There's no way to annotate ``typ`` is accepting ``typing.Annotated`` specifically, so it just accepts
+        ``object``.
+    """
+    return get_origin(typ) is Annotated
+
+def join_trailing(s: Iterable[str], sep: str, *, trail_single: bool = False) -> str:
+    """Same as ``str.join()``, but adds an additional ``sep`` at the end if any joining was performed.
+
+    :param trail_single: Add a trailing ``sep`` even if there's only one item in ``s``.
+    """
+    return sep.join(seq := list(s)) + (sep if len(seq) > (0 if trail_single else 1) else '')
 
 def linepos_to_pos(s: str, lineno: int, linepos: int) -> int:
     """Converts a 0-indexed line number and position to a global position in a string."""

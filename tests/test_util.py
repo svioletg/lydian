@@ -2,7 +2,7 @@ from collections.abc import Callable, Iterable
 from dataclasses import Field, dataclass, field
 from datetime import UTC, datetime, timedelta, tzinfo
 from pathlib import Path
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 import pytest
 from maybetype import Nothing, Some, maybe
@@ -137,6 +137,10 @@ def test_get_dataclass_fields() -> None:
     assert dc_fields['c'].default == dc.c
     assert dc_fields['d.x'].default == dc.d.x
     assert dc_fields['d.y'].default_factory() == dc.d.y  # ty:ignore[call-non-callable]
+
+def test_is_annotated() -> None:
+    assert not util.is_annotated(str)
+    assert util.is_annotated(Annotated[str, 'Description'])
 
 def test_join_trailing() -> None:
     assert util.join_trailing('abc', ' ') == 'a b c '

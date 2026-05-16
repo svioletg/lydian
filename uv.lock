@@ -526,7 +526,7 @@ requires-dist = [
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "myst-parser", marker = "extra == 'docs'", specifier = ">=5.0.0" },
     { name = "prompt-toolkit", specifier = ">=3.0.52" },
-    { name = "py-maybetype", specifier = "==0.11.0" },
+    { name = "py-maybetype", specifier = "==0.12.0" },
     { name = "pynacl", specifier = ">=1.6.2,<1.7" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0.3" },
     { name = "pytest-mock", specifier = ">=3.15.1" },
@@ -741,11 +741,11 @@ wheels = [
 
 [[package]]
 name = "py-maybetype"
-version = "0.11.0"
+version = "0.12.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b0/9a/bdf878763e8c1b7d534badbb96018b75cd532eb54008c57e429d963a1d06/py_maybetype-0.11.0.tar.gz", hash = "sha256:df3d7ae05af491d23a467c88c67d4ef68adb6e814a08eb6d9ccc95f83db76b97", size = 60122, upload-time = "2026-04-06T20:55:08.83Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cb/80/22a799d91ce9076c7c3d5f36ffafa7f488e77c5cc13e8c53b0ac17829540/py_maybetype-0.12.0.tar.gz", hash = "sha256:81421533cb5f81573a8025630e77bece24d64e29e58c0b605c90236a0e3d6db2", size = 60600, upload-time = "2026-05-16T22:39:01.594Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c8/f2/816f9720352dbf82303dd034a0e476ac5a785d43cd98e1f64fdb1d4be657/py_maybetype-0.11.0-py3-none-any.whl", hash = "sha256:ac0c6d1afe85552337e8973f2c5b71737430c75fa8849dc0b9f8fc1557905b03", size = 10051, upload-time = "2026-04-06T20:55:07.789Z" },
+    { url = "https://files.pythonhosted.org/packages/eb/9a/f4fee989080356e7935f55ad850b09d4e8b597cabd172d45becc95b0481a/py_maybetype-0.12.0-py3-none-any.whl", hash = "sha256:bddb67bb56d5ea3d118abd4e018d3d14a7350fd4dd9d7efc9f2b24f82a279385", size = 10216, upload-time = "2026-05-16T22:38:59.918Z" },
 ]
 
 [[package]]

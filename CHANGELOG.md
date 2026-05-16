@@ -21,6 +21,7 @@ configured prefix accordingly.
 - Added constant `const.DOTENV_PATH`
 - Added class `util.FromStr`
 - Added function `bot.on_message()` as a Discord event listener of the same name
+- Added function `util.is_annotated()`
 - Added function `util.join_trailing()`
 - Added functions to `tests/conftest.py`:
   - `mock_discord_role()`
@@ -29,6 +30,7 @@ configured prefix accordingly.
 - Added command function `cogs.debug.captureuser()`
 - Added function `util.wrap_paragraphs()`
 - Added method `cogs.voice.VoiceCog.task_handle_play_requests()`
+- Added test file `test_console.py`
 - Added test file `test_perms.py`
 - Added test file `test_util_fromstr.py`
 
