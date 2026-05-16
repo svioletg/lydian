@@ -33,13 +33,14 @@ class Named(Protocol):
 class Arg:
     """Customizes a positional argument to a :py:class:`ConsoleCommand` function."""
 
-    def __init__(self, *, doc: str = '', parse: Callable[[str], Any] | None = None) -> None:
+    def __init__(self, name: str | None = None, *, doc: str = '', parse: Callable[[str], Any] | None = None) -> None:
         """Initializes a new ``Arg``.
 
         :param doc: A string of help text to describe this argument.
         :param parse: A function to convert this argument value from the raw string given to the desired type.
             If ``None``, the parameter's type annotation will be called with the argument string.
         """
+        self.name = name
         self.doc = doc
         self.parse = parse
 
@@ -56,6 +57,7 @@ class ConsoleCommand:
             *,
             group: str | tuple[str, ...] = (),
             doc: str | None = None,
+            console: BotConsole | None = None,
         ) -> None:
         """Initializes a new ``ConsoleCommand``.
 
@@ -64,16 +66,19 @@ class ConsoleCommand:
         :param group: A single group or tuple of nested group names to put this command under.
         :param doc: A string to use to describe this command for the ``help`` command. Will use ``func``'s docstring if
             not given.
+        :param console: The :py:class:`BotConsole` object this command belongs to. ``None`` by default; set
+            automatically if registered to a console.
         """
         self.func = cast('Intersection[Callable[..., None], Named]', self.validate(func))
-        self.func_sig: inspect.Signature = inspect.signature(func)
-
         self.group = group if isinstance(group, tuple) else (group,)
         self.name = name or (
             self.func.__name__ if not self.group else
             self.func.__name__.removeprefix('_'.join(self.group) + '_')
         )
         self.doc: str | None = doc or func.__doc__
+        self.console = console
+
+        self.func_sig: inspect.Signature = inspect.signature(func)
 
     def __repr__(self) -> str:  # noqa: D105
         return f'ConsoleCommand[{self.func.__name__}{str(self.func_sig).removesuffix(' -> None')}]' \
@@ -205,9 +210,16 @@ class ConsoleCommand:
         return Ok((parsed_args, parsed_kwargs))
 
     def invoke(self, *raw_args: str) -> None:
-        """Calls this command with string arguments parsed from console input, converting them as needed."""
-        raise NotImplementedError
-        parsed_args, parsed_kwargs = self.parse_raw_args(*raw_args)
+        """Calls this command with string arguments parsed from console input or logs an error.
+
+        The command function is called with the ``console`` attribute as the first argument, so that the ``self``
+        parameter in the function corresponds to its console and not the function.
+        """
+        match self.parse_raw_args(*raw_args):
+            case Ok((args, kwargs)):
+                self.func(self.console, *args, **kwargs)
+            case Err(message):
+                logger.error(message)
 
 def command(name: str | None = None, **kwargs: Any) -> Callable[Callable[..., None], ConsoleCommand]:  # noqa: ANN401
     """Decorates a function into a :py:class:`CommandFunc`, intended for use on :py:class:`BotConsole` methods."""
@@ -246,10 +258,13 @@ class BotConsole(metaclass=BotConsoleMeta):
     # Can't get ty to properly work with a recursive value type here so we're just using Any for now, see docstring
     commands: benedict[str, Any]
     """A map of command or group names to either a ``CommandFunc`` or another dictionary just like this one."""
-    commandslist: list[ConsoleCommand]
+    commandlist: list[ConsoleCommand]
 
     def __new__(cls, *_args: object, **_kwargs: object) -> Self:  # noqa: D102
-        return super().__new__(cls)
+        self: Self = super().__new__(cls)
+        for command in self.commandlist:
+            command.console = self
+        return self
 
     def __repr__(self) -> str:  # noqa: D105
         return f'{self.__class__.__name__}({self.bot!r}, prompt={self.prompt_prefix!r})'
@@ -305,7 +320,7 @@ class BotConsole(metaclass=BotConsoleMeta):
 
             match self.parse_input(user_input):
                 case Ok((command, args)):
-                    command(self, *args)
+                    command.invoke(*args)
                 case Err(message):
                     logger.warning(message)
 
@@ -336,18 +351,17 @@ class LydianConsole(BotConsole):
         pass
 
     @command()
-    def help(self, command: str | None = None, /) -> None:
+    def help(self, name: Annotated[str | None, Arg('command')] = None, /) -> None:
         """Prints information on all commands if no argument is given, or describes a given command."""
-        help_str: str = ''
-        if command:
-            help_str = cast('ConsoleCommand', self.commands[command]).help
+        if name:
+            if name not in (command := self.commands.get(name)):
+                logger.error(f'Unknown command: {name}')
+            if not isinstance(command, ConsoleCommand):
+                logger.error(f'Expected command after group name: {name}')
+            else:
+                console.print(command.help)
         else:
-            for k in self.commands.keypaths():
-                if not isinstance(v := self.commands[k], ConsoleCommand):
-                    continue
-                help_str += v.help + '\n'
-
-        console.print(help_str.strip())
+            console.print('\n\n'.join(c.help for c in self.commandlist))
 
     @command(group='debug')
     def debug_read(self, expr: str, /, *, log: bool = False) -> None:
