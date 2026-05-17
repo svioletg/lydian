@@ -2,20 +2,15 @@
 import asyncio
 import logging
 import os
-import shlex
 import sys
 import traceback
 from datetime import UTC, datetime
 from getpass import getpass
-from typing import Any, cast
 
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-from humanize import precisedelta
 from loguru import logger
-from prompt_toolkit import PromptSession
-from prompt_toolkit.patch_stdout import patch_stdout
 from rich.prompt import Confirm
 
 from lydian.cogs.debug import DebugCog
@@ -24,6 +19,7 @@ from lydian.cogs.util import embed_error, embed_info
 from lydian.cogs.voice import VoiceCog
 from lydian.cogs.voice import background_tasks as voice_background_tasks
 from lydian.config import config
+from lydian.console import bot_console
 from lydian.const import (
     CONFIG_PATH,
     DATA_DIR,
@@ -126,76 +122,12 @@ async def thread_bot() -> None:
         debug_context['bot-start-time'] = datetime.now(UTC)
         await bot.start(token)
 
-# TODO(svioletg): https://github.com/svioletg/lydian-discord-bot/issues/2
-async def thread_console() -> None:  # noqa: C901
+async def thread_console() -> None:
     """Returns the ``Coroutine`` thread for the interactive console."""
     await event_start_console.wait()
 
-    session = PromptSession()
-
-    logger.debug('Console is active')
-
-    while True:
-        # raw=True to allow log colorization
-        with patch_stdout(raw=True):
-            try:
-                user_input: str = await session.prompt_async('> ')
-            except EOFError:
-                user_input = 'stop'
-
-        if not user_input:
-            continue
-
-        logger.log('CONSOLE', user_input)
-
-        if user_input == 'stop':
-            logger.info('Stopping...')
-
-            # Make sure the bot doesn't try to download any more items in queue,
-            # .close() will trigger on_player_stop()
-            vc = cast('VoiceCog', bot.cogs['VoiceCog'])
-            vc.queue_advance_lock.state = True
-            vc.queue.clear()
-
-            await bot.close()
-            logger.info('Bot connection closed')
-            return
-
-        command, *args = shlex.split(user_input)
-
-        if command == 'uptime':
-            if args:
-                logger.error('Command "uptime" takes no arguments')
-                continue
-            console.print(
-                f'Bot has been running for {precisedelta(datetime.now(UTC) - debug_context['bot-start-time'])}',
-            )
-            continue
-
-        if config.debug and (command == 'debug'):
-            if not args:
-                logger.error('Expected sub-command after "debug"')
-                continue
-            command, *args = args
-
-            if (command in ('read', 'readlog')):
-                print_fn = logger.debug if command == 'readlog' else console.print
-                if len(args) != 1:
-                    logger.error(f'Expected single argument to console command "{command}"')
-                    continue
-
-                expr: str = args[0]
-
-                # Can't be ast.literal_eval, we explicitly need access to some outside variables
-                # This is only accessible in debug mode and will be warned about in multiple places
-                try:
-                    eval_globals: dict[str, Any] = {'config': config, 'perms': perms, 'dbg': debug_context}
-                    print_fn(f'{expr} == {eval(expr, eval_globals)!r}')  # noqa: S307
-                except Exception as e:  # noqa: BLE001
-                    logger.error(f'{e.__class__.__name__}: {e}')
-                continue
-
-        logger.warning(f'Unrecognized console input: {user_input}')
+    bot_console.bot = bot
+    await bot_console.start_loop()
 
 def prompt_bot_setup() -> bool:
     """Prompts the user to setup Lydian in the current working directory and returns whether the user confirmed."""

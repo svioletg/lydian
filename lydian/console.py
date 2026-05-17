@@ -162,7 +162,9 @@ class ConsoleCommand:
                 continue
             arginfo: Arg = self.arginfo[param.name]
             name: str = arginfo.name
-            if (arginfo.default is ...) and (param.kind is not inspect.Parameter.VAR_POSITIONAL):
+            if param.kind is inspect.Parameter.VAR_POSITIONAL:
+                name = f'{name}...'
+            if arginfo.default is ...:
                 # Required parameter
                 name = f'<{name}>'
             elif param.annotation is bool:
@@ -170,7 +172,7 @@ class ConsoleCommand:
                 name = f'[--{name}]' if arginfo.default is False else f'[--no-{name}]'
             else:
                 # Optional parameter
-                name = f'[{name if param.kind is inspect.Parameter.POSITIONAL_ONLY else f'--{name}=...'}]'
+                name = f'[{f'--{name}=' if param.kind is inspect.Parameter.KEYWORD_ONLY else name}]'
             parts.append(name)
 
         return f'{self.qualified_name} {' '.join(parts)}'.strip()
@@ -405,7 +407,7 @@ class LydianConsole(BotConsole):
         if name:
             if not (command := self.commands.get(name)):
                 logger.error(f'Unknown command: {name}')
-            if not isinstance(command, ConsoleCommand):
+            elif not isinstance(command, ConsoleCommand):
                 logger.error(f'Expected command after group name: {name}')
             else:
                 console.print(escape(command.help))

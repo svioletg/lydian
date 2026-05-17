@@ -95,6 +95,10 @@ def test_command_signature(console: Console) -> None:
     assert console.repeat.cli_signature == 'repeat <text> [n]'
     assert console.add.cli_signature == 'math add <a> <b>'
     assert console.sign.cli_signature == 'math sign <n> [--no-keep-zero]'
+    assert console.testparsing.cli_signature == 'testparsing <nums>'
+    assert console.var_positional.cli_signature == 'var_positional <a> <b> <c...>'
+    assert console.only_var_pos.cli_signature == 'only_var_pos <xs...>'
+    assert console.only_var_pos_optional.cli_signature == 'only_var_pos_optional [xs...]'
 
 @pytest.mark.parametrize(('s', 'expected'),
     [
