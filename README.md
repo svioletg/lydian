@@ -20,6 +20,7 @@ Documentation: <https://lydian-discord-bot.readthedocs.io/en/latest/>
 - [Usage: Running the bot](#usage-running-the-bot)
 - [Usage: Bot console commands](#usage-bot-console-commands)
   - [`debug read`, `debug readlog`](#debug-read-debug-readlog)
+  - [`help`](#help)
   - [`stop`](#stop)
   - [`uptime`](#uptime)
 - [Usage: CLI commands](#usage-cli-commands)
@@ -85,8 +86,6 @@ reason, you should be able to hit Ctrl+C to send a keyboard interrupt and forcib
 
 ## Usage: Bot console commands
 
-Lydian implements a basic console that can accept some limited commands while the bot is running:
-
 > [!NOTE]
 > All commands starting with `debug` require [debug mode](#debug-mode) to use.
 
@@ -115,6 +114,13 @@ debug_context['cog.voice.queue'] == MediaQueue([])
 > debug readlog dbg.cog.voice.queue
 [2026-04-30 00:51:30] [bot::thread_console/DEBUG]: debug_context['cog.voice.queue'] == MediaQueue([])
 ```
+
+### `help`
+
+Shows a description for a given command, or all commands if given no arguments.
+
+Arguments:
+  - command name (string) [optional]
 
 ### `stop`
 

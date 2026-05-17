@@ -15,11 +15,15 @@ configured prefix accordingly.
 - Added ability to restrict command usage to users with or without certain roles (#9)
 - Added debug-only bot command `-captureuser`
   - Stores the `discord.Member` object of the command author to the `debug_context` dictionary
+- Added module `console`
 - Added module `perms`
 - Added constant `const.PERMISSIONS_PATH`
 - Added constant `const.DOTENV_PATH`
 - Added class `util.FromStr`
 - Added function `bot.on_message()` as a Discord event listener of the same name
+- Added function `util.get_annotation()`
+- Added function `util.is_annotated()`
+- Added function `util.join_trailing()`
 - Added functions to `tests/conftest.py`:
   - `mock_discord_role()`
   - `mock_get_role()`
@@ -27,6 +31,7 @@ configured prefix accordingly.
 - Added command function `cogs.debug.captureuser()`
 - Added function `util.wrap_paragraphs()`
 - Added method `cogs.voice.VoiceCog.task_handle_play_requests()`
+- Added test file `test_console.py`
 - Added test file `test_perms.py`
 - Added test file `test_util_fromstr.py`
 

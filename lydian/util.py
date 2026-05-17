@@ -12,7 +12,7 @@ from math import floor
 from pathlib import Path
 from time import perf_counter_ns
 from types import TracebackType
-from typing import Any, ClassVar, Literal, cast, get_args, get_origin
+from typing import Annotated, Any, ClassVar, Literal, cast, get_args, get_origin
 from zoneinfo import ZoneInfo
 
 from maybetype import Maybe, maybe
@@ -351,20 +351,6 @@ def expect[T](value: T | None) -> T:
         raise ValueError('None')
     return value
 
-def get_dataclass_fields(dc: object, parents: list[str] | None = None) -> dict[str, Field]:
-    """Returns a dictionary of field names (dotted if the field is a dataclass) to field objects for a dataclass.
-
-    :param parents: Strings to prefix this dataclass' field names with, joined by dots.
-    """
-    parents = parents or []
-    field_dict: dict[str, Field] = {}
-    for f in fields(dc):  # ty:ignore[invalid-argument-type]
-        field_dict[f.name if not parents else f'{'.'.join(parents)}.{f.name}'] = f
-        if is_dataclass(f.type):
-            field_dict = field_dict | get_dataclass_fields(f.type, [*parents, f.name])
-
-    return field_dict
-
 def first_where[T](it: Iterable[T], predicate: Callable[[T], bool]) -> T | None:
     """Return the first item of an iterable that returns ``True`` for ``predicate(i)``, or ``None`` if no items pass."""
     try:
@@ -379,6 +365,43 @@ def format_duration(total_seconds: float) -> str:
     if h:
         return f'{h}:{m:02d}:{s:02d}'
     return f'{m}:{s:02d}'
+
+def get_annotation(typ: object) -> Any | None:  # noqa: ANN401
+    """Returns the second type argument if ``typ`` is ``typing.Annotated``, otherwise returns ``None``."""
+    try:
+        return get_args(typ)[1] if get_origin(typ) is Annotated else None
+    except IndexError:
+        return None
+
+def get_dataclass_fields(dc: object, parents: list[str] | None = None) -> dict[str, Field]:
+    """Returns a dictionary of field names (dotted if the field is a dataclass) to field objects for a dataclass.
+
+    :param parents: Strings to prefix this dataclass' field names with, joined by dots.
+    """
+    parents = parents or []
+    field_dict: dict[str, Field] = {}
+    for f in fields(dc):  # ty:ignore[invalid-argument-type]
+        field_dict[f.name if not parents else f'{'.'.join(parents)}.{f.name}'] = f
+        if is_dataclass(f.type):
+            field_dict = field_dict | get_dataclass_fields(f.type, [*parents, f.name])
+
+    return field_dict
+
+def is_annotated(typ: object) -> bool:
+    """Returns whether ``typ``'s type origin is ``typing.Annotated``.
+
+    .. note::
+        There's no way to annotate ``typ`` is accepting ``typing.Annotated`` specifically, so it just accepts
+        ``object``.
+    """
+    return get_origin(typ) is Annotated
+
+def join_trailing(s: Iterable[str], sep: str, *, trail_single: bool = False) -> str:
+    """Same as ``str.join()``, but adds an additional ``sep`` at the end if any joining was performed.
+
+    :param trail_single: Add a trailing ``sep`` even if there's only one item in ``s``.
+    """
+    return sep.join(seq := list(s)) + (sep if len(seq) > (0 if trail_single else 1) else '')
 
 def linepos_to_pos(s: str, lineno: int, linepos: int) -> int:
     """Converts a 0-indexed line number and position to a global position in a string."""
