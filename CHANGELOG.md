@@ -49,6 +49,10 @@ configured prefix accordingly.
 - Config key `max-filesize` now additionally accepts a string of a value and unit, like `"50 MB"` or
   `1gb`
 
+### Fixed
+
+- Fixed wrong line position being shown for TODO lines when running the `todos` tools (#19)
+
 ## [0.4.1] - 2026-05-12
 
 ### Added
