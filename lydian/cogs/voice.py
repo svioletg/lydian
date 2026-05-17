@@ -323,8 +323,8 @@ def _assert_voice_client(vc: discord.VoiceProtocol | None) -> discord.VoiceClien
 class VoiceCog(commands.Cog):
     """Voice-related commands."""
 
-    def __init__(self, bot: discord.client.Bot) -> None:
-        self.bot: discord.client.Bot = bot
+    def __init__(self, bot: commands.Bot) -> None:
+        self.bot: commands.Bot = bot
 
         # Media
         self.queue = MediaQueue(maxlen=config.max_queue_length)

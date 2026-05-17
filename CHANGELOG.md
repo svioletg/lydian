@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
 configured prefix accordingly.
 
+## [Unreleased]
+
+### Fixed
+
+- Changed type annotation for `cogs.voice.VoiceCog.bot` to `commands.Bot` instead of
+  `discord.client.Bot` to fix sphinx error
+
 ## [0.5.0] - 2026-05-17
 
 ### Added

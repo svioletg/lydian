@@ -2,7 +2,7 @@
 .. py:currentmodule:: lydian.cogs.voice
 
 :py:mod:`~lydian.cogs.voice` module
-==============================
+===================================
 
 .. automodule:: lydian.cogs.voice
    :members:
