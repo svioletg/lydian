@@ -205,6 +205,6 @@ def setup_rich_console() -> Console:
         theme=theme,
     )
 
-console: Console = setup_rich_console()
+screen: Console = setup_rich_console()
 
 debug_context = benedict()

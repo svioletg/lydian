@@ -53,6 +53,7 @@ configured prefix accordingly.
   `envcov`, and will be used more generally
 - Config key `max-filesize` now additionally accepts a string of a value and unit, like `"50 MB"` or
   `1gb`
+- Renamed `const.console` to `const.screen` to further separate it from the newly added `BotConsole`
 
 ### Fixed
 

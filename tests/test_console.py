@@ -5,8 +5,7 @@ import pytest
 from maybetype import Err, Ok
 
 from lydian.console import Arg, BotConsole, ConsoleCommand, command
-from lydian.const import console as screen
-from lydian.const import setup_logger
+from lydian.const import screen, setup_logger
 
 
 class Console(BotConsole):  # noqa: D101

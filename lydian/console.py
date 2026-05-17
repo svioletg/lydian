@@ -19,7 +19,7 @@ from prompt_toolkit.patch_stdout import patch_stdout
 from rich.markup import escape
 
 from lydian.config import config
-from lydian.const import console, debug_context, setup_logger
+from lydian.const import debug_context, screen, setup_logger
 from lydian.perms import perms
 from lydian.util import get_annotation, is_annotated, join_trailing, wrap_paragraphs
 
@@ -410,9 +410,9 @@ class LydianConsole(BotConsole):
             elif not isinstance(command, ConsoleCommand):
                 logger.error(f'Expected command after group name: {name}')
             else:
-                console.print(escape(command.help))
+                screen.print(escape(command.help))
         else:
-            console.print(escape('\n\n'.join(c.help for c in self.commandlist)))
+            screen.print(escape('\n\n'.join(c.help for c in self.commandlist)))
 
     @command(enabled=config.debug, group='debug')
     def debug_read(self, expr: str, /, *, log: bool = False) -> None:
@@ -424,7 +424,7 @@ class LydianConsole(BotConsole):
         :param expr: The expression to evaluate.
         :param log: Whether to log this evaluation (as DEBUG-level) or just print it to the screen.
         """
-        print_fn = logger.debug if log else console.print
+        print_fn = logger.debug if log else screen.print
 
         # Can't be ast.literal_eval, we explicitly need access to some outside variables
         # This is only accessible in debug mode and will be warned about in multiple places
@@ -438,7 +438,7 @@ class LydianConsole(BotConsole):
     @command()
     def uptime(self, /) -> None:
         """Prints how long the bot has been running for."""
-        console.print(f'Bot has been running for {precisedelta(datetime.now(UTC) - debug_context['bot-start-time'])}')
+        screen.print(f'Bot has been running for {precisedelta(datetime.now(UTC) - debug_context['bot-start-time'])}')
 
     #endregion COMMANDS
 

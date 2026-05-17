@@ -29,9 +29,9 @@ from lydian.const import (
     PERMISSIONS_PATH,
     PROJECT_VERSION,
     clear_tmp_dir,
-    console,
     create_directories,
     debug_context,
+    screen,
     setup_logger,
 )
 from lydian.errors import AbortCommand
@@ -134,25 +134,25 @@ def prompt_bot_setup() -> bool:
     if Confirm.ask('Do you want to setup Lydian in this directory?'):
         if not CONFIG_PATH.exists():
             CONFIG_PATH.touch()
-            console.print(f'Created file: {CONFIG_PATH}')
+            screen.print(f'Created file: {CONFIG_PATH}')
         if not PERMISSIONS_PATH.exists():
             PERMISSIONS_DEFAULT.to_yaml(PERMISSIONS_PATH)
-            console.print(f'Created file: {PERMISSIONS_PATH}')
+            screen.print(f'Created file: {PERMISSIONS_PATH}')
         if not DATA_DIR.exists():
             DATA_DIR.mkdir()
-            console.print(f'Created directory: {DATA_DIR}')
+            screen.print(f'Created directory: {DATA_DIR}')
         if not DOTENV_PATH.exists():
-            console.print('No .env file found; creating one now.')
+            screen.print('No .env file found; creating one now.')
             token: str = getpass('Enter or paste your bot token: ', echo_char='*')
             DOTENV_PATH.write_text(f'LYDIAN_TOKEN={token.strip()}\n')
-            console.print(f'Created file: {DOTENV_PATH}')
+            screen.print(f'Created file: {DOTENV_PATH}')
         return True
     return False
 
 async def async_main() -> int:
     """Initializes the logger and starts the bot."""
     if not CONFIG_PATH.exists():
-        console.print('"lydian-config.toml" not found in this directory.')
+        screen.print('"lydian-config.toml" not found in this directory.')
         return 1 if prompt_bot_setup() else 0
 
     setup_logger(
@@ -199,6 +199,6 @@ async def async_main() -> int:
 @logger.catch(onerror=lambda _: sys.exit(1))
 def main() -> None:  # noqa: D103
     if len(sys.argv) > 1:
-        console.print('[err]ERROR: lydian takes 0 arguments[/]')
+        screen.print('[err]ERROR: lydian takes 0 arguments[/]')
         sys.exit(1)
     sys.exit(asyncio.run(async_main()))

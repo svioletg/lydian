@@ -5,7 +5,7 @@ from argparse import ArgumentParser
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from lydian.const import console
+from lydian.const import screen
 from lydian.util import pos_to_linepos
 
 PROJECT_DIR: Path = Path('lydian').absolute()
@@ -86,8 +86,8 @@ def main() -> int:  # noqa: D103
     if todos:
         for todo in todos:
             linepos: tuple[int, int] = pos_to_linepos(todo.file.read_text('utf-8'), todo.span[0])
-            console.print(f'TODO in [bold]{todo.file}:{linepos[0] + 1}:{linepos[1] + 1}[/]: [cyan]{todo.content()}[/]')
-        console.print(f'Found {len(todos)} TODOs.')
+            screen.print(f'TODO in [bold]{todo.file}:{linepos[0] + 1}:{linepos[1] + 1}[/]: [cyan]{todo.content()}[/]')
+        screen.print(f'Found {len(todos)} TODOs.')
         return 1
 
     return 0
