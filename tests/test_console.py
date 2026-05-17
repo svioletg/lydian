@@ -6,6 +6,7 @@ from maybetype import Err, Ok
 
 from lydian.console import Arg, BotConsole, ConsoleCommand, command
 from lydian.const import console as screen
+from lydian.const import setup_logger
 
 
 class Console(BotConsole):  # noqa: D101
@@ -38,6 +39,11 @@ class Console(BotConsole):  # noqa: D101
     @command()
     def testparsing(self, nums: Annotated[list[int], Arg(parse=lambda s: [int(i) for i in s.split(',')])], /) -> None:
         screen.print(nums)
+
+    @command()
+    def var_positional(self, a: str, b: int, /, *c: str) -> None:
+        joined: str = ' '.join(c)
+        screen.print(f'a={a!r}, b={b!r}, c={joined!r}')
 
 @pytest.fixture
 def console() -> Console:
@@ -76,11 +82,11 @@ def test_command_validate() -> None:
         assert not ConsoleCommand.validate(invalid_c)
 
 def test_command_signature(console: Console) -> None:
-    assert console.noargs.signature == 'noargs'
-    assert console.echo.signature == 'echo <text>'
-    assert console.repeat.signature == 'repeat <text> [n]'
-    assert console.add.signature == 'math add <a> <b>'
-    assert console.sign.signature == 'math sign <n> [--no-keep_zero]'
+    assert console.noargs.cli_signature == 'noargs'
+    assert console.echo.cli_signature == 'echo <text>'
+    assert console.repeat.cli_signature == 'repeat <text> [n]'
+    assert console.add.cli_signature == 'math add <a> <b>'
+    assert console.sign.cli_signature == 'math sign <n> [--no-keep-zero]'
 
 @pytest.mark.parametrize(('s', 'expected'),
     [
@@ -112,3 +118,36 @@ def test_parse_raw_args(console: Console) -> None:
     assert console.add.parse_raw_args('1', '2') == Ok(([1, 2], {}))
 
     assert console.testparsing.parse_raw_args('1,2,3') == Ok(([[1, 2, 3]], {}))
+
+    assert console.var_positional.parse_raw_args('a', '2', 'c', 'd', 'e', 'f') \
+        == Ok((['a', 2, 'c', 'd', 'e', 'f'], {}))
+
+def test_invoke(console: Console, capsys: pytest.CaptureFixture) -> None:
+    setup_logger('DEBUG')
+
+    console.noargs.invoke()
+    assert capsys.readouterr().out == ''
+
+    console.echo.invoke('text')
+    assert capsys.readouterr().out == 'text\n'
+
+    console.repeat.invoke('text', '2')
+    assert capsys.readouterr().out == 'texttext\n'
+
+    console.add.invoke('1', '2')
+    assert capsys.readouterr().out == 'Result: 3\n'
+
+    console.sign.invoke('1')
+    assert capsys.readouterr().out == '1\n'
+    console.sign.invoke('0')
+    assert capsys.readouterr().out == '0\n'
+    console.sign.invoke('0', '--no-keep-zero')
+    assert capsys.readouterr().out == '1\n'
+    console.sign.invoke('-1')
+    assert capsys.readouterr().out == '-1\n'
+
+    console.testparsing.invoke('1,2,3')
+    assert capsys.readouterr().out == '[1, 2, 3]\n'
+
+    console.var_positional.invoke('a', '2', 'c', 'd', 'e', 'f')
+    assert capsys.readouterr().out == "a='a', b=2, c='c d e f'\n"

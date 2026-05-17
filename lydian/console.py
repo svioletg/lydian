@@ -1,9 +1,11 @@
 """Holds the :py:class:`BotConsole` class to handle console command while running the bot."""
+import asyncio
 import inspect
 import shlex
 from collections.abc import Callable
 from datetime import UTC, datetime
 from itertools import zip_longest
+from types import EllipsisType, NoneType
 from typing import TYPE_CHECKING, Annotated, Any, Protocol, Self, Union, cast, get_args, get_origin
 from unittest.mock import AsyncMock
 
@@ -14,11 +16,12 @@ from loguru import logger
 from maybetype import Err, Ok, Result
 from prompt_toolkit import PromptSession
 from prompt_toolkit.patch_stdout import patch_stdout
+from rich.markup import escape
 
 from lydian.config import config
-from lydian.const import console, debug_context
+from lydian.const import console, debug_context, setup_logger
 from lydian.perms import perms
-from lydian.util import is_annotated, join_trailing, wrap_paragraphs
+from lydian.util import get_annotation, is_annotated, join_trailing, wrap_paragraphs
 
 if TYPE_CHECKING:
     from ty_extensions import Intersection
@@ -31,18 +34,41 @@ class Named(Protocol):
     __name__: str
 
 class Arg:
-    """Customizes a positional argument to a :py:class:`ConsoleCommand` function."""
+    """Customizes a positional argument to a :py:class:`ConsoleCommand` function.
 
-    def __init__(self, name: str | None = None, *, doc: str = '', parse: Callable[[str], Any] | None = None) -> None:
+    .. important::
+        The ``name`` attribute will be unset until processed in a :py:class:`ConsoleCommand`, at which point if not
+        already set it is defaulted to the parameter's original name.
+    """
+
+    def __init__(self,
+            name: str | None = None,
+            *,
+            doc: str = '',
+            parse: Callable[[str], Any] | None = None,
+            default: Any | EllipsisType = ...,  # noqa: ANN401
+        ) -> None:
         """Initializes a new ``Arg``.
 
+        :param name: A custom name to use in help text and as the keyword for this argument, if applicable. Underscores
+            will be automatically converted to hyphens to make it kebab-cased.
         :param doc: A string of help text to describe this argument.
         :param parse: A function to convert this argument value from the raw string given to the desired type.
             If ``None``, the parameter's type annotation will be called with the argument string.
+            When given with a variable parameter (like ``*args``), ``parse`` will be mapped onto each string.
+        :param default: A default to give this argument, or ``...`` to provide no default. This will be overwritten by
+            the actual default of the parameter if one is present, so this is largely intended to be used for giving
+            variable parameters a default value, thus making them optional.
         """
-        self.name = name
-        self.doc = doc
-        self.parse = parse
+        self.name: str
+        if name:
+            self.name = name.replace('_', '-')
+        self.doc: str = doc
+        self.parse: Callable[[str], Any] | None = parse
+        self.default: Any | EllipsisType = default
+
+    def __repr__(self) -> str:  # noqa: D105
+        return f'{self.__class__.__name__}(name={self.name!r})'
 
 class ConsoleCommand:
     """A wrapper object for functions meant as :py:class:`BotConsole` commands.
@@ -55,6 +81,7 @@ class ConsoleCommand:
             func: Callable[..., None],
             name: str | None = None,
             *,
+            enabled: bool = True,
             group: str | tuple[str, ...] = (),
             doc: str | None = None,
             console: BotConsole | None = None,
@@ -63,6 +90,8 @@ class ConsoleCommand:
 
         :param func: The function to wrap as a command.
         :param name: A name to give this command, defaulting to the function's name minus any group prefix.
+        :param enable: Whether this command should be enabled in the console it is added to. If ``False``,
+            the command will not be registered to the console and calling :py:meth:`invoke` will return immediately.
         :param group: A single group or tuple of nested group names to put this command under.
         :param doc: A string to use to describe this command for the ``help`` command. Will use ``func``'s docstring if
             not given.
@@ -70,6 +99,7 @@ class ConsoleCommand:
             automatically if registered to a console.
         """
         self.func = cast('Intersection[Callable[..., None], Named]', self.validate(func))
+        self.enabled = enabled
         self.group = group if isinstance(group, tuple) else (group,)
         self.name = name or (
             self.func.__name__ if not self.group else
@@ -79,6 +109,17 @@ class ConsoleCommand:
         self.console = console
 
         self.func_sig: inspect.Signature = inspect.signature(func)
+        self.arginfo: dict[str, Arg] = {}
+
+        for param in self.func_sig.parameters.values():
+            if param.name == 'self':
+                continue
+            arginfo = get_annotation(param.annotation) or Arg()
+            if not hasattr(arginfo, 'name'):
+                arginfo.name = param.name.replace('_', '-')
+            if param.default is not inspect.Parameter.empty:
+                arginfo.default = param.default
+            self.arginfo[param.name] = self.arginfo[arginfo.name] = arginfo
 
     def __repr__(self) -> str:  # noqa: D105
         return f'ConsoleCommand[{self.func.__name__}{str(self.func_sig).removesuffix(' -> None')}]' \
@@ -98,7 +139,7 @@ class ConsoleCommand:
         sig = inspect.signature(func)
         for param in sig.parameters.values():
             if param.kind is inspect.Parameter.POSITIONAL_OR_KEYWORD:
-                # Only allow functions will positional-only and keyword-only parameters
+                # Only allow functions with positional-only and keyword-only parameters
                 #
                 # This helps ease work later and there generally isn't a use for
                 # positional-or-keyword parameters in a command context
@@ -107,34 +148,37 @@ class ConsoleCommand:
 
         return func
 
-    # TODO(svioletg): Add method to create CLI-style command signature from function signature
-    # https://github.com/svioletg/lydian-discord-bot/issues/2
     @property
-    def signature(self) -> str:
+    def qualified_name(self) -> str:
+        """The command's name prefixed with its groups, separated by spaces."""
+        return join_trailing(self.group, ' ', trail_single=True) + self.name
+
+    @property
+    def cli_signature(self) -> str:
         """A CLI-style command signature created from the wrapped function's signature."""
-        qualified_name: str = join_trailing(self.group, ' ', trail_single=True) + self.name
         parts: list[str] = []
         for param in self.func_sig.parameters.values():
             if param.name == 'self':
                 continue
-            name: str = param.name
-            if param.default is inspect.Parameter.empty:
+            arginfo: Arg = self.arginfo[param.name]
+            name: str = arginfo.name
+            if (arginfo.default is ...) and (param.kind is not inspect.Parameter.VAR_POSITIONAL):
                 # Required parameter
                 name = f'<{name}>'
             elif param.annotation is bool:
                 # Flag parameter
-                name = f'[--{name}]' if param.default is False else f'[--no-{name}]'
+                name = f'[--{name}]' if arginfo.default is False else f'[--no-{name}]'
             else:
                 # Optional parameter
                 name = f'[{name if param.kind is inspect.Parameter.POSITIONAL_ONLY else f'--{name}=...'}]'
             parts.append(name)
 
-        return f'{qualified_name} {' '.join(parts)}'.strip()
+        return f'{self.qualified_name} {' '.join(parts)}'.strip()
 
     @property
     def help(self) -> str:
         """Returns the string printed when using the ``help`` command on this command (or showing all)."""
-        return f'{self.signature}\n' + '\n'.join(wrap_paragraphs(
+        return f'{self.cli_signature}\n' + '\n'.join(wrap_paragraphs(
             self.doc or '(no description)',
             80,
             initial_indent='    ',
@@ -149,59 +193,64 @@ class ConsoleCommand:
         message. If parsing failed because of invalid command function defintions or otherwise an error outside the
         user's control, ``ValueError`` or ``TypeError`` may be raised.
         """
-        positional: dict[str, inspect.Parameter] = {}
+        positional: list[inspect.Parameter] = []
         keyword: dict[str, inspect.Parameter] = {}
 
         for param in self.func_sig.parameters.values():
             if param.name == 'self':
                 continue
-            (positional if param.kind is inspect.Parameter.POSITIONAL_ONLY else keyword)[param.name] = param
+            if param.kind in [inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.VAR_POSITIONAL]:
+                positional.append(param)
+            else:
+                keyword[param.name] = param
 
-        args: list[str] = []
-        kwargs: list[str] = []
+        pos_vals: list[str] = []
+        kw_vals: list[str] = []
 
         for s in raw_args:
             if s.startswith('--'):
-                kwargs.append(s.removeprefix('--'))
+                kw_vals.append(s.removeprefix('--'))
             else:
-                args.append(s)
+                pos_vals.append(s)
 
         parsed_args: list[Any] = []
         parsed_kwargs: dict[str, Any] = {}
 
-        for n, (value, param) in enumerate(zip_longest(args, positional.values(), fillvalue=None)):
+        for n, (value, param) in enumerate(zip_longest(pos_vals, positional, fillvalue=None)):
             if param is None:
                 return Err(f'Unexpected additional argument: {value!r}')
+            argtype, arginfo = cast('tuple[Any, Arg]', get_args(param.annotation)) if is_annotated(param.annotation) \
+                else (param.annotation, self.arginfo[param.name])
             if value is None:
-                if param.default is inspect.Parameter.empty:
+                if arginfo.default is ...:
                     return Err('Missing required positional argument(s):'
-                        + f' {', '.join(p.name for p in list(positional.values())[n:])}')
-                parsed_args.append(param.default)
+                        + f' {', '.join(p.name for p in positional[n:])}')
+                parsed_args.append(arginfo.default)
                 continue
-            argtype: type = param.annotation
-            if get_origin(param.annotation) is Union:
-                t_args = get_args(param.annotation)
-                if len(t_args) != 2:  # noqa: PLR2004
-                    raise ValueError(f'Expected only two type arguments for union in {param} of {self.func}:'
-                        + f' {t_args!r}')
-                if t_args[1] is not None:
-                    raise TypeError(f'Command function parameter unions can only be T | None: {param}')
+            if param.kind is inspect.Parameter.VAR_POSITIONAL:
+                remaining: tuple[str, ...] = tuple(pos_vals[n:])
+                parser: Callable[[str], Any] = (arginfo and arginfo.parse) or argtype  # ty:ignore[invalid-assignment]
+                parsed_args.extend(tuple(map(parser, remaining)))
+                break
+            if get_origin(argtype) is Union:
+                t_args = get_args(argtype)
+                if t_args[1] is not NoneType:
+                    raise TypeError(f'Command function parameter unions can only be T | None: {argtype} (in {param!r})')
                 argtype = t_args[0]
-            arginfo: Arg | None = get_args(param.annotation)[1] if is_annotated(param.annotation) else None
             parser: Callable[[str], Any] = (arginfo and arginfo.parse) or argtype  # ty:ignore[invalid-assignment]
             parsed_args.append(parser(value))
 
-        for kwarg in kwargs:
+        for kwarg in kw_vals:
             split: list[str] = kwarg.split('=', maxsplit=1)
             name: str = split[0]
-            if not (param := keyword.get(name.removeprefix('no-'))):
+            if not (param := keyword.get(name.removeprefix('no-').replace('-', '_'))):
                 return Err(f'Unexpected keyword argument: --{kwarg}')
+            arginfo: Arg = self.arginfo[param.name]
             if (param.annotation is bool) and (len(split) == 1):
                 # No value is fine for a flag, check for --flag or --no-flag
-                parsed_kwargs[param.name] = not param.default if name.startswith('no-') else param.default
+                parsed_kwargs[param.name] = not arginfo.default if name.startswith('no-') else arginfo.default
                 continue
             value: str = split[1]
-
             arginfo: Arg | None = get_args(param.annotation)[1] if is_annotated(param.annotation) else None
             parser: Callable[[str], Any] = (arginfo and arginfo.parse) or param.annotation  # ty:ignore[invalid-assignment]
             parsed_value = parser(value)
@@ -215,6 +264,9 @@ class ConsoleCommand:
         The command function is called with the ``console`` attribute as the first argument, so that the ``self``
         parameter in the function corresponds to its console and not the function.
         """
+        if not self.enabled:
+            return
+
         match self.parse_raw_args(*raw_args):
             case Ok((args, kwargs)):
                 self.func(self.console, *args, **kwargs)
@@ -231,13 +283,17 @@ class BotConsoleMeta(type):
     """Metaclass for ``BotConsole``, handling registering commands."""
 
     def __new__(cls, name: str, bases: tuple[type, ...], attrs: dict[str, Any]) -> BotConsoleMeta:  # noqa: D102
-        attrs['prompt'] = '> '
+        attrs['prompt_prefix'] = '> '
         attrs['commands']: benedict[str, Any] = benedict(keypath_separator=' ')
         attrs['commandlist']: list[ConsoleCommand] = []
 
         new_cls = super().__new__(cls, name, bases, attrs)
+
+        # Register commands
         for attr in new_cls.__mro__[0].__dict__.values():
             if not isinstance(attr, ConsoleCommand):
+                continue
+            if not attr.enabled:
                 continue
             depth = attrs['commands']
             for part in attr.group:
@@ -340,30 +396,20 @@ class LydianConsole(BotConsole):
     #region COMMANDS
 
     @command()
-    def sigtest(self,
-            a: str,
-            b: Annotated[str, Arg(parse=lambda s: s.lower())],
-            c: str | None = None,
-            /, *,
-            d: bool = False,
-            e: int = 5,
-        ) -> None:
-        pass
-
-    @command()
-    def help(self, name: Annotated[str | None, Arg('command')] = None, /) -> None:
+    def help(self, /, *name_parts: Annotated[str, Arg('command')]) -> None:
         """Prints information on all commands if no argument is given, or describes a given command."""
+        name: str = ' '.join(name_parts)
         if name:
-            if name not in (command := self.commands.get(name)):
+            if not (command := self.commands.get(name)):
                 logger.error(f'Unknown command: {name}')
             if not isinstance(command, ConsoleCommand):
                 logger.error(f'Expected command after group name: {name}')
             else:
-                console.print(command.help)
+                console.print(escape(command.help))
         else:
-            console.print('\n\n'.join(c.help for c in self.commandlist))
+            console.print(escape('\n\n'.join(c.help for c in self.commandlist)))
 
-    @command(group='debug')
+    @command(enabled=config.debug, group='debug')
     def debug_read(self, expr: str, /, *, log: bool = False) -> None:
         """Prints the result of an expression to stdout.
 
@@ -392,3 +438,7 @@ class LydianConsole(BotConsole):
     #endregion COMMANDS
 
 bot_console = LydianConsole(None)
+
+if __name__ == '__main__':
+    setup_logger(config.logging.log_level)
+    asyncio.run(bot_console.start_loop())

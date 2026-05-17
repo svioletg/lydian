@@ -21,6 +21,7 @@ configured prefix accordingly.
 - Added constant `const.DOTENV_PATH`
 - Added class `util.FromStr`
 - Added function `bot.on_message()` as a Discord event listener of the same name
+- Added function `util.get_annotation()`
 - Added function `util.is_annotated()`
 - Added function `util.join_trailing()`
 - Added functions to `tests/conftest.py`:
