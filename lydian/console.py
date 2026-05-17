@@ -225,6 +225,9 @@ class ConsoleCommand:
                 if arginfo.default is ...:
                     return Err('Missing required positional argument(s):'
                         + f' {', '.join(p.name for p in positional[n:])}')
+                if param.kind is inspect.Parameter.VAR_POSITIONAL:
+                    parsed_args.extend(arginfo.default)
+                    break
                 parsed_args.append(arginfo.default)
                 continue
             if param.kind is inspect.Parameter.VAR_POSITIONAL:
@@ -396,7 +399,7 @@ class LydianConsole(BotConsole):
     #region COMMANDS
 
     @command()
-    def help(self, /, *name_parts: Annotated[str, Arg('command')]) -> None:
+    def help(self, /, *name_parts: Annotated[str, Arg('command', default=())]) -> None:
         """Prints information on all commands if no argument is given, or describes a given command."""
         name: str = ' '.join(name_parts)
         if name:

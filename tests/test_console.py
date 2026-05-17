@@ -45,6 +45,14 @@ class Console(BotConsole):  # noqa: D101
         joined: str = ' '.join(c)
         screen.print(f'a={a!r}, b={b!r}, c={joined!r}')
 
+    @command()
+    def only_var_pos(self, /, *xs: str) -> None:
+        screen.print(' '.join(xs))
+
+    @command()
+    def only_var_pos_optional(self, /, *xs: Annotated[str, Arg(default=('a'))]) -> None:
+        screen.print(' '.join(xs))
+
 @pytest.fixture
 def console() -> Console:
     return Console()
@@ -122,6 +130,11 @@ def test_parse_raw_args(console: Console) -> None:
     assert console.var_positional.parse_raw_args('a', '2', 'c', 'd', 'e', 'f') \
         == Ok((['a', 2, 'c', 'd', 'e', 'f'], {}))
 
+    assert console.only_var_pos.parse_raw_args('a', 'b', 'c') == Ok((['a', 'b', 'c'], {}))
+
+    assert console.only_var_pos_optional.parse_raw_args() == Ok((['a'], {}))
+    assert console.only_var_pos_optional.parse_raw_args('a', 'b', 'c') == Ok((['a', 'b', 'c'], {}))
+
 def test_invoke(console: Console, capsys: pytest.CaptureFixture) -> None:
     setup_logger('DEBUG')
 
@@ -151,3 +164,11 @@ def test_invoke(console: Console, capsys: pytest.CaptureFixture) -> None:
 
     console.var_positional.invoke('a', '2', 'c', 'd', 'e', 'f')
     assert capsys.readouterr().out == "a='a', b=2, c='c d e f'\n"
+
+    console.only_var_pos.invoke('a', 'b', 'c')
+    assert capsys.readouterr().out == 'a b c\n'
+
+    console.only_var_pos_optional.invoke()
+    assert capsys.readouterr().out == 'a\n'
+    console.only_var_pos_optional.invoke('a', 'b', 'c')
+    assert capsys.readouterr().out == 'a b c\n'
