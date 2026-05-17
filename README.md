@@ -1,17 +1,21 @@
 # Lydian (Discord Bot) <!-- omit in toc -->
 
+> [!WARNING]
+> Lydian is currently in a beta state, before its v1.0.0 release it may be unstable or subject to
+> a number of bugs. [Pre-releases](https://github.com/svioletg/lydian-discord-bot/releases) should
+> work reasonably well, but it should likely be kept to smaller servers for the time being.
+
 Lydian is a Discord bot for playing music. It uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) to
 extract info and download media from URLs, and thus will support [any source that yt-dlp
-supports](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md).
+supports](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md). Lydian does not support
+Spotify links.
 
-Lydian does not support Spotify links.
+Documentation: <https://lydian-discord-bot.readthedocs.io/en/latest/>
 
 > [!IMPORTANT]
 > Lydian is intended to be used in only one server at a time. Trying to play music in
 > two or more different servers at once may cause unexpected issues and is unsupported for the time
 > being.
-
-Documentation: <https://lydian-discord-bot.readthedocs.io/en/latest/>
 
 ## Contents <!-- omit in toc -->
 
