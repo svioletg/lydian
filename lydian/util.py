@@ -366,6 +366,13 @@ def format_duration(total_seconds: float) -> str:
         return f'{h}:{m:02d}:{s:02d}'
     return f'{m}:{s:02d}'
 
+def get_annotation(typ: object) -> Any | None:  # noqa: ANN401
+    """Returns the second type argument if ``typ`` is ``typing.Annotated``, otherwise returns ``None``."""
+    try:
+        return get_args(typ)[1] if get_origin(typ) is Annotated else None
+    except IndexError:
+        return None
+
 def get_dataclass_fields(dc: object, parents: list[str] | None = None) -> dict[str, Field]:
     """Returns a dictionary of field names (dotted if the field is a dataclass) to field objects for a dataclass.
 
