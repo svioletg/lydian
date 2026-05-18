@@ -160,6 +160,36 @@ def test_is_annotated() -> None:
     assert not util.is_annotated(str)
     assert util.is_annotated(Annotated[str, 'Description'])
 
+def test_iter_columns() -> None:
+    table = [
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9],
+    ]
+
+    assert list(util.iter_columns(table)) == [(1, 4, 7), (2, 5, 8), (3, 6, 9)]
+
+    uneven_table = [
+        [1,  2,  3],
+        [4,  5,  6,  7, 8],
+        [9],
+        [10, 11, 12, 13],
+        [14, 15, 16, 17],
+        [],
+        [18, 19],
+    ]
+
+    with pytest.raises(IndexError):
+        assert list(util.iter_columns(uneven_table))
+
+    assert list(util.iter_columns(uneven_table, 0)) == [
+        (1, 4, 9, 10, 14, 0, 18),
+        (2, 5, 0, 11, 15, 0, 19),
+        (3, 6, 0, 12, 16, 0, 0),
+        (0, 7, 0, 13, 17, 0, 0),
+        (0, 8, 0,  0,  0, 0, 0),
+    ]
+
 def test_join_trailing() -> None:
     assert util.join_trailing('abc', ' ') == 'a b c '
     assert util.join_trailing('a', ' ') == 'a'

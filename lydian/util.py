@@ -5,13 +5,13 @@ used by any module.
 """
 import re
 import textwrap
-from collections.abc import Callable, Generator, Iterable, Mapping
+from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from dataclasses import Field, fields, is_dataclass
 from datetime import UTC, datetime, timedelta, tzinfo
 from math import floor
 from pathlib import Path
 from time import perf_counter_ns
-from types import TracebackType
+from types import EllipsisType, TracebackType
 from typing import Annotated, Any, ClassVar, Literal, cast, get_args, get_origin, overload
 from zoneinfo import ZoneInfo
 
@@ -428,6 +428,32 @@ def is_annotated(typ: object) -> bool:
         ``object``.
     """
     return get_origin(typ) is Annotated
+
+@overload
+def iter_columns[T](data: Sequence[Sequence[T]], default: EllipsisType = ...) -> Generator[T]: ...
+@overload
+def iter_columns[T, U](data: Sequence[Sequence[T]], default: U) -> Generator[T | U]: ...
+def iter_columns[T, U](
+        data: Sequence[Sequence[T]],
+        default: U | EllipsisType = ...,
+    ) -> Generator[tuple[T | U, ...]]:
+    """Yields columns from a two-dimensional sequence.
+
+    ``default`` will fill empty cells row or column lengths are not consistent, otherwise ``IndexError`` is raised.
+    """
+    def get_cell(row: int, column: int, default: U) -> T | U:
+        try:
+            return data[row][column]
+        except IndexError:
+            return default
+
+    height: int = len(data)
+    width: int = len(data[0]) if default is ... else max(map(len, data))
+
+    yield from (
+        tuple(data[row][column] if default is ... else get_cell(row, column, default) for row in range(height))
+        for column in range(width)
+    )
 
 def join_trailing(s: Iterable[str], sep: str, *, trail_single: bool = False) -> str:
     """Same as ``str.join()``, but adds an additional ``sep`` at the end if any joining was performed.
