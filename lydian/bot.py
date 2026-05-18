@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from getpass import getpass
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from loguru import logger
 from rich.prompt import Confirm
@@ -17,7 +17,6 @@ from lydian.cogs.debug import DebugCog
 from lydian.cogs.general import GeneralCog
 from lydian.cogs.util import embed_error, embed_info
 from lydian.cogs.voice import VoiceCog
-from lydian.cogs.voice import background_tasks as voice_background_tasks
 from lydian.config import config
 from lydian.console import bot_console
 from lydian.const import (
@@ -36,7 +35,7 @@ from lydian.const import (
 )
 from lydian.errors import AbortCommand
 from lydian.perms import PERMISSIONS_DEFAULT, perms
-from lydian.util import dirsize
+from lydian.util import dirsize, get_background_tasks
 
 load_dotenv('.env')
 
@@ -50,8 +49,10 @@ bot = commands.Bot(
     command_prefix=config.prefix,
     log_handler=logging.FileHandler(filename=LOGS_DIR / 'discord.log', encoding='utf-8', mode='w'),
 )
-
 debug_context['bot'] = bot
+
+background_tasks: dict[str, dict[str, tasks.Loop]] = {}
+debug_context['tasks'] = background_tasks
 
 event_start_console = asyncio.Event()
 
@@ -104,11 +105,12 @@ async def thread_bot() -> None:
     async with bot:
         # Add cogs
         await bot.add_cog(GeneralCog(bot))
-        await bot.add_cog(cog_voice := VoiceCog(bot))
+        await bot.add_cog(VoiceCog(bot))
         if config.debug:
             await bot.add_cog(DebugCog(bot))
 
-        debug_context['cog.voice'] = cog_voice
+        debug_context['cog'] = {name.removesuffix('Cog').lower():cog for name, cog in bot.cogs.items()}
+        background_tasks.update(get_background_tasks(bot))
 
         # Start
         logger.info('Logging in; wait for "Ready!" before running commands')
@@ -187,7 +189,7 @@ async def async_main() -> int:
         return_when=asyncio.FIRST_COMPLETED,
     )
 
-    for task in voice_background_tasks:
+    for task in background_tasks['VoiceCog'].values():
         if (internal := task.get_task()) and internal.done():
             _ = internal.exception()
 

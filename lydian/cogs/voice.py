@@ -28,7 +28,6 @@ from lydian.const import (
 from lydian.errors import AbortCommand, FileSizeLimitError, MediaQueueLimitError
 from lydian.util import BasicLock, Cache, expect, format_duration
 
-background_tasks: list[tasks.Loop] = []
 
 class YTDLLogHandler:
     """Basic class implementing ``debug``, ``info``, and ``warning`` methods to handle YoutubeDL logging.
@@ -362,8 +361,6 @@ class VoiceCog(commands.Cog):
         # Start tasks
         self.task_tick_timers.start()
         self.task_handle_play_requests.start()
-
-        background_tasks.extend(attr for name in dir(self) if isinstance(attr := getattr(self, name), tasks.Loop))
 
     #region LISTENERS
 

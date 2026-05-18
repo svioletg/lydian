@@ -15,6 +15,7 @@ from types import TracebackType
 from typing import Annotated, Any, ClassVar, Literal, cast, get_args, get_origin
 from zoneinfo import ZoneInfo
 
+from discord.ext import commands, tasks
 from maybetype import Maybe, maybe
 
 from lydian.errors import AssuranceError
@@ -372,6 +373,13 @@ def get_annotation(typ: object) -> Any | None:  # noqa: ANN401
         return get_args(typ)[1] if get_origin(typ) is Annotated else None
     except IndexError:
         return None
+
+def get_background_tasks(bot: commands.Bot) -> dict[str, dict[str, tasks.Loop]]:
+    """Returns a dictionary of cog names to a dictionary of background task coroutines by their names."""
+    return {
+        cog_name:{name:attr for name, attr in cog.__dict__.items() if isinstance(attr, tasks.Loop)}
+        for cog_name, cog in bot.cogs.items()
+    }
 
 def get_dataclass_fields(dc: object, parents: list[str] | None = None) -> dict[str, Field]:
     """Returns a dictionary of field names (dotted if the field is a dataclass) to field objects for a dataclass.
