@@ -45,7 +45,7 @@ def _toml_encoder(obj: object) -> TOMLItem:
         return tb
     raise ConvertError(f'Cannot convert object of type {type(obj)}: {obj!r}')
 
-tm.register_encoder(_toml_encoder)  # ty:ignore[invalid-argument-type]
+tm.register_encoder(_toml_encoder)
 
 def env_to_bool(s: str) -> bool:
     """Returns an environment variable value parsed to a ``bool``.
