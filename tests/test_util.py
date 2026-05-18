@@ -138,6 +138,24 @@ def test_get_dataclass_fields() -> None:
     assert dc_fields['d.x'].default == dc.d.x
     assert dc_fields['d.y'].default_factory() == dc.d.y  # ty:ignore[call-non-callable]
 
+def test_get_leaves() -> None:
+    tree = {
+        'a': 1,
+        'b': '2',
+        'c': {
+            'a': 3,
+            'b': {
+                'a': 4,
+            },
+            'c': '5',
+        },
+        'd': '6',
+    }
+
+    assert list(util.get_leaves(tree)) == [1, '2', 3, 4, '5', '6']
+    assert list(util.get_leaves(tree, int)) == [1, 3, 4]
+    assert list(util.get_leaves(tree, str)) == ['2', '5', '6']
+
 def test_is_annotated() -> None:
     assert not util.is_annotated(str)
     assert util.is_annotated(Annotated[str, 'Description'])

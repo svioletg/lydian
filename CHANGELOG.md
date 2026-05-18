@@ -13,6 +13,7 @@ configured prefix accordingly.
 ### Added
 
 - Added function `util.get_background_tasks()`
+- Added function `util.get_leaves()`
 - Added keypaths for every registered cog to `debug_context`, not just `voice`
   - Keys are the cog object name with the `Cog` suffix removed and lowercased,
     e.g. `GeneralCog` → `general`
