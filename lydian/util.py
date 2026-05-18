@@ -547,6 +547,75 @@ def strftimestamp(
     tz: tzinfo = ZoneInfo(tz) if isinstance(tz, str) else tz
     return datetime.fromtimestamp(timestamp, tz=UTC).astimezone(tz).strftime(format_str)
 
+def tabulate(
+        data: Sequence[tuple[object, ...]],
+        *,
+        header: tuple[str, ...] | None = None,
+        head_sep: str = '-',
+        hsep: str = ' ',
+        vsep: str = '',
+        vborder: str = '',
+        render: Callable[[object], str] = str,
+        justify: Callable[[str, int], str] | tuple[Callable[[str, int], str], ...] | None = None,
+        strip: str | re.Pattern[str] | None = None,
+    ) -> str:
+    """Returns a string with ``data`` formatted as a table based on the given options.
+
+    This function assumes that all rows in ``data`` are the same length as the first.
+
+    :param header: A row of strings to place as titles for each column before the rest of the table.
+    :param head_sep: Character to repeat for the table's width between the header row and the rest of the table.
+        There is no separation between the header and the rest of the table if this string is empty.
+    :param hsep: Horizontal separator character to place between each column.
+    :param vsep: Vertical separator character to repeat for the table's width between each row.
+        No lines are placed between rows if this string is empty.
+    :param vborder: Character to repeat for the table's width as the first and last lines of the table string.
+    :param render: A function to use to convert each item into a string.
+    :param justify: A function used to justify the string for a given cell, passed the string content and the column's
+        width. Defaults to ``str.ljust``. If given a tuple of functions, each function will be used for the respective
+        column.
+    :param strip: A regular expression matching characters to strip out of the rendered string before calculating its
+        length, e.g. for stripping non-visible characters like color escape codes.
+    """
+    if isinstance(strip, str):
+        strip = re.compile(strip)
+
+    justify = justify or str.ljust
+
+    if not isinstance(justify, tuple):
+        justify = (justify,) * len(data[0])
+
+    justify = cast('tuple[Callable[[str, int], str], ...]', justify)
+
+    rendered: list[tuple[str, ...]] = [tuple(render(cell) for cell in row) for row in data]
+    col_widths: list[int] = [
+        max(map(len, (strip.sub('', cell) for cell in column) if strip else column))
+        for column in iter_columns(rendered)
+    ]
+    table_width: int = sum(col_widths) + (len(hsep) * (len(col_widths) - 1))
+
+    table: list[str] = [vborder * table_width] if vborder else []
+
+    if header:
+        table.append(
+            hsep.join(just(cell, width) for cell, width, just in zip(header, col_widths, justify, strict=True)),
+        )
+        if head_sep:
+            table.append(head_sep * table_width)
+
+    for row in rendered:
+        table.append(hsep.join(just(cell, width) for cell, width, just in zip(row, col_widths, justify, strict=True)))
+        if vsep:
+            table.append(vsep * table_width)
+
+    if vsep:
+        table.pop()
+
+    if vborder:
+        table.append(vborder * table_width)
+
+    return '\n'.join(table)
+
 def wrap_paragraphs(
         text: str,
         width: int,
