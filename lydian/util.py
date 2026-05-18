@@ -5,14 +5,14 @@ used by any module.
 """
 import re
 import textwrap
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Generator, Iterable, Mapping
 from dataclasses import Field, fields, is_dataclass
 from datetime import UTC, datetime, timedelta, tzinfo
 from math import floor
 from pathlib import Path
 from time import perf_counter_ns
 from types import TracebackType
-from typing import Annotated, Any, ClassVar, Literal, cast, get_args, get_origin
+from typing import Annotated, Any, ClassVar, Literal, cast, get_args, get_origin, overload
 from zoneinfo import ZoneInfo
 
 from maybetype import Maybe, maybe
@@ -386,6 +386,31 @@ def get_dataclass_fields(dc: object, parents: list[str] | None = None) -> dict[s
             field_dict = field_dict | get_dataclass_fields(f.type, [*parents, f.name])
 
     return field_dict
+
+@overload
+def get_leaves[T](tree: Mapping[Any, Any], typ: type[T]) -> Generator[T]: ...
+@overload
+def get_leaves(tree: Mapping[Any, Any], typ: None = None) -> Generator[Any]: ...
+def get_leaves[T](tree: Mapping[Any, Any], typ: type[T] | None = None) -> Generator[T] | Generator[Any]:
+    """Returns every non-mapping (or a specific type) value in an arbitrarily nested mapping.
+
+    :param typ: A type to use in ``isinstance`` checks determining whether a value is considered a leaf.
+        If ``None``, the value is simply checked to not be a mapping instance.
+    """
+    # Returns two booleans, one for whether this value is a leaf, and one for whether we should descend into this value
+    # This prevents unnecessarily checking for a Mapping instance a second time if `typ` is None
+    is_leaf: Callable[[Any], tuple[bool, bool]] = (lambda v: (not isinstance(v, Mapping), True)) \
+        if typ is None else (lambda v: (isinstance(v, typ), isinstance(v, Mapping)))
+
+    def search(d: Mapping[Any, Any]) -> Generator:
+        for v in d.values():
+            take, descend = is_leaf(v)
+            if take:
+                yield v
+            elif descend:
+                yield from search(v)
+
+    yield from search(tree)
 
 def is_annotated(typ: object) -> bool:
     """Returns whether ``typ``'s type origin is ``typing.Annotated``.

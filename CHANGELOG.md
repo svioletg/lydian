@@ -10,6 +10,10 @@ configured prefix accordingly.
 
 ## [Unreleased]
 
+### Added
+
+- Added function `util.get_leaves()`
+
 ### Fixed
 
 - Changed type annotation for `cogs.voice.VoiceCog.bot` to `commands.Bot` instead of
