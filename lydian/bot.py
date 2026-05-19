@@ -81,8 +81,6 @@ bot = commands.Bot(
 )
 debug_context['bot'] = bot
 
-event_start_console = asyncio.Event()
-
 @bot.event
 async def on_message(message: discord.Message) -> None:
     """Called when a message is created and sent."""
@@ -148,13 +146,23 @@ async def thread_bot() -> None:
             logger.error(f'No bot token found, please set the {target_env_var} environment variable')
             return
 
-        event_start_console.set()
         debug_context['bot-start-time'] = datetime.now(UTC)
-        await bot.start(token)
+        try:
+            await bot.start(token)
+        except discord.LoginFailure as e:
+            if 'Improper token' in str(e):
+                logger.error('Bad token given; check your'
+                    + f' {'LYDIAN_DEBUG_TOKEN' if config.debug else 'LYDIAN_TOKEN'} value')
+            else:
+                logger.opt(exception=e).error(f'Failed to log in: {e}')
 
 async def thread_console() -> None:
     """Returns the ``Coroutine`` thread for the interactive console."""
-    await event_start_console.wait()
+    while not bot.user:  # noqa: ASYNC110
+        # For ignoring ASYNC110: Login failures cause issues with a running console, so we need to make sure the bot is
+        # logged in first, and since `await bot.start()` blocks until's connection is closed, we have no way of ensuring
+        # that through an event alone. This is the only way to do this for now.
+        await asyncio.sleep(1)
 
     bot_console.bot = bot
     await bot_console.start_loop()

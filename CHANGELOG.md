@@ -38,6 +38,8 @@ configured prefix accordingly.
   they can be floats
 - `TypeError` and `ValueError` raised while trying to parse console command argument values are now
   caught and displayed without killing the console
+- Login failures are caught properly with a custom succinct message for improper tokens, otherwise
+  logs the traceback
 
 ## [0.5.0] - 2026-05-17
 
