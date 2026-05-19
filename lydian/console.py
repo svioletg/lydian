@@ -486,7 +486,7 @@ class LydianConsole(BotConsole):
     def tasks_start(self, task_id: int, /) -> None:
         """Attempts to start a background task which is not running. Use ``tasks list`` to see IDs."""
         tasklist: list[tasks.Loop] = debug_context['tasklist']
-        if not 0 <= task_id <= len(tasklist):
+        if not 0 <= task_id < len(tasklist):
             logger.error('task_id out of range')
             return
         task = tasklist[task_id]
