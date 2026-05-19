@@ -30,6 +30,8 @@ configured prefix accordingly.
 
 - Changed type annotation for `cogs.voice.VoiceCog.bot` to `commands.Bot` instead of
   `discord.client.Bot` to fix sphinx error
+- Fixed `ValueError` raised in `util.format_duration()` when formatting `m` or `s` with `02d` since
+  they can be floats
 
 ## [0.5.0] - 2026-05-17
 

@@ -8,7 +8,7 @@ import textwrap
 from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from dataclasses import Field, fields, is_dataclass
 from datetime import UTC, datetime, timedelta, tzinfo
-from math import floor
+from math import ceil, floor
 from pathlib import Path
 from time import perf_counter_ns
 from types import EllipsisType, TracebackType
@@ -364,8 +364,8 @@ def format_duration(total_seconds: float) -> str:
     h, m = divmod(total_seconds, 3600)
     m, s = divmod(m, 60)
     if h:
-        return f'{h}:{m:02d}:{s:02d}'
-    return f'{m}:{s:02d}'
+        return f'{ceil(h)}:{ceil(m):02d}:{ceil(s):02d}'
+    return f'{ceil(m)}:{ceil(s):02d}'
 
 def get_annotation(typ: object) -> Any | None:  # noqa: ANN401
     """Returns the second type argument if ``typ`` is ``typing.Annotated``, otherwise returns ``None``."""
