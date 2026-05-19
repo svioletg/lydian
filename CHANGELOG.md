@@ -36,6 +36,8 @@ configured prefix accordingly.
   `discord.client.Bot` to fix sphinx error
 - Fixed `ValueError` raised in `util.format_duration()` when formatting `m` or `s` with `02d` since
   they can be floats
+- `TypeError` and `ValueError` raised while trying to parse console command argument values are now
+  caught and displayed without killing the console
 
 ## [0.5.0] - 2026-05-17
 

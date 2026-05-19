@@ -189,7 +189,7 @@ class ConsoleCommand:
             subsequent_indent='    ',
         ))
 
-    def parse_raw_args(self, *raw_args: str) -> Result[tuple[list[Any], dict[str, Any]], str]:  # noqa: C901
+    def parse_raw_args(self, *raw_args: str) -> Result[tuple[list[Any], dict[str, Any]], str]:  # noqa: C901, PLR0915
         """Parses raw string argument values into values ready to call the wrapped function with.
 
         If parsing was successful, returns ``Ok`` of a tuple of the parsed positional argument values, and a dictionary
@@ -245,7 +245,10 @@ class ConsoleCommand:
                     raise TypeError(f'Command function parameter unions can only be T | None: {argtype} (in {param!r})')
                 argtype = t_args[0]
             parser: Callable[[str], Any] = (arginfo and arginfo.parse) or argtype  # ty:ignore[invalid-assignment]
-            parsed_args.append(parser(value))
+            try:
+                parsed_args.append(parser(value))
+            except (TypeError, ValueError) as e:
+                return Err(f"Failed to parse value for argument '{arginfo.name}': {e.__class__.__name__}: {e}")
 
         for kwarg in kw_vals:
             split: list[str] = kwarg.split('=', maxsplit=1)
@@ -258,10 +261,13 @@ class ConsoleCommand:
                 parsed_kwargs[param.name] = not arginfo.default if name.startswith('no-') else arginfo.default
                 continue
             value: str = split[1]
-            arginfo: Arg | None = get_args(param.annotation)[1] if is_annotated(param.annotation) else None
+            arginfo: Arg = self.arginfo[name]
             parser: Callable[[str], Any] = (arginfo and arginfo.parse) or param.annotation  # ty:ignore[invalid-assignment]
             parsed_value = parser(value)
-            parsed_kwargs[param.name] = parsed_value
+            try:
+                parsed_kwargs[param.name] = parsed_value
+            except (TypeError, ValueError) as e:
+                return Err(f"Failed to parse value for argument '{arginfo.name}': {e.__class__.__name__}: {e}")
 
         return Ok((parsed_args, parsed_kwargs))
 

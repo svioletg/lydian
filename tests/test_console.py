@@ -126,7 +126,12 @@ def test_parse_raw_args(console: Console) -> None:
     assert console.echo.parse_raw_args('echo') == Ok((['echo'], {}))
     assert console.echo.parse_raw_args('echo', '--repeat=2') == Err('Unexpected keyword argument: --repeat=2')
 
+    assert console.repeat.parse_raw_args('text') == Ok((['text', 1], {}))
+    assert console.repeat.parse_raw_args('text', '2') == Ok((['text', 2], {}))
+
     assert console.add.parse_raw_args('1', '2') == Ok(([1, 2], {}))
+    assert console.add.parse_raw_args('a', 'b') == \
+        Err("Failed to parse value for argument 'a': ValueError: invalid literal for int() with base 10: 'a'")
 
     assert console.testparsing.parse_raw_args('1,2,3') == Ok(([[1, 2, 3]], {}))
 
