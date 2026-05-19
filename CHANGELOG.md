@@ -12,11 +12,16 @@ configured prefix accordingly.
 
 ### Added
 
+- Added console command `tasks`
+  - Lists background tasks assigned to the bot and their status, interval, and ID
 - Added function `util.get_background_tasks()`
 - Added function `util.get_leaves()`
+- Added function `util.iter_columns()`
+- Added function `util.tabulate()`
 - Added keypaths for every registered cog to `debug_context`, not just `voice`
   - Keys are the cog object name with the `Cog` suffix removed and lowercased,
     e.g. `GeneralCog` → `general`
+- Added `tasks` and `tasklist` keys to `debug_context`
 
 ### Fixed
 

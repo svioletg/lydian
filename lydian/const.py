@@ -4,6 +4,7 @@ import sys
 from enum import StrEnum
 from importlib.metadata import metadata
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import loguru
 from benedict import benedict
@@ -13,6 +14,9 @@ from rich.console import Console
 from rich.highlighter import Highlighter
 from rich.text import Text
 from rich.theme import Theme
+
+if TYPE_CHECKING:
+    from discord.ext import tasks
 
 PROJECT_VERSION: str = metadata('lydian-discord-bot')['version']
 
@@ -66,6 +70,9 @@ YTDL_DOWNLOAD_PROGRESS_REGEX: re.Pattern[str] = re.compile(r'\[download\].+ETA')
 # Other values
 DEFAULT_DISCORD_PROMPT_TIMEOUT: float = 60.0
 QUEUE_MAX_PER_PAGE: int = 20
+
+BACKGROUND_TASKS_MAP: dict[str, dict[str, tasks.Loop]] = {}
+BACKGROUND_TASKS: tuple[tasks.Loop, ...] = ()
 
 class ConsoleHighlighter(Highlighter):
     """Custom highlighter class for the ``rich`` console."""

@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from getpass import getpass
 
 import discord
+from benedict import benedict
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from loguru import logger
@@ -20,6 +21,7 @@ from lydian.cogs.voice import VoiceCog
 from lydian.config import config
 from lydian.console import bot_console
 from lydian.const import (
+    BACKGROUND_TASKS_MAP,
     CONFIG_PATH,
     DATA_DIR,
     DL_DIR,
@@ -35,7 +37,7 @@ from lydian.const import (
 )
 from lydian.errors import AbortCommand
 from lydian.perms import PERMISSIONS_DEFAULT, perms
-from lydian.util import dirsize, get_background_tasks
+from lydian.util import dirsize, get_background_tasks, get_leaves
 
 load_dotenv('.env')
 
@@ -51,8 +53,7 @@ bot = commands.Bot(
 )
 debug_context['bot'] = bot
 
-background_tasks: dict[str, dict[str, tasks.Loop]] = {}
-debug_context['tasks'] = background_tasks
+debug_context['tasks'] = BACKGROUND_TASKS_MAP
 
 event_start_console = asyncio.Event()
 
@@ -110,7 +111,8 @@ async def thread_bot() -> None:
             await bot.add_cog(DebugCog(bot))
 
         debug_context['cog'] = {name.removesuffix('Cog').lower():cog for name, cog in bot.cogs.items()}
-        background_tasks.update(get_background_tasks(bot))
+        debug_context['tasks'] = benedict(get_background_tasks(bot))
+        debug_context['tasklist'] = list(get_leaves(debug_context['tasks'], tasks.Loop))
 
         # Start
         logger.info('Logging in; wait for "Ready!" before running commands')
@@ -189,7 +191,9 @@ async def async_main() -> int:
         return_when=asyncio.FIRST_COMPLETED,
     )
 
-    for task in background_tasks['VoiceCog'].values():
+    tasklist: list[tasks.Loop] = list(get_leaves(BACKGROUND_TASKS_MAP))
+
+    for task in tasklist:
         if (internal := task.get_task()) and internal.done():
             _ = internal.exception()
 

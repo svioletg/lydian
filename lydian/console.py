@@ -2,6 +2,7 @@
 import asyncio
 import inspect
 import shlex
+from asyncio.tasks import Task
 from collections.abc import Callable
 from datetime import UTC, datetime
 from itertools import zip_longest
@@ -10,7 +11,7 @@ from typing import TYPE_CHECKING, Annotated, Any, Protocol, Self, Union, cast, g
 from unittest.mock import AsyncMock
 
 from benedict import benedict
-from discord.ext import commands
+from discord.ext import commands, tasks
 from humanize import precisedelta
 from loguru import logger
 from maybetype import Err, Ok, Result
@@ -21,7 +22,7 @@ from rich.markup import escape
 from lydian.config import config
 from lydian.const import debug_context, screen, setup_logger
 from lydian.perms import perms
-from lydian.util import get_annotation, is_annotated, join_trailing, wrap_paragraphs
+from lydian.util import get_annotation, is_annotated, join_trailing, tabulate, wrap_paragraphs
 
 if TYPE_CHECKING:
     from ty_extensions import Intersection
@@ -434,6 +435,49 @@ class LydianConsole(BotConsole):
         except Exception as e:  # noqa: BLE001
             # The full traceback for this case is usually unnecessary
             logger.error(f'{e.__class__.__name__}: {e}')
+
+    @staticmethod
+    def task_status(task: Task) -> str:
+        """Returns a rich-formatted string based on the task's status."""
+        if task.cancelled():
+            return '[err]cancelled[/]'
+        if task.done():
+            return f'[warn]done{f' ([err]{exc}[/])' if (exc := task.exception()) else ''}[/]'
+        return '[ok]running[/]'
+
+    @staticmethod
+    def task_interval(task: tasks.Loop) -> str:
+        """Returns a rich-formatted string based on the task's interval."""
+        intervals: list[str] = []
+        if task.time:
+            return ', '.join(str(dt) for dt in task.time)
+        else:
+            if task.seconds:
+                intervals.append(f'{task.seconds}s')
+            if task.minutes:
+                intervals.append(f'{task.minutes}m')
+            if task.hours:
+                intervals.append(f'{task.hours}h')
+            return ', '.join(intervals)
+
+    @command('tasks')
+    def tasks_show(self, /) -> None:
+        """Prints background tasks and their status."""
+        status_table: list[tuple[str, str, str, str]] = [('ID', 'NAME', 'STATUS', 'INTERVAL(S)')]
+        for n, task in enumerate(cast('list[tasks.Loop]', debug_context['tasklist'])):
+            if not (inner_task := task.get_task()):
+                status_table.append((str(hash(task)), f'(NO TASK: {task})', '', ''))
+            else:
+                status_table.append((
+                    str(n), inner_task.get_name(), self.task_status(inner_task), self.task_interval(task),
+                ))
+
+        screen.print(tabulate(
+            status_table[1:],
+            header=status_table[0],
+            hsep='  ',
+            strip=r'\[[\w/]+\]',
+        ))
 
     @command()
     def uptime(self, /) -> None:
