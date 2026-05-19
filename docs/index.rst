@@ -10,6 +10,7 @@ lydian-discord-bot documentation
    reference/bot
    reference/cli
    reference/config
+   reference/console
    reference/const
    reference/errors
    reference/perms
