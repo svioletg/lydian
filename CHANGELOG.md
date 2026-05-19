@@ -31,6 +31,8 @@ configured prefix accordingly.
 ### Changed
 
 - Log messages from discord.py are now properly redirected to Lydian's logger
+  - Any message originating from a private function (prefixed with `_`) are overridden to be a
+    "DEBUG"-level log
 - `no-` prefixes in console command flags no longer invert the flag's default, instead `no-` just
   sets its value to `False` and sets `True` otherwise
 

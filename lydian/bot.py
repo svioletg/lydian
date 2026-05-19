@@ -29,6 +29,7 @@ from lydian.const import (
     LOGS_DIR,
     PERMISSIONS_PATH,
     PROJECT_VERSION,
+    LogLevel,
     clear_tmp_dir,
     create_directories,
     debug_context,
@@ -50,6 +51,9 @@ class InterceptHandler(logging.Handler):
             level: str | int = logger.level(record.levelname).name
         except ValueError:
             level = record.levelno
+
+        if record.funcName.startswith('_'):
+            level = LogLevel.DEBUG
 
         # Find caller from where originated the logged message.
         frame, depth = inspect.currentframe(), 0
