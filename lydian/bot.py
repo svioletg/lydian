@@ -22,7 +22,6 @@ from lydian.cogs.voice import VoiceCog
 from lydian.config import config
 from lydian.console import bot_console
 from lydian.const import (
-    BACKGROUND_TASKS_MAP,
     CONFIG_PATH,
     DATA_DIR,
     DL_DIR,
@@ -81,8 +80,6 @@ bot = commands.Bot(
     command_prefix=config.prefix,
 )
 debug_context['bot'] = bot
-
-debug_context['tasks'] = BACKGROUND_TASKS_MAP
 
 event_start_console = asyncio.Event()
 
@@ -220,7 +217,7 @@ async def async_main() -> int:
         return_when=asyncio.FIRST_COMPLETED,
     )
 
-    tasklist: list[tasks.Loop] = list(get_leaves(BACKGROUND_TASKS_MAP))
+    tasklist: list[tasks.Loop] = debug_context['tasklist']
 
     for task in tasklist:
         if (internal := task.get_task()) and internal.done():
