@@ -26,6 +26,10 @@ configured prefix accordingly.
     e.g. `GeneralCog` → `general`
 - Added `tasks` and `tasklist` keys to `debug_context`
 
+### Changed
+
+- Log messages from discord.py are now properly redirected to Lydian's logger
+
 ### Fixed
 
 - Changed type annotation for `cogs.voice.VoiceCog.bot` to `commands.Bot` instead of

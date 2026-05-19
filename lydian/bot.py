@@ -1,5 +1,6 @@
 """Handles bot setup and execution."""
 import asyncio
+import inspect
 import logging
 import os
 import sys
@@ -41,6 +42,35 @@ from lydian.util import dirsize, get_background_tasks, get_leaves
 
 load_dotenv('.env')
 
+class InterceptHandler(logging.Handler):
+    """Handles redirecting logs for the ``discord`` module to ``loguru``."""
+
+    def emit(self, record: logging.LogRecord) -> None:  # noqa: D102
+        # Get corresponding Loguru level if it exists.
+        try:
+            level: str | int = logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+
+        # Find caller from where originated the logged message.
+        frame, depth = inspect.currentframe(), 0
+        while frame:
+            filename = frame.f_code.co_filename
+            is_logging = filename == logging.__file__
+            is_frozen = 'importlib' in filename and '_bootstrap' in filename
+            if depth > 0 and not (is_logging or is_frozen):
+                break
+            frame = frame.f_back
+            depth += 1
+
+        logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+
+# Redirect discord.py logs to our logger
+discord_logger = logging.getLogger('discord')
+discord_logger.setLevel(config.logging.log_level)
+logging.getLogger('discord.http').setLevel(config.logging.log_level)
+discord_logger.addHandler(InterceptHandler())
+
 intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
@@ -49,7 +79,6 @@ intents.voice_states = True
 bot = commands.Bot(
     intents=intents,
     command_prefix=config.prefix,
-    log_handler=logging.FileHandler(filename=LOGS_DIR / 'discord.log', encoding='utf-8', mode='w'),
 )
 debug_context['bot'] = bot
 
