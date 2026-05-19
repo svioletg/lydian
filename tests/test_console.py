@@ -52,6 +52,10 @@ class Console(BotConsole):  # noqa: D101
     def only_var_pos_optional(self, /, *xs: Annotated[str, Arg(default=('a'))]) -> None:
         screen.print(' '.join(xs))
 
+    @command()
+    def flag_false_default(self, /, *, flag: bool = False) -> None:
+        screen.print(flag)
+
 @pytest.fixture
 def console() -> Console:
     return Console()
@@ -133,6 +137,8 @@ def test_parse_raw_args(console: Console) -> None:
     assert console.add.parse_raw_args('a', 'b') == \
         Err("Failed to parse value for argument 'a': ValueError: invalid literal for int() with base 10: 'a'")
 
+    assert console.sign.parse_raw_args('1', '--no-keep-zero') == Ok(([1], {'keep_zero': False}))
+
     assert console.testparsing.parse_raw_args('1,2,3') == Ok(([[1, 2, 3]], {}))
 
     assert console.var_positional.parse_raw_args('a', '2', 'c', 'd', 'e', 'f') \
@@ -142,6 +148,9 @@ def test_parse_raw_args(console: Console) -> None:
 
     assert console.only_var_pos_optional.parse_raw_args() == Ok((['a'], {}))
     assert console.only_var_pos_optional.parse_raw_args('a', 'b', 'c') == Ok((['a', 'b', 'c'], {}))
+
+    assert console.flag_false_default.parse_raw_args() == Ok(([], {}))
+    assert console.flag_false_default.parse_raw_args('--flag') == Ok(([], {'flag': True}))
 
 def test_invoke(console: Console, capsys: pytest.CaptureFixture) -> None:
     setup_logger('DEBUG')

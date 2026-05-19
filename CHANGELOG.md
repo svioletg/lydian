@@ -29,6 +29,8 @@ configured prefix accordingly.
 ### Changed
 
 - Log messages from discord.py are now properly redirected to Lydian's logger
+- `no-` prefixes in console command flags no longer invert the flag's default, instead `no-` just
+  sets its value to `False` and sets `True` otherwise
 
 ### Fixed
 
@@ -40,6 +42,7 @@ configured prefix accordingly.
   caught and displayed without killing the console
 - Login failures are caught properly with a custom succinct message for improper tokens, otherwise
   logs the traceback
+- Fixed "flag" keyword arguments not getting parsed correctly by the console
 
 ## [0.5.0] - 2026-05-17
 

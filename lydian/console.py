@@ -255,10 +255,9 @@ class ConsoleCommand:
             name: str = split[0]
             if not (param := keyword.get(name.removeprefix('no-').replace('-', '_'))):
                 return Err(f'Unexpected keyword argument: --{kwarg}')
-            arginfo: Arg = self.arginfo[param.name]
             if (param.annotation is bool) and (len(split) == 1):
                 # No value is fine for a flag, check for --flag or --no-flag
-                parsed_kwargs[param.name] = not arginfo.default if name.startswith('no-') else arginfo.default
+                parsed_kwargs[param.name] = not name.startswith('no-')
                 continue
             value: str = split[1]
             arginfo: Arg = self.arginfo[name]
