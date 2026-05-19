@@ -1,4 +1,4 @@
-"""Holds the :py:class:`BotConsole` class to handle console command while running the bot."""
+"""Holds the :py:class:`BotConsole` class to handle console commands while running the bot."""
 import asyncio
 import inspect
 import shlex
@@ -11,7 +11,8 @@ from typing import TYPE_CHECKING, Annotated, Any, Protocol, Self, Union, cast, g
 from unittest.mock import AsyncMock
 
 from benedict import benedict
-from discord.ext import commands, tasks
+from discord.ext import tasks
+from discord.ext.commands import Bot
 from humanize import precisedelta
 from loguru import logger
 from maybetype import Err, Ok, Result
@@ -314,7 +315,7 @@ class BotConsoleMeta(type):
 class BotConsole(metaclass=BotConsoleMeta):
     """Base class for bot consoles."""
 
-    bot: commands.Bot
+    bot: Bot
     prompt_prefix: str
     """A string shown before each user input prompt."""
     # Can't get ty to properly work with a recursive value type here so we're just using Any for now, see docstring
@@ -389,14 +390,14 @@ class BotConsole(metaclass=BotConsoleMeta):
 class LydianConsole(BotConsole):
     """Handles the bot's console command prompt loop."""
 
-    def __init__(self, bot: commands.Bot | None, *, prompt: str = '> ') -> None:
+    def __init__(self, bot: Bot | None, *, prompt: str = '> ') -> None:
         """Initializes a ``LydianConsole`` instance.
 
         :param bot: The Discord bot object to assign to this console. Can be given ``None`` to use an
             ``AsyncMock`` object instead for testing purposes.
         :param prompt: The string to show at the beginning of each input prompt.
         """
-        self.bot = bot or AsyncMock(commands.Bot)
+        self.bot = bot or AsyncMock(Bot)
         self.prompt_prefix = prompt
 
     #region COMMANDS

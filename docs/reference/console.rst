@@ -2,7 +2,7 @@
 .. py:currentmodule:: lydian.console
 
 :py:mod:`~lydian.console` module
-===============================
+================================
 
 .. automodule:: lydian.console
    :members:

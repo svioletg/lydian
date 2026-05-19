@@ -24,23 +24,21 @@ from lydian.errors import AssuranceError
 class BasicLock:
     """A basic "lock" object that can be used as a context manager.
 
-    ```python
-    lock = BasicLock()
+    .. code-block:: python
+        lock = BasicLock()
 
-    print(lock) # BasicLock(False)
+        print(lock) # BasicLock(False)
 
-    with lock:
-        print(lock) # BasicLock(True)
+        with lock:
+            print(lock) # BasicLock(True)
 
-    print(lock) # BasicLock(False)
-    ```
+        print(lock) # BasicLock(False)
 
     The ``name`` argument can be given to customize the ``repr``.
 
-    ```python
-    lock = BasicLock('QueueLock')
-    print(lock) # QueueLock(False)
-    ```
+    .. code-block:: python
+        lock = BasicLock('QueueLock')
+        print(lock) # QueueLock(False)
     """
 
     def __init__(self, name: str | None = None, *, default_state: bool = False) -> None:
