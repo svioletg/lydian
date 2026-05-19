@@ -118,8 +118,7 @@ class Config(DataclassUpdateMixin):
     """
 
     prefix: str = '-'
-    debug: bool = field(
-        default=False,
+    debug: bool = field(default=False,
         doc='Enables various commands and features intended for developers.'
             + ' See the README for a full description of what debug mode does:'
             + ' https://github.com/svioletg/lydian-discord-bot/blob/main/README.md',
@@ -128,24 +127,31 @@ class Config(DataclassUpdateMixin):
     command_aliases: dict[str, list[str]] = field(default_factory=_default_command_aliases)
     max_filesize: int = field(default=20_000_000,
         doc='Maximum filesize in bytes for media that can be downloaded by the bot.'
-        + ' Will have no effect when streaming media (stream-media = true).',
-        metadata={'converter': FromStr.filesize})
+            + ' Will have no effect when streaming media (stream-media = true).',
+        metadata={'converter': FromStr.filesize},
+    )
     max_playlist_length: int = field(default=20,
-        doc='Maximum number of items that can be added from a single playlist link.')
+        doc='Maximum number of items that can be added from a single playlist link.',
+    )
     max_queue_length: int = field(default=100,
-        doc='Maximum number of items that can be added to the media queue.')
+        doc='Maximum number of items that can be added to the media queue.',
+    )
     media_dir_warn_threshold: int = field(default=100_000_000,
         doc='Total size in bytes that downloaded media can take up before a warning is emitted at bot'
-        + ' startup. Set to -1 to disable the warning entirely.',
-        metadata={'converter': FromStr.filesize})
+            + ' startup. Set to -1 to disable the warning entirely.',
+        metadata={'converter': FromStr.filesize},
+    )
     stream_media: bool = field(default=True,
-        doc='Whether to stream media instead of downloading it to disk and playing the file.')
+        doc='Whether to stream media instead of downloading it to disk and playing the file.',
+    )
     inactivity_timeout: int = field(default=120,
         doc='How long in seconds the bot can be inactive (not playing anything and the queue is empty) before'
-            + ' disconnecting. Set to -1 to never disconnect for inactivity.')
+            + ' disconnecting. Set to -1 to never disconnect for inactivity.',
+    )
     lonely_timeout: int = field(default=120,
         doc='How long in seconds the bot can be the only user in a voice channel before disconnecting.'
-            + ' Set to -1 to never disconnect in this case.')
+            + ' Set to -1 to never disconnect in this case.',
+    )
 
     media_filter: MediaFilterConfig = field(default_factory=MediaFilterConfig)
     vote_skipping: VoteSkippingConfig = field(default_factory=VoteSkippingConfig)
