@@ -547,7 +547,7 @@ def strftimestamp(
     tz: tzinfo = ZoneInfo(tz) if isinstance(tz, str) else tz
     return datetime.fromtimestamp(timestamp, tz=UTC).astimezone(tz).strftime(format_str)
 
-def tabulate(
+def tabulate(  # noqa: C901
         data: Sequence[tuple[object, ...]],
         *,
         header: tuple[str, ...] | None = None,
@@ -592,7 +592,13 @@ def tabulate(
         max(map(len, (strip.sub('', cell) for cell in column) if strip else column))
         for column in iter_columns(rendered)
     ]
-    table_width: int = sum(col_widths) + (len(hsep) * (len(col_widths) - 1))
+    for n, width in enumerate(col_widths):
+        if header:
+            col_widths[n] = max(width, len(header[n]))
+
+    table_width: int = sum(
+        (max(colw, len(head)) for colw, head in zip(col_widths, header, strict=True)) if header else col_widths,
+    ) + (len(hsep) * (len(col_widths) - 1))
 
     table: list[str] = [vborder * table_width] if vborder else []
 
