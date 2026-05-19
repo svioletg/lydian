@@ -22,7 +22,7 @@ from rich.markup import escape
 from lydian.config import config
 from lydian.const import debug_context, screen, setup_logger
 from lydian.perms import perms
-from lydian.util import get_annotation, is_annotated, join_trailing, tabulate, wrap_paragraphs
+from lydian.util import expect, get_annotation, is_annotated, join_trailing, tabulate, wrap_paragraphs
 
 if TYPE_CHECKING:
     from ty_extensions import Intersection
@@ -440,9 +440,11 @@ class LydianConsole(BotConsole):
     def task_status(task: Task) -> str:
         """Returns a rich-formatted string based on the task's status."""
         if task.cancelled():
-            return '[err]cancelled[/]'
+            return '[warn]cancelled[/]'
         if task.done():
-            return f'[warn]done{f' ([err]{exc}[/])' if (exc := task.exception()) else ''}[/]'
+            if exc := task.exception():
+                return f'[err]failed ({exc.__class__.__name__})[/]'
+            return '[warn]done[/]'
         return '[ok]running[/]'
 
     @staticmethod
@@ -460,8 +462,8 @@ class LydianConsole(BotConsole):
                 intervals.append(f'{task.hours}h')
             return ', '.join(intervals)
 
-    @command('tasks')
-    def tasks_show(self, /) -> None:
+    @command(group='tasks')
+    def tasks_list(self, /) -> None:
         """Prints background tasks and their status."""
         status_table: list[tuple[str, str, str, str]] = [('ID', 'NAME', 'STATUS', 'INTERVAL(S)')]
         for n, task in enumerate(cast('list[tasks.Loop]', debug_context['tasklist'])):
@@ -478,6 +480,20 @@ class LydianConsole(BotConsole):
             hsep='  ',
             strip=r'\[[\w/]+\]',
         ))
+
+    @command(group='tasks')
+    def tasks_start(self, task_id: int, /) -> None:
+        """Attempts to start a background task which is not running. Use ``tasks list`` to see IDs."""
+        tasklist: list[tasks.Loop] = debug_context['tasklist']
+        if not 0 <= task_id <= len(tasklist):
+            logger.error('task_id out of range')
+            return
+        task = tasklist[task_id]
+        if task.is_running():
+            logger.info(f'Task is already running: {expect(task.get_task()).get_name()}')
+            return
+        logger.info(f'Starting task: {expect(task.get_task()).get_name()}')
+        task.start()
 
     @command()
     def uptime(self, /) -> None:

@@ -12,8 +12,11 @@ configured prefix accordingly.
 
 ### Added
 
-- Added console command `tasks`
-  - Lists background tasks assigned to the bot and their status, interval, and ID
+- Added console command group `tasks`
+  - `list`: Lists background tasks assigned to the bot and their status, interval, and ID
+  - `start`: Attempts to start a specified background task
+- Added method `console.LydianConsole.tasks_list()`
+- Added method `console.LydianConsole.tasks_start()`
 - Added function `util.get_background_tasks()`
 - Added function `util.get_leaves()`
 - Added function `util.iter_columns()`
