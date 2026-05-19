@@ -428,16 +428,23 @@ class LydianConsole(BotConsole):
         The expression will have access to Python's built-ins, the global "config" and "perms" objects, and a "dbg"
         dictionary which stores references to various things specifically for debugging or development usage.
 
+        For convenience, "?" can be used in place of "dbg." at the beginning of the expression, e.g. "?bot.user" is
+        parsed as "dbg.bot.user".
+
         :param expr: The expression to evaluate.
         :param log: Whether to log this evaluation (as DEBUG-level) or just print it to the screen.
         """
         print_fn = logger.debug if log else screen.print
 
-        # Can't be ast.literal_eval, we explicitly need access to some outside variables
-        # This is only accessible in debug mode and will be warned about in multiple places
+        eval_globals: dict[str, Any] = {'config': config, 'perms': perms, 'dbg': debug_context}
+        parsed_expr: str = expr
+        if parsed_expr[0] == '?':
+            parsed_expr = parsed_expr.replace('?', 'dbg.', count=1)
+
         try:
-            eval_globals: dict[str, Any] = {'config': config, 'perms': perms, 'dbg': debug_context}
-            print_fn(f'{expr} == {eval(expr, eval_globals)!r}')  # noqa: S307
+            # Can't be ast.literal_eval, we explicitly need access to some outside variables
+            # This is only accessible in debug mode and will be warned about in multiple places
+            print_fn(f'{parsed_expr} == {eval(parsed_expr, eval_globals)!r}')  # noqa: S307
         except Exception as e:  # noqa: BLE001
             # The full traceback for this case is usually unnecessary
             logger.error(f'{e.__class__.__name__}: {e}')

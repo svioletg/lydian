@@ -25,6 +25,8 @@ configured prefix accordingly.
   - Keys are the cog object name with the `Cog` suffix removed and lowercased,
     e.g. `GeneralCog` → `general`
 - Added `tasks` and `tasklist` keys to `debug_context`
+- Console command `debug read` expression argument can now be prefixed with `?` as an alias to
+  `dbg.`
 
 ### Changed
 

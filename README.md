@@ -104,7 +104,8 @@ reason, you should be able to hit Ctrl+C to send a keyboard interrupt and forcib
 Prints the result of an expression to stdout, or logs it as a DEBUG-level log if the `--log` flag is
 given. This command has access to the `config` object, `perms` object, and a `dbg` dictionary which
 stores references to various things specifically for debugging or development usage, as well as
-Python's built-ins.
+Python's built-ins. For convenience, `?` can be used in place of `dbg.` at the beginning of the
+expression, e.g. `?bot.user` is parsed as `dbg.bot.user`.
 
 Arguments:
   - expression (string)
