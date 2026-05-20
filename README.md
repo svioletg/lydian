@@ -12,6 +12,10 @@ Spotify links.
 
 Documentation: <https://lydian-discord-bot.readthedocs.io/en/latest/>
 
+Bug reports, feature suggestions, questions: <https://github.com/svioletg/lydian-discord-bot/issues>
+
+View the project's status board: <https://github.com/users/svioletg/projects/6/views/1>
+
 > [!IMPORTANT]
 > Lydian is designed to be used in only one server at a time. Trying to play music in two or more
 > different servers at once may cause unexpected issues and is unsupported for the time being.
