@@ -492,7 +492,7 @@ class VoiceCog(commands.Cog):
             return
         await ctx.send(embed=embed_info('The player is not paused.', 'Use `-play <URL>` to queue something up.'))
 
-    async def _try_to_queue(self, ctx: commands.Context, url: str) -> Result[tuple[MediaItem, ...], discord.Embed]:
+    async def _try_to_queue(self, ctx: commands.Context, url: str) -> Result[tuple[MediaItem, ...], discord.Embed]:  # noqa: PLR0911
         author = _assert_discord_member(ctx.author)
 
         try:
@@ -505,6 +505,16 @@ class VoiceCog(commands.Cog):
                 return Err(embed_info("No suitable extractor found for this URL with the bot's current configuration."))
             else:
                 return Err(embed_error('Failed to get URL information', f'From yt-dlp: {msg}'))
+
+        # Check against the duration limit, if any
+        if (len(items) == 1) and config.max_duration:
+            item = items[0]
+            if (item.duration is None) and not config.max_duration_allow_unknown:
+                return Err(embed_info("Cannot queue; this media's duration is unknown",
+                    'Allowing unknown durations is currently disabled'))
+            elif (item.duration is not None) and item.duration > config.max_duration:
+                return Err(embed_info('Media exceeds the duration limit',
+                    f'{format_duration(item.duration)} > {format_duration(config.max_duration)}\n{item.url}'))
 
         # Reject if the items won't fit in the queue
         if config.max_queue_length and (len(self.queue) + len(items) > config.max_queue_length):
@@ -529,7 +539,7 @@ class VoiceCog(commands.Cog):
 
         return Ok(items)
 
-    async def advance_queue(self, ctx: commands.Context, *, play_now: MediaItem | None = None) -> int | None:
+    async def advance_queue(self, ctx: commands.Context, *, play_now: MediaItem | None = None) -> int | None:  # noqa: C901
         """Plays the next item in the queue, returning how many items had to be skipped if any.
 
         Returns ``None`` without advancing if the queue is empty and ``play_now`` is ``None``.
@@ -568,6 +578,17 @@ class VoiceCog(commands.Cog):
 
                 if (not item.duration) or (item.thumbnail_url):
                     item.refresh()
+
+                # Check against the duration limit, if any
+                if config.max_duration:
+                    if (item.duration is None) and not config.max_duration_allow_unknown:
+                        await ctx.send(embed=embed_info("Cannot queue; this media's duration is unknown",
+                            f'Allowing unknown durations is currently disabled\n{item.url}'))
+                        continue
+                    if (item.duration is not None) and item.duration > config.max_duration:
+                        await ctx.send(embed=embed_info('Media exceeds the duration limit',
+                            f'{format_duration(item.duration)} > {format_duration(config.max_duration)}\n{item.url}'))
+                        continue
 
                 logger.debug(f'Getting YTDLSource from: {item.url}')
                 if progress_msg:

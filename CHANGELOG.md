@@ -10,6 +10,11 @@ configured prefix accordingly.
 
 ## [Unreleased]
 
+### Added
+
+- Added config key `max-duration` (integer)
+- Added config key `max-duration-allow-unknown` (boolean)
+
 ### Fixed
 
 - Fixed single-digit filesize numbers in TOML config not matching pattern

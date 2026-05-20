@@ -125,6 +125,10 @@ class Config(DataclassUpdateMixin):
         metadata={'env': 'DEBUG'},
     )
     command_aliases: dict[str, list[str]] = field(default_factory=_default_command_aliases)
+    max_duration: int = field(default=0,
+        doc='Maximum duration (in seconds) of media that can be played by the bot. Set to 0 for no limit.')
+    max_duration_allow_unknown: bool = field(default=False,
+        doc="Whether to allow media whose duration couldn't be retrieved when max-duration is more than 0.")
     max_filesize: int = field(default=20_000_000,
         doc='Maximum filesize in bytes for media that can be downloaded by the bot.'
             + ' Will have no effect when streaming media (stream-media = true).',
@@ -329,7 +333,7 @@ def main() -> int:
     dest: Path | None = args.out
     add_comments: bool = not args.no_comments
 
-    toml: str = Config().to_toml(add_comments=add_comments)
+    toml: str = Config().to_toml(add_comments=add_comments).strip() + '\n'
 
     if not dest:
         print(toml)  # noqa: T201
