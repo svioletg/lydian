@@ -35,6 +35,9 @@ configured prefix accordingly.
     "DEBUG"-level log
 - `no-` prefixes in console command flags no longer invert the flag's default, instead `no-` just
   sets its value to `False` and sets `True` otherwise
+- `console.BotConsole.start_loop()` now accept a `catch` parameter
+  - If `True`, exceptions raised while invoking a command are logged instead of propagating them,
+    allowing the console loop to continue
 
 ### Fixed
 

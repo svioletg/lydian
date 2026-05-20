@@ -355,8 +355,11 @@ class BotConsole(metaclass=BotConsoleMeta):
                 return Ok((command, args))
         return Err(f'Expected command after group name: {word}')
 
-    async def start_loop(self) -> None:
-        """Starts the console loop, returning when the ``stop`` command is issued or EOF is sent."""
+    async def start_loop(self, *, catch: bool = False) -> None:
+        """Starts the console loop, returning when the ``stop`` command is issued or EOF is sent.
+
+        :param catch: Whether to catch all exceptions raised from a command and log them instead of propagating.
+        """
         session = PromptSession()
         logger.debug('Console is active')
         while True:
@@ -388,7 +391,13 @@ class BotConsole(metaclass=BotConsoleMeta):
 
             match self.parse_input(user_input):
                 case Ok((command, args)):
-                    command.invoke(*args)
+                    try:
+                        command.invoke(*args)
+                    except Exception as e:
+                        if catch:
+                            logger.opt(exception=e).error(f'Unexpected error while invoking command: {user_input}')
+                        else:
+                            raise
                 case Err(message):
                     logger.warning(message)
 

@@ -169,7 +169,7 @@ async def thread_console() -> None:
         await asyncio.sleep(1)
 
     bot_console.bot = bot
-    await bot_console.start_loop()
+    await bot_console.start_loop(catch=True)
 
 def prompt_bot_setup() -> bool:
     """Prompts the user to setup Lydian in the current working directory and returns whether the user confirmed."""
