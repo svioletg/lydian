@@ -244,7 +244,7 @@ class FromStr:
     }
 
     filesize_regex: ClassVar[re.Pattern[str]] = re.compile(
-        r'^(?P<n>[\d,]+\.?\d+) ?(?P<unit>b|[kmg]i?b)$',
+        r'^(?P<n>[\d,]*\.?\d+) ?(?P<unit>b|[kmg]i?b)$',
         flags=re.IGNORECASE,
     )
 

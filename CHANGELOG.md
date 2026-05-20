@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
 configured prefix accordingly.
 
+## [Unreleased]
+
+### Fixed
+
+- Fixed single-digit filesize numbers in TOML config not matching pattern
+
 ## [0.6.0] - 2026-05-19
 
 ### Added
