@@ -82,6 +82,10 @@ def test_cache() -> None:
     with pytest.raises(ValueError, match='must be a future date'):
         cache.get_or_set(1, lambda: 'one', datetime(2025, 1, 1, tzinfo=UTC))
 
+def test_compose() -> None:
+    assert util.compose([int, float, str, float, int, bool])('1') is True
+    assert util.compose([str.strip, str.lower])('    Text    ') == 'text'
+
 def test_dirsize(tmpdir: Path) -> None:
     def write_dummy(size: int, dest: Path) -> Path:
         with open(dest, 'wb') as f:

@@ -216,6 +216,7 @@ class DataclassUpdateMixin:
             elif t_origin:
                 typ = t_origin
 
+            validator = fld.metadata.get('validator', lambda x: x)
             if hasattr(typ, 'update'):
                 if t_origin is not dict:
                     getattr(self, k).update(v, on_missing=on_missing)
@@ -223,9 +224,9 @@ class DataclassUpdateMixin:
                     getattr(self, k).update(v)
             # If the field is a Literal then just because it's the right type doesn't mean it's the right value
             elif isinstance(v, typ) and not is_literal:
-                setattr(self, k, v)
+                setattr(self, k, validator(v))
             else:
-                converted = fld.metadata.get('converter', typ)(v)
+                converted = validator(fld.metadata.get('converter', typ)(v))
                 if is_literal and (converted not in t_args):
                     raise ValueError(f'Expected one of {','.join(repr(i) for i in t_args)}: {converted!r}')
                 setattr(self, k, converted)
@@ -329,6 +330,19 @@ def assure(condition: bool, exc_args: str = '') -> None:  # noqa: FBT001
     """Raises :py:class:`lydian.errors.AssuranceError` if ``condition`` is ``False``, otherwise does nothing."""
     if not condition:
         raise AssuranceError(exc_args)
+
+def compose(funcs: Iterable[Callable]) -> Callable[[object], object]:
+    """Composes ``funcs`` into one function which takes a single argument.
+
+    The returned function calls each function of ``func`` in sequence, using the value returned from the last function
+    as the value passed to the next, returning the final value when there are no functions left.
+    """
+    def composed_func(x: object) -> object:
+        result = x
+        for fn in funcs:
+            result = fn(result)
+        return result
+    return composed_func
 
 def dirsize(source_dir: str | Path) -> int:
     """Returns the total size of a directory's contents in bytes."""
