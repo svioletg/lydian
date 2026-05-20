@@ -447,10 +447,7 @@ class VoiceCog(commands.Cog):
             just_started: bool = False
             if not self.now_playing:
                 just_started = True
-                exc = await self.advance_queue(ctx)
-                if exc:
-                    await progress_msg.delete()
-                    continue
+                skipped: int | None = await self.advance_queue(ctx)
 
             if (len(items) == 1) and not just_started:
                 item = items[0]
@@ -459,7 +456,7 @@ class VoiceCog(commands.Cog):
                 )
             else:
                 if just_started:
-                    items = items[1:]
+                    items = items[(skipped or 0) + 1:]
                 if not items:
                     await progress_msg.delete()
                     continue
@@ -532,11 +529,14 @@ class VoiceCog(commands.Cog):
 
         return Ok(items)
 
-    async def advance_queue(self, ctx: commands.Context, *, play_now: MediaItem | None = None) -> Exception | None:
-        """Plays the next item in the queue, returning any exception caught and handled in the process.
+    async def advance_queue(self, ctx: commands.Context, *, play_now: MediaItem | None = None) -> int | None:
+        """Plays the next item in the queue, returning how many items had to be skipped if any.
 
-        Returns immediately if the queue is empty and ``play_now`` is ``None``.
+        Returns ``None`` without advancing if the queue is empty and ``play_now`` is ``None``.
         If the bot is paused or playing audio, it will be stopped and the current media is skipped.
+        If the queue item cannot be played (e.g. due to filesize or duration limit), the next item will be tried until
+        either the player starts successfully or the queue is empty. The count of how many times this occurs is
+        returned.
 
         .. important::
             It is assumed that the bot is connected voice when calling this method, otherwise ``TypeError`` will be
@@ -549,39 +549,50 @@ class VoiceCog(commands.Cog):
         if self.queue_advance_lock:
             return None
 
-        with self.queue_advance_lock:
-            voice = _assert_voice_client(ctx.voice_client)
+        progress_msg: discord.Message | None = None
+        skipped: int = -1
+        while True:
+            skipped += 1
+            with self.queue_advance_lock:
+                voice = _assert_voice_client(ctx.voice_client)
 
-            if voice.is_playing() or voice.is_paused():
-                voice.stop()
+                if voice.is_playing() or voice.is_paused():
+                    voice.stop()
 
-            if (not self.queue) and (not play_now):
-                return None
+                if (not self.queue) and (not play_now):
+                    return 0
 
-            item = play_now or self.queue.popleft()
+                item = play_now or self.queue.popleft()
+                # Make sure play_now is consumed so it doesn't try to queue on the next loop
+                play_now = None
 
-            if (not item.duration) or (item.thumbnail_url):
-                item.refresh()
+                if (not item.duration) or (item.thumbnail_url):
+                    item.refresh()
 
-            logger.debug(f'Getting YTDLSource from: {item.url}')
-            progress_msg: discord.Message = await ctx.send(embed=embed_info('Downloading...'))
+                logger.debug(f'Getting YTDLSource from: {item.url}')
+                if progress_msg:
+                    await progress_msg.edit(embed=embed_info('Downloading...', item.url))
+                else:
+                    progress_msg = await ctx.send(embed=embed_info('Downloading...', item.url))
 
-            try:
-                source = await YTDLSource.from_url(item.url, stream=config.stream_media)
-            except FileSizeLimitError as e:
-                await progress_msg.edit(embed=embed_info('File is larger than the set filesize limit.'))
-                logger.info(e)
-                return e
+                try:
+                    source = await YTDLSource.from_url(item.url, stream=config.stream_media)
+                except FileSizeLimitError as e:
+                    await progress_msg.edit(embed=embed_info('File is larger than the set filesize limit.'))
+                    logger.info(e)
+                    continue
 
-            await progress_msg.delete()
+                await progress_msg.delete()
 
-            logger.info(f'Playing: {item}')
-            voice.play(source, after=lambda e: self.on_player_stop(ctx, exc=e))
-            self.now_playing = item
+                logger.info(f'Playing: {item}')
+                voice.play(source, after=lambda e: self.on_player_stop(ctx, exc=e))
+                self.now_playing = item
 
-            await ctx.send(embed=item.embed(f'{EmojiStr.PLAY} Playing: '))
+                await ctx.send(embed=item.embed(f'{EmojiStr.PLAY} Playing: '))
 
-            return None
+                break
+
+        return skipped
 
     def on_player_stop(self, ctx: commands.Context, exc: Exception | None) -> None:
         """Callback for the voice client's ``.play()`` method ``after`` callback.
