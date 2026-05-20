@@ -13,9 +13,8 @@ Spotify links.
 Documentation: <https://lydian-discord-bot.readthedocs.io/en/latest/>
 
 > [!IMPORTANT]
-> Lydian is intended to be used in only one server at a time. Trying to play music in
-> two or more different servers at once may cause unexpected issues and is unsupported for the time
-> being.
+> Lydian is designed to be used in only one server at a time. Trying to play music in two or more
+> different servers at once may cause unexpected issues and is unsupported for the time being.
 
 ## Contents <!-- omit in toc -->
 
@@ -23,7 +22,7 @@ Documentation: <https://lydian-discord-bot.readthedocs.io/en/latest/>
 - [Setup: Lydian](#setup-lydian)
 - [Usage: Running the bot](#usage-running-the-bot)
 - [Usage: Bot console commands](#usage-bot-console-commands)
-  - [`debug read`, `debug readlog`](#debug-read-debug-readlog)
+  - [`debug read`](#debug-read)
   - [`help`](#help)
   - [`stop`](#stop)
   - [`uptime`](#uptime)
@@ -93,7 +92,7 @@ reason, you should be able to hit Ctrl+C to send a keyboard interrupt and forcib
 > [!NOTE]
 > All commands starting with `debug` require [debug mode](#debug-mode) to use.
 
-### `debug read`, `debug readlog`
+### `debug read`
 
 > [!WARNING]
 > This command uses the `eval()` function, which is [unsafe to use with untrusted user
@@ -102,20 +101,24 @@ reason, you should be able to hit Ctrl+C to send a keyboard interrupt and forcib
 > `LYDIAN_DEBUG_TOKEN`), and as long as you're only running the bot locally on a secure machine this
 > shouldn't be an issue.
 
-Prints the result of an expression to stdout, or logs it as a DEBUG-level log if using `readlog`.
-`read` and `readlog` have access to the `config` object, `perms` object, and a `dbg` dictionary
-which stores references to various things specifically for debugging or development usage, as well
-as Python's built-ins.
+Prints the result of an expression to stdout, or logs it as a DEBUG-level log if the `--log` flag is
+given. This command has access to the `config` object, `perms` object, and a `dbg` dictionary which
+stores references to various things specifically for debugging or development usage, as well as
+Python's built-ins. For convenience, `?` can be used in place of `dbg.` at the beginning of the
+expression, e.g. `?bot.user` is parsed as `dbg.bot.user`.
 
 Arguments:
   - expression (string)
+
+Options:
+  - `--log` (flag)
 
 Example:
 
 ```log
 > debug read dbg.cog.voice.queue
 debug_context['cog.voice.queue'] == MediaQueue([])
-> debug readlog dbg.cog.voice.queue
+> debug read --log dbg.cog.voice.queue
 [2026-04-30 00:51:30] [bot::thread_console/DEBUG]: debug_context['cog.voice.queue'] == MediaQueue([])
 ```
 

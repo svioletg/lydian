@@ -21,6 +21,7 @@ from lydian.const import (
     COLOR_ESCAPE_REGEX,
     COLOR_INFO,
     DL_DIR,
+    GH_ISSUES,
     QUEUE_MAX_PER_PAGE,
     YTDL_DOWNLOAD_PROGRESS_REGEX,
     EmojiStr,
@@ -28,7 +29,6 @@ from lydian.const import (
 from lydian.errors import AbortCommand, FileSizeLimitError, MediaQueueLimitError
 from lydian.util import BasicLock, Cache, expect, format_duration
 
-background_tasks: list[tasks.Loop] = []
 
 class YTDLLogHandler:
     """Basic class implementing ``debug``, ``info``, and ``warning`` methods to handle YoutubeDL logging.
@@ -323,8 +323,8 @@ def _assert_voice_client(vc: discord.VoiceProtocol | None) -> discord.VoiceClien
 class VoiceCog(commands.Cog):
     """Voice-related commands."""
 
-    def __init__(self, bot: discord.client.Bot) -> None:
-        self.bot: discord.client.Bot = bot
+    def __init__(self, bot: commands.Bot) -> None:
+        self.bot: commands.Bot = bot
 
         # Media
         self.queue = MediaQueue(maxlen=config.max_queue_length)
@@ -362,8 +362,6 @@ class VoiceCog(commands.Cog):
         # Start tasks
         self.task_tick_timers.start()
         self.task_handle_play_requests.start()
-
-        background_tasks.extend(attr for name in dir(self) if isinstance(attr := getattr(self, name), tasks.Loop))
 
     #region LISTENERS
 
@@ -478,6 +476,10 @@ class VoiceCog(commands.Cog):
     async def on_task_exception(self, exc: BaseException) -> Any:  # noqa: ANN401 ; error decorator expects Any return type
         """Handles unhandled exceptions raised in background tasks."""
         logger.opt(exception=exc).error('Unhandled exception in background task')
+        logger.error('The task will need to be manually restarted. Use the "tasks list" command to find the failed'
+            + ' task, then run "tasks start" followed by that task\'s ID to do so. If you continue to encounter this'
+            + ' error, please check for existing bug reports and make a new one if needed (include the above'
+            + f' traceback) at: {GH_ISSUES}')
 
     #endregion TASKS
 

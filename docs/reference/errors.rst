@@ -2,7 +2,7 @@
 .. py:currentmodule:: lydian.errors
 
 :py:mod:`~lydian.errors` module
-==============================
+===============================
 
 .. automodule:: lydian.errors
    :members:

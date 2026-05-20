@@ -15,6 +15,8 @@ from rich.text import Text
 from rich.theme import Theme
 
 PROJECT_VERSION: str = metadata('lydian-discord-bot')['version']
+GH_REPO: str = 'https://github.com/svioletg/lydian-discord-bot'
+GH_ISSUES: str = GH_REPO + '/issues'
 
 # Paths
 PACKAGE_DIR      : Path = Path(__file__).resolve().parent

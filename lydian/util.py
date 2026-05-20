@@ -5,16 +5,17 @@ used by any module.
 """
 import re
 import textwrap
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from dataclasses import Field, fields, is_dataclass
 from datetime import UTC, datetime, timedelta, tzinfo
-from math import floor
+from math import ceil, floor
 from pathlib import Path
 from time import perf_counter_ns
-from types import TracebackType
-from typing import Annotated, Any, ClassVar, Literal, cast, get_args, get_origin
+from types import EllipsisType, TracebackType
+from typing import Annotated, Any, ClassVar, Literal, cast, get_args, get_origin, overload
 from zoneinfo import ZoneInfo
 
+from discord.ext import commands, tasks
 from maybetype import Maybe, maybe
 
 from lydian.errors import AssuranceError
@@ -23,23 +24,21 @@ from lydian.errors import AssuranceError
 class BasicLock:
     """A basic "lock" object that can be used as a context manager.
 
-    ```python
-    lock = BasicLock()
+    .. code-block:: python
+        lock = BasicLock()
 
-    print(lock) # BasicLock(False)
+        print(lock) # BasicLock(False)
 
-    with lock:
-        print(lock) # BasicLock(True)
+        with lock:
+            print(lock) # BasicLock(True)
 
-    print(lock) # BasicLock(False)
-    ```
+        print(lock) # BasicLock(False)
 
     The ``name`` argument can be given to customize the ``repr``.
 
-    ```python
-    lock = BasicLock('QueueLock')
-    print(lock) # QueueLock(False)
-    ```
+    .. code-block:: python
+        lock = BasicLock('QueueLock')
+        print(lock) # QueueLock(False)
     """
 
     def __init__(self, name: str | None = None, *, default_state: bool = False) -> None:
@@ -363,8 +362,8 @@ def format_duration(total_seconds: float) -> str:
     h, m = divmod(total_seconds, 3600)
     m, s = divmod(m, 60)
     if h:
-        return f'{h}:{m:02d}:{s:02d}'
-    return f'{m}:{s:02d}'
+        return f'{ceil(h)}:{ceil(m):02d}:{ceil(s):02d}'
+    return f'{ceil(m)}:{ceil(s):02d}'
 
 def get_annotation(typ: object) -> Any | None:  # noqa: ANN401
     """Returns the second type argument if ``typ`` is ``typing.Annotated``, otherwise returns ``None``."""
@@ -372,6 +371,13 @@ def get_annotation(typ: object) -> Any | None:  # noqa: ANN401
         return get_args(typ)[1] if get_origin(typ) is Annotated else None
     except IndexError:
         return None
+
+def get_background_tasks(bot: commands.Bot) -> dict[str, dict[str, tasks.Loop]]:
+    """Returns a dictionary of cog names to a dictionary of background task coroutines by their names."""
+    return {
+        cog_name:{name:attr for name, attr in cog.__dict__.items() if isinstance(attr, tasks.Loop)}
+        for cog_name, cog in bot.cogs.items()
+    }
 
 def get_dataclass_fields(dc: object, parents: list[str] | None = None) -> dict[str, Field]:
     """Returns a dictionary of field names (dotted if the field is a dataclass) to field objects for a dataclass.
@@ -387,6 +393,31 @@ def get_dataclass_fields(dc: object, parents: list[str] | None = None) -> dict[s
 
     return field_dict
 
+@overload
+def get_leaves[T](tree: Mapping[Any, Any], typ: type[T]) -> Generator[T]: ...
+@overload
+def get_leaves(tree: Mapping[Any, Any], typ: None = None) -> Generator[Any]: ...
+def get_leaves[T](tree: Mapping[Any, Any], typ: type[T] | None = None) -> Generator[T] | Generator[Any]:
+    """Returns every non-mapping (or a specific type) value in an arbitrarily nested mapping.
+
+    :param typ: A type to use in ``isinstance`` checks determining whether a value is considered a leaf.
+        If ``None``, the value is simply checked to not be a mapping instance.
+    """
+    # Returns two booleans, one for whether this value is a leaf, and one for whether we should descend into this value
+    # This prevents unnecessarily checking for a Mapping instance a second time if `typ` is None
+    is_leaf: Callable[[Any], tuple[bool, bool]] = (lambda v: (not isinstance(v, Mapping), True)) \
+        if typ is None else (lambda v: (isinstance(v, typ), isinstance(v, Mapping)))
+
+    def search(d: Mapping[Any, Any]) -> Generator:
+        for v in d.values():
+            take, descend = is_leaf(v)
+            if take:
+                yield v
+            elif descend:
+                yield from search(v)
+
+    yield from search(tree)
+
 def is_annotated(typ: object) -> bool:
     """Returns whether ``typ``'s type origin is ``typing.Annotated``.
 
@@ -395,6 +426,32 @@ def is_annotated(typ: object) -> bool:
         ``object``.
     """
     return get_origin(typ) is Annotated
+
+@overload
+def iter_columns[T](data: Sequence[Sequence[T]], default: EllipsisType = ...) -> Generator[tuple[T, ...]]: ...
+@overload
+def iter_columns[T, U](data: Sequence[Sequence[T]], default: U) -> Generator[tuple[T | U, ...]]: ...
+def iter_columns[T, U](
+        data: Sequence[Sequence[T]],
+        default: U | EllipsisType = ...,
+    ) -> Generator[tuple[T | U, ...]]:
+    """Yields columns from a two-dimensional sequence.
+
+    ``default`` will fill empty cells row or column lengths are not consistent, otherwise ``IndexError`` is raised.
+    """
+    def get_cell(row: int, column: int, default: U) -> T | U:
+        try:
+            return data[row][column]
+        except IndexError:
+            return default
+
+    height: int = len(data)
+    width: int = len(data[0]) if default is ... else max(map(len, data))
+
+    yield from (
+        tuple(data[row][column] if default is ... else get_cell(row, column, default) for row in range(height))
+        for column in range(width)
+    )
 
 def join_trailing(s: Iterable[str], sep: str, *, trail_single: bool = False) -> str:
     """Same as ``str.join()``, but adds an additional ``sep`` at the end if any joining was performed.
@@ -487,6 +544,81 @@ def strftimestamp(
     """Format a Unix timestamp to the given format string, converting its timezone to ``tz`` if given a value."""
     tz: tzinfo = ZoneInfo(tz) if isinstance(tz, str) else tz
     return datetime.fromtimestamp(timestamp, tz=UTC).astimezone(tz).strftime(format_str)
+
+def tabulate(  # noqa: C901
+        data: Sequence[tuple[object, ...]],
+        *,
+        header: tuple[str, ...] | None = None,
+        head_sep: str = '-',
+        hsep: str = ' ',
+        vsep: str = '',
+        vborder: str = '',
+        render: Callable[[object], str] = str,
+        justify: Callable[[str, int], str] | tuple[Callable[[str, int], str], ...] | None = None,
+        strip: str | re.Pattern[str] | None = None,
+    ) -> str:
+    """Returns a string with ``data`` formatted as a table based on the given options.
+
+    This function assumes that all rows in ``data`` are the same length as the first.
+
+    :param header: A row of strings to place as titles for each column before the rest of the table.
+    :param head_sep: Character to repeat for the table's width between the header row and the rest of the table.
+        There is no separation between the header and the rest of the table if this string is empty.
+    :param hsep: Horizontal separator character to place between each column.
+    :param vsep: Vertical separator character to repeat for the table's width between each row.
+        No lines are placed between rows if this string is empty.
+    :param vborder: Character to repeat for the table's width as the first and last lines of the table string.
+    :param render: A function to use to convert each item into a string.
+    :param justify: A function used to justify the string for a given cell, passed the string content and the column's
+        width. Defaults to ``str.ljust``. If given a tuple of functions, each function will be used for the respective
+        column.
+    :param strip: A regular expression matching characters to strip out of the rendered string before calculating its
+        length, e.g. for stripping non-visible characters like color escape codes.
+    """
+    if isinstance(strip, str):
+        strip = re.compile(strip)
+
+    justify = justify or str.ljust
+
+    if not isinstance(justify, tuple):
+        justify = (justify,) * len(data[0])
+
+    justify = cast('tuple[Callable[[str, int], str], ...]', justify)
+
+    rendered: list[tuple[str, ...]] = [tuple(render(cell) for cell in row) for row in data]
+    col_widths: list[int] = [
+        max(map(len, (strip.sub('', cell) for cell in column) if strip else column))
+        for column in iter_columns(rendered)
+    ]
+    for n, width in enumerate(col_widths):
+        if header:
+            col_widths[n] = max(width, len(header[n]))
+
+    table_width: int = sum(
+        (max(colw, len(head)) for colw, head in zip(col_widths, header, strict=True)) if header else col_widths,
+    ) + (len(hsep) * (len(col_widths) - 1))
+
+    table: list[str] = [vborder * table_width] if vborder else []
+
+    if header:
+        table.append(
+            hsep.join(just(cell, width) for cell, width, just in zip(header, col_widths, justify, strict=True)),
+        )
+        if head_sep:
+            table.append(head_sep * table_width)
+
+    for row in rendered:
+        table.append(hsep.join(just(cell, width) for cell, width, just in zip(row, col_widths, justify, strict=True)))
+        if vsep:
+            table.append(vsep * table_width)
+
+    if vsep:
+        table.pop()
+
+    if vborder:
+        table.append(vborder * table_width)
+
+    return '\n'.join(table)
 
 def wrap_paragraphs(
         text: str,

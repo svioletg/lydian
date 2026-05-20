@@ -1,7 +1,8 @@
-"""Holds the :py:class:`BotConsole` class to handle console command while running the bot."""
+"""Holds the :py:class:`BotConsole` class to handle console commands while running the bot."""
 import asyncio
 import inspect
 import shlex
+from asyncio.tasks import Task
 from collections.abc import Callable
 from datetime import UTC, datetime
 from itertools import zip_longest
@@ -10,7 +11,8 @@ from typing import TYPE_CHECKING, Annotated, Any, Protocol, Self, Union, cast, g
 from unittest.mock import AsyncMock
 
 from benedict import benedict
-from discord.ext import commands
+from discord.ext import tasks
+from discord.ext.commands import Bot
 from humanize import precisedelta
 from loguru import logger
 from maybetype import Err, Ok, Result
@@ -21,7 +23,7 @@ from rich.markup import escape
 from lydian.config import config
 from lydian.const import debug_context, screen, setup_logger
 from lydian.perms import perms
-from lydian.util import get_annotation, is_annotated, join_trailing, wrap_paragraphs
+from lydian.util import expect, get_annotation, is_annotated, join_trailing, tabulate, wrap_paragraphs
 
 if TYPE_CHECKING:
     from ty_extensions import Intersection
@@ -187,7 +189,7 @@ class ConsoleCommand:
             subsequent_indent='    ',
         ))
 
-    def parse_raw_args(self, *raw_args: str) -> Result[tuple[list[Any], dict[str, Any]], str]:  # noqa: C901
+    def parse_raw_args(self, *raw_args: str) -> Result[tuple[list[Any], dict[str, Any]], str]:  # noqa: C901, PLR0915
         """Parses raw string argument values into values ready to call the wrapped function with.
 
         If parsing was successful, returns ``Ok`` of a tuple of the parsed positional argument values, and a dictionary
@@ -243,23 +245,28 @@ class ConsoleCommand:
                     raise TypeError(f'Command function parameter unions can only be T | None: {argtype} (in {param!r})')
                 argtype = t_args[0]
             parser: Callable[[str], Any] = (arginfo and arginfo.parse) or argtype  # ty:ignore[invalid-assignment]
-            parsed_args.append(parser(value))
+            try:
+                parsed_args.append(parser(value))
+            except (TypeError, ValueError) as e:
+                return Err(f"Failed to parse value for argument '{arginfo.name}': {e.__class__.__name__}: {e}")
 
         for kwarg in kw_vals:
             split: list[str] = kwarg.split('=', maxsplit=1)
             name: str = split[0]
             if not (param := keyword.get(name.removeprefix('no-').replace('-', '_'))):
                 return Err(f'Unexpected keyword argument: --{kwarg}')
-            arginfo: Arg = self.arginfo[param.name]
             if (param.annotation is bool) and (len(split) == 1):
                 # No value is fine for a flag, check for --flag or --no-flag
-                parsed_kwargs[param.name] = not arginfo.default if name.startswith('no-') else arginfo.default
+                parsed_kwargs[param.name] = not name.startswith('no-')
                 continue
             value: str = split[1]
-            arginfo: Arg | None = get_args(param.annotation)[1] if is_annotated(param.annotation) else None
+            arginfo: Arg = self.arginfo[name]
             parser: Callable[[str], Any] = (arginfo and arginfo.parse) or param.annotation  # ty:ignore[invalid-assignment]
             parsed_value = parser(value)
-            parsed_kwargs[param.name] = parsed_value
+            try:
+                parsed_kwargs[param.name] = parsed_value
+            except (TypeError, ValueError) as e:
+                return Err(f"Failed to parse value for argument '{arginfo.name}': {e.__class__.__name__}: {e}")
 
         return Ok((parsed_args, parsed_kwargs))
 
@@ -313,7 +320,7 @@ class BotConsoleMeta(type):
 class BotConsole(metaclass=BotConsoleMeta):
     """Base class for bot consoles."""
 
-    bot: commands.Bot
+    bot: Bot
     prompt_prefix: str
     """A string shown before each user input prompt."""
     # Can't get ty to properly work with a recursive value type here so we're just using Any for now, see docstring
@@ -348,8 +355,11 @@ class BotConsole(metaclass=BotConsoleMeta):
                 return Ok((command, args))
         return Err(f'Expected command after group name: {word}')
 
-    async def start_loop(self) -> None:
-        """Starts the console loop, returning when the ``stop`` command is issued or EOF is sent."""
+    async def start_loop(self, *, catch: bool = False) -> None:
+        """Starts the console loop, returning when the ``stop`` command is issued or EOF is sent.
+
+        :param catch: Whether to catch all exceptions raised from a command and log them instead of propagating.
+        """
         session = PromptSession()
         logger.debug('Console is active')
         while True:
@@ -381,21 +391,27 @@ class BotConsole(metaclass=BotConsoleMeta):
 
             match self.parse_input(user_input):
                 case Ok((command, args)):
-                    command.invoke(*args)
+                    try:
+                        command.invoke(*args)
+                    except Exception as e:
+                        if catch:
+                            logger.opt(exception=e).error(f'Unexpected error while invoking command: {user_input}')
+                        else:
+                            raise
                 case Err(message):
                     logger.warning(message)
 
 class LydianConsole(BotConsole):
     """Handles the bot's console command prompt loop."""
 
-    def __init__(self, bot: commands.Bot | None, *, prompt: str = '> ') -> None:
+    def __init__(self, bot: Bot | None, *, prompt: str = '> ') -> None:
         """Initializes a ``LydianConsole`` instance.
 
         :param bot: The Discord bot object to assign to this console. Can be given ``None`` to use an
             ``AsyncMock`` object instead for testing purposes.
         :param prompt: The string to show at the beginning of each input prompt.
         """
-        self.bot = bot or AsyncMock(commands.Bot)
+        self.bot = bot or AsyncMock(Bot)
         self.prompt_prefix = prompt
 
     #region COMMANDS
@@ -421,19 +437,85 @@ class LydianConsole(BotConsole):
         The expression will have access to Python's built-ins, the global "config" and "perms" objects, and a "dbg"
         dictionary which stores references to various things specifically for debugging or development usage.
 
+        For convenience, "?" can be used in place of "dbg." at the beginning of the expression, e.g. "?bot.user" is
+        parsed as "dbg.bot.user".
+
         :param expr: The expression to evaluate.
         :param log: Whether to log this evaluation (as DEBUG-level) or just print it to the screen.
         """
         print_fn = logger.debug if log else screen.print
 
-        # Can't be ast.literal_eval, we explicitly need access to some outside variables
-        # This is only accessible in debug mode and will be warned about in multiple places
+        eval_globals: dict[str, Any] = {'config': config, 'perms': perms, 'dbg': debug_context}
+        parsed_expr: str = expr
+        if parsed_expr[0] == '?':
+            parsed_expr = parsed_expr.replace('?', 'dbg.', count=1)
+
         try:
-            eval_globals: dict[str, Any] = {'config': config, 'perms': perms, 'dbg': debug_context}
-            print_fn(f'{expr} == {eval(expr, eval_globals)!r}')  # noqa: S307
+            # Can't be ast.literal_eval, we explicitly need access to some outside variables
+            # This is only accessible in debug mode and will be warned about in multiple places
+            print_fn(f'{parsed_expr} == {eval(parsed_expr, eval_globals)!r}')  # noqa: S307
         except Exception as e:  # noqa: BLE001
             # The full traceback for this case is usually unnecessary
             logger.error(f'{e.__class__.__name__}: {e}')
+
+    @staticmethod
+    def task_status(task: Task) -> str:
+        """Returns a rich-formatted string based on the task's status."""
+        if task.cancelled():
+            return '[warn]cancelled[/]'
+        if task.done():
+            if exc := task.exception():
+                return f'[err]failed ({exc.__class__.__name__})[/]'
+            return '[warn]done[/]'
+        return '[ok]running[/]'
+
+    @staticmethod
+    def task_interval(task: tasks.Loop) -> str:
+        """Returns a rich-formatted string based on the task's interval."""
+        intervals: list[str] = []
+        if task.time:
+            return ', '.join(str(dt) for dt in task.time)
+        else:
+            if task.seconds:
+                intervals.append(f'{task.seconds}s')
+            if task.minutes:
+                intervals.append(f'{task.minutes}m')
+            if task.hours:
+                intervals.append(f'{task.hours}h')
+            return ', '.join(intervals)
+
+    @command(group='tasks')
+    def tasks_list(self, /) -> None:
+        """Prints background tasks and their status."""
+        status_table: list[tuple[str, str, str, str]] = [('ID', 'NAME', 'STATUS', 'INTERVAL(S)')]
+        for n, task in enumerate(cast('list[tasks.Loop]', debug_context['tasklist'])):
+            if not (inner_task := task.get_task()):
+                status_table.append((str(hash(task)), f'(NO TASK: {task})', '', ''))
+            else:
+                status_table.append((
+                    str(n), inner_task.get_name(), self.task_status(inner_task), self.task_interval(task),
+                ))
+
+        screen.print(tabulate(
+            status_table[1:],
+            header=status_table[0],
+            hsep='  ',
+            strip=r'\[[\w/]+\]',
+        ))
+
+    @command(group='tasks')
+    def tasks_start(self, task_id: int, /) -> None:
+        """Attempts to start a background task which is not running. Use ``tasks list`` to see IDs."""
+        tasklist: list[tasks.Loop] = debug_context['tasklist']
+        if not 0 <= task_id < len(tasklist):
+            logger.error('task_id out of range')
+            return
+        task = tasklist[task_id]
+        if task.is_running():
+            logger.info(f'Task is already running: {expect(task.get_task()).get_name()}')
+            return
+        logger.info(f'Starting task: {expect(task.get_task()).get_name()}')
+        task.start()
 
     @command()
     def uptime(self, /) -> None:

@@ -33,8 +33,8 @@ def test_dump(tmpdir: Path) -> None:
     # Check that it can be parsed back into valid TOML to begin with before trying the specialized stuff
     assert (parsed := tm.parse(dumped))
     assert inst.prefix == parsed['prefix']
-    assert inst.vote_skipping.enabled == parsed['vote-skipping']['enabled']  # ty:ignore[not-subscriptable]
-    assert inst.logging.log_level == parsed['logging']['log-level']  # ty:ignore[not-subscriptable]
+    assert inst.vote_skipping.enabled == parsed['vote-skipping']['enabled']
+    assert inst.logging.log_level == parsed['logging']['log-level']
     assert inst.debug == parsed['debug']
 
 def test_env_to_bool() -> None:

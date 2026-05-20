@@ -8,6 +8,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
 configured prefix accordingly.
 
+## [Unreleased]
+
+### Added
+
+- Added console command group `tasks`
+  - `list`: Lists background tasks assigned to the bot and their status, interval, and ID
+  - `start`: Attempts to start a specified background task
+- Added method `console.LydianConsole.tasks_list()`
+- Added method `console.LydianConsole.tasks_start()`
+- Added function `util.get_background_tasks()`
+- Added function `util.get_leaves()`
+- Added function `util.iter_columns()`
+- Added function `util.tabulate()`
+- Added keypaths for every registered cog to `debug_context`, not just `voice`
+  - Keys are the cog object name with the `Cog` suffix removed and lowercased,
+    e.g. `GeneralCog` → `general`
+- Added `tasks` and `tasklist` keys to `debug_context`
+- Console command `debug read` expression argument can now be prefixed with `?` as an alias to
+  `dbg.`
+
+### Changed
+
+- Log messages from discord.py are now properly redirected to Lydian's logger
+  - Any message originating from a private function (prefixed with `_`) are overridden to be a
+    "DEBUG"-level log
+- `no-` prefixes in console command flags no longer invert the flag's default, instead `no-` just
+  sets its value to `False` and sets `True` otherwise
+- `console.BotConsole.start_loop()` now accept a `catch` parameter
+  - If `True`, exceptions raised while invoking a command are logged instead of propagating them,
+    allowing the console loop to continue
+
+### Fixed
+
+- Changed type annotation for `cogs.voice.VoiceCog.bot` to `commands.Bot` instead of
+  `discord.client.Bot` to fix sphinx error
+- Fixed `ValueError` raised in `util.format_duration()` when formatting `m` or `s` with `02d` since
+  they can be floats
+- `TypeError` and `ValueError` raised while trying to parse console command argument values are now
+  caught and displayed without killing the console
+- Login failures are caught properly with a custom succinct message for improper tokens, otherwise
+  logs the traceback
+- Fixed "flag" keyword arguments not getting parsed correctly by the console
+
 ## [0.5.0] - 2026-05-17
 
 ### Added
