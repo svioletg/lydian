@@ -27,7 +27,7 @@ from lydian.const import (
     EmojiStr,
 )
 from lydian.errors import AbortCommand, FileSizeLimitError, MediaQueueLimitError
-from lydian.util import BasicLock, Cache, expect, format_duration
+from lydian.util import BasicLock, Cache, Stopwatch, expect, format_duration
 
 
 class YTDLLogHandler:
@@ -122,11 +122,9 @@ class MediaItem:
     """The discord user who requested this item, if any."""
 
     @property
-    def duration_str(self) -> str | None:
-        """Return a formatted string of the duration if present."""
-        if not self.duration:
-            return None
-        return format_duration(ceil(self.duration))
+    def duration_str(self) -> str:
+        """Return a formatted string of the duration, returning '?:??' if no duration is set."""
+        return format_duration(ceil(self.duration)) if self.duration else '?:??'
 
     @classmethod
     def from_ytdl_extracted(cls, info: dict[str, Any]) -> Self:
@@ -174,13 +172,19 @@ class MediaItem:
             inline=inline,
         )
 
-    def embed(self, title_prefix: str = '') -> discord.Embed:
-        """Returns a ``discord.Embed`` for this item."""
+    def embed(self, title_prefix: str = '', *, timestamp: float | None = None) -> discord.Embed:
+        """Returns a ``discord.Embed`` for this item.
+
+        :param timestamp: The current timestamp of this track to show as relative to the duration.
+        """
+        timestamp_str: str | None = maybe(timestamp).then(format_duration)
+        time_display: str = f'Time: {timestamp_str} / {self.duration_str}' \
+            if timestamp_str else f'Duration: {self.duration_str}'
         return discord.Embed(
             title=title_prefix + self.title,
             description=
                 (f'Queued by {self.user.mention}\n' if self.user else '')
-                + (f'({self.duration_str}) ' if self.duration else '')
+                + f'{time_display}\n'
                 + self.url,
             color=COLOR_INFO,
         ).set_thumbnail(url=self.thumbnail_url)
@@ -332,6 +336,7 @@ class VoiceCog(commands.Cog):
         """Whether the queue is allowed to be advanced right now. Used as a lock for :py:meth:`advance_queue`."""
         self.now_playing: MediaItem | None = None
         """The :py:class:`MediaItem`, if any, that is currently being played by the bot."""
+        self.now_playing_timer: Stopwatch = Stopwatch()
         self.stopped_track: MediaItem | None = None
         """Stores the currently playing track when ``-stop`` is used.
 
@@ -484,6 +489,7 @@ class VoiceCog(commands.Cog):
         if voice.is_paused():
             logger.info('Resuming paused player')
             voice.resume()
+            self.now_playing_timer.unpause()
             return
         if (not voice.is_playing()) and self.stopped_track:
             # Start running the queue again if stopped
@@ -608,8 +614,9 @@ class VoiceCog(commands.Cog):
                 logger.info(f'Playing: {item}')
                 voice.play(source, after=lambda e: self.on_player_stop(ctx, exc=e))
                 self.now_playing = item
+                self.now_playing_timer.reset()
 
-                await ctx.send(embed=item.embed(f'{EmojiStr.PLAY} Playing: '))
+                await self.nowplaying.invoke(ctx)
 
                 break
 
@@ -670,7 +677,10 @@ class VoiceCog(commands.Cog):
     async def nowplaying(self, ctx: commands.Context) -> None:
         """Shows the currently playing track."""
         if self.now_playing:
-            await ctx.send(embed=self.now_playing.embed(f'{EmojiStr.PLAY} Playing: '))
+            await ctx.send(embed=self.now_playing.embed(
+                f'{EmojiStr.PLAY} Playing: ',
+                timestamp=self.now_playing_timer.elapsed(),
+            ))
         else:
             await ctx.send(embed=embed_info('Nothing is playing.'))
 
@@ -702,6 +712,7 @@ class VoiceCog(commands.Cog):
 
         logger.info('Pausing player')
         voice.pause()
+        self.now_playing_timer.pause()
 
     async def _check_queue_index_arg(self, ctx: commands.Context, index: int) -> bool:
         if not 1 <= index <= len(self.queue):
