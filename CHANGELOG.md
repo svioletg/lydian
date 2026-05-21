@@ -28,6 +28,9 @@ configured prefix accordingly.
   version and exit without starting the bot
 - Fixed filesize strings in the config with single digits raising an error due to a typo in the
   regex used to match them
+- The "now playing" view now shows the approximate current timestamp of the playing media
+  - Slight network delays will likely cause this number to be slightly inaccurate, but it should
+    remain close enough for reference
 
 ### Added
 
@@ -39,6 +42,12 @@ configured prefix accordingly.
 - Added support for validator functions in `config.Config` fields, which can be given with the
   `'validators'` key of a given field's `metadata` argument as a single function or iterable of
   functions
+
+### Changed
+
+- `cogs.voice.MediaItem.duration_str` now returns `?:??` for an unknown duration instead of `None`
+- `cogs.voice.MediaItem.embed()` now accepts an optional `timestamp` keyword argument to show the
+  current time alongside its duration
 
 ### Fixed
 
