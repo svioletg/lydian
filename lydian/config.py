@@ -67,6 +67,18 @@ def _default_command_aliases() -> dict[str, list[str]]:
         'leave': ['l'],
     }
 
+def to_validator[T](func: Callable[[T], bool], err: str) -> Callable[[T], Result[T, str]]:
+    """Transforms ``func`` to return a result of either the passed value or an error message."""
+    return lambda x: Ok(x) if func(x) else Err(err)
+
+def _validator_min(minimum: float) -> Callable[[float], bool]:
+    return lambda x: Ok(x) if x >= minimum else Err(f'Must be >= {minimum}: {x!r}')
+
+def _validator_max(maximum: float) -> Callable[[float], bool]:
+    return lambda x: Ok(x) if x <= maximum else Err(f'Must be <= {maximum}: {x!r}')
+
+_validate_positive = _validator_min(0)
+
 @dataclass(kw_only=True)
 class MediaFilterConfig(DataclassUpdateMixin):
     """Configuration for whitelisting or blacklisting input URLs and extractors."""
@@ -101,18 +113,6 @@ class LoggingConfig(DataclassUpdateMixin):
         doc="Whether to show log timestamps in UTC. If false, they are shown in your system's local time.",
         metadata={'env': 'LOG_UTC'},
     )
-
-def to_validator[T](func: Callable[[T], bool], err: str) -> Callable[[T], Result[T, str]]:
-    """Transforms ``func`` to return a result of either the passed value or an error message."""
-    return lambda x: Ok(x) if func(x) else Err(err)
-
-def _validator_min(minimum: float) -> Callable[[float], bool]:
-    return lambda x: Ok(x) if x >= minimum else Err(f'Must be >= {minimum}: {x!r}')
-
-def _validator_max(maximum: float) -> Callable[[float], bool]:
-    return lambda x: Ok(x) if x <= maximum else Err(f'Must be <= {maximum}: {x!r}')
-
-_validate_positive = _validator_min(0)
 
 @dataclass(kw_only=True)
 class Config(DataclassUpdateMixin):
