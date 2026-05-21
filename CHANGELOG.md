@@ -5,10 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+Version changelogs may have an extra "Overview" section before the sections defined by *Keep a
+Changelog* to more briefly describe end-user changes, while the rest of the changelog more
+verbosely describes internal changes.
+
 Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
 configured prefix accordingly.
 
 ## [Unreleased]
+
+### Overview
+
+- A duration limit for media items can now be set using the `max-duration` config key, which
+  specifies the limit in seconds using a positive integer (setting to 0 will disable the limit)
+  - `max-duration-allow-unknown` specifies whether tracks with an unknown duration can be played
+    or not when a duration limit is in place, defaulting to `false`
+    - If no limit is set, this key is unused and tracks of unknown duration are always allowed
+    - To save time on queueing, Lydian does not fetch a track's duration until it needs to, meaning
+      items queued from a playlist URL won't have their duration checked against the limit until
+      they are next in line
+- `lydian` can now be run with the `-V` or `--version` option to display the installed Lydian
+  version and exit without starting the bot
+- Fixed filesize strings in the config with single digits raising an error due to a typo in the
+  regex used to match them
 
 ### Added
 
