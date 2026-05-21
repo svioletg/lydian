@@ -14,7 +14,7 @@ from zoneinfo import ZoneInfo
 import tomlkit as tm
 from benedict.core import unflatten
 from dotenv import load_dotenv
-from maybetype import maybe
+from maybetype import Err, Ok, Result, maybe
 from tomlkit.exceptions import ConvertError
 from tomlkit.items import InlineTable
 from tomlkit.items import Item as TOMLItem
@@ -102,19 +102,33 @@ class LoggingConfig(DataclassUpdateMixin):
         metadata={'env': 'LOG_UTC'},
     )
 
+def to_validator[T](func: Callable[[T], bool], err: str) -> Callable[[T], Result[T, str]]:
+    """Transforms ``func`` to return a result of either the passed value or an error message."""
+    return lambda x: Ok(x) if func(x) else Err(err)
+
+def _validator_min(minimum: float) -> Callable[[float], bool]:
+    return lambda x: Ok(x) if x >= minimum else Err(f'Must be >= {minimum}: {x!r}')
+
+def _validator_max(maximum: float) -> Callable[[float], bool]:
+    return lambda x: Ok(x) if x <= maximum else Err(f'Must be <= {maximum}: {x!r}')
+
+_validate_positive = _validator_min(0)
+
 @dataclass(kw_only=True)
 class Config(DataclassUpdateMixin):
     """Dataclass which handles project-wide configuration and can save or load values via TOML.
 
     The ``doc`` value of a field, if not empty, will be used as a TOML comment preceding the key.
 
-    A field's ``metadata`` will be checked for the following keys under certain circumstances:
+    A field's ``metadata`` can optionally specify any of these keys:
 
     - ``converter``: A function which takes the value parsed from TOML and returns the field's type, allowing for things
         like filesize fields taking strings (e.g. "10 MB") and converting them to an ``int`` of bytes.
     - ``env``: Environment variable name (without the ``LYDIAN_`` prefix) corresponding to this field. Config fields
         can only be set by the environment when this key is present. Setting this key will require ``parser`` to be set
         as well, which in this case should take a ``str`` and return the expected value.
+    - ``validators``: A function or an iterable of functions which take the field's type (after being parsed with
+        ``converter``) and return ``Ok`` with the passed value if valid, or ``Err`` with a message string.
     """
 
     prefix: str = '-'
@@ -126,24 +140,28 @@ class Config(DataclassUpdateMixin):
     )
     command_aliases: dict[str, list[str]] = field(default_factory=_default_command_aliases)
     max_duration: int = field(default=0,
-        doc='Maximum duration (in seconds) of media that can be played by the bot. Set to 0 for no limit.')
+        doc='Maximum duration (in seconds) of media that can be played by the bot. Set to 0 for no limit.',
+        metadata={'validators': _validate_positive},
+    )
     max_duration_allow_unknown: bool = field(default=False,
         doc="Whether to allow media whose duration couldn't be retrieved when max-duration is more than 0.")
     max_filesize: int = field(default=20_000_000,
         doc='Maximum filesize in bytes for media that can be downloaded by the bot.'
             + ' Will have no effect when streaming media (stream-media = true).',
-        metadata={'converter': FromStr.filesize},
+        metadata={'converter': FromStr.filesize, 'validators': _validate_positive},
     )
     max_playlist_length: int = field(default=20,
         doc='Maximum number of items that can be added from a single playlist link.',
+        metadata={'validators': _validate_positive},
     )
     max_queue_length: int = field(default=100,
         doc='Maximum number of items that can be added to the media queue.',
+        metadata={'validators': _validate_positive},
     )
     media_dir_warn_threshold: int = field(default=100_000_000,
         doc='Total size in bytes that downloaded media can take up before a warning is emitted at bot'
             + ' startup. Set to -1 to disable the warning entirely.',
-        metadata={'converter': FromStr.filesize},
+        metadata={'converter': FromStr.filesize, 'validators': _validator_min(-1)},
     )
     stream_media: bool = field(default=True,
         doc='Whether to stream media instead of downloading it to disk and playing the file.',
@@ -151,10 +169,12 @@ class Config(DataclassUpdateMixin):
     inactivity_timeout: int = field(default=120,
         doc='How long in seconds the bot can be inactive (not playing anything and the queue is empty) before'
             + ' disconnecting. Set to -1 to never disconnect for inactivity.',
+        metadata={'validators': _validator_min(-1)},
     )
     lonely_timeout: int = field(default=120,
         doc='How long in seconds the bot can be the only user in a voice channel before disconnecting.'
             + ' Set to -1 to never disconnect in this case.',
+        metadata={'validators': _validator_min(-1)},
     )
 
     media_filter: MediaFilterConfig = field(default_factory=MediaFilterConfig)
