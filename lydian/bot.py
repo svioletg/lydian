@@ -199,7 +199,7 @@ async def async_main() -> int:
         return 1 if prompt_bot_setup() else 0
 
     setup_logger(
-        'DEBUG' if config.debug else config.logging.log_level,
+        config.logging.log_level,
         logs_dir=LOGS_DIR,
         log_in_utc=config.logging.utc,
     )

@@ -40,6 +40,10 @@ configured prefix accordingly.
   `'validators'` key of a given field's `metadata` argument as a single function or iterable of
   functions
 
+### Changed
+
+- Having debug mode enabled no longer forces the log level to "DEBUG" level
+
 ### Fixed
 
 - Fixed single-digit filesize numbers in TOML config not matching pattern
