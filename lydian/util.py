@@ -290,7 +290,7 @@ class Stopwatch:
             finishes.
         """
         self.start: int = 0
-        self._paused: bool = paused
+        self.paused: bool = paused
         self._paused_at: int = 0
         self._pause_offset: int = 0
 
@@ -303,16 +303,7 @@ class Stopwatch:
 
         This property cannot be set directly; use the :py:meth:`pause` and :py:meth:`unpause` methods.
         """
-        return self._paused
-
-    def pause(self) -> None:
-        """Pauses the Stopwatch, does nothing if already paused.
-
-        The elapsed time will not increase until :py:meth:`unpause` is called.
-        """
-        if not self.is_paused:
-            self._paused = True
-            self._paused_at = perf_counter_ns()
+        return self.paused
 
     def elapsed(self) -> float:
         """Seconds that have elapsed."""
@@ -326,10 +317,28 @@ class Stopwatch:
             return self._paused_at - self.start
         return (perf_counter_ns() - self.start) - self._pause_offset
 
+    def pause(self) -> None:
+        """Pauses the Stopwatch, does nothing if already paused.
+
+        The elapsed time will not increase until :py:meth:`unpause` is called.
+        """
+        if not self.is_paused:
+            self.paused = True
+            self._paused_at = perf_counter_ns()
+
+    def reset(self) -> None:
+        """Resets the Stopwatch, setting its start time to right now and clearing pause offsets."""
+        if self.paused:
+            self.start = 0
+        else:
+            self.start = perf_counter_ns()
+        self._paused_at = 0
+        self._pause_offset = 0
+
     def unpause(self) -> None:
         """Unpauses the Stopwatch, does nothing if not paused."""
         if self.is_paused:
-            self._paused = False
+            self.paused = False
             if not self.start:
                 self.start = perf_counter_ns()
             else:
