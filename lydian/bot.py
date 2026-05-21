@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 import traceback
+from argparse import ArgumentParser
 from datetime import UTC, datetime
 from getpass import getpass
 
@@ -242,7 +243,15 @@ async def async_main() -> int:
 
 @logger.catch(onerror=lambda _: sys.exit(1))
 def main() -> None:  # noqa: D103
-    if len(sys.argv) > 1:
-        screen.print('[err]ERROR: lydian takes 0 arguments[/]')
-        sys.exit(1)
+    parser = ArgumentParser(description='Starts the Lydian Discord bot if given no arguments.')
+    parser.add_argument('-V', '--version', action='store_true',
+        help='Prints the currently installed Lydian version and exits.')
+
+    args = parser.parse_args()
+    print_version: bool = args.version
+
+    if print_version:
+        screen.print(f'Lydian v{PROJECT_VERSION}')
+        sys.exit()
+
     sys.exit(asyncio.run(async_main()))

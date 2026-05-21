@@ -12,6 +12,8 @@ configured prefix accordingly.
 
 ### Added
 
+- Added the `-V`/`--version` option to the `lydian` package command
+  - When used, Lydian's version is printed out and the script immediately exits
 - Added config key `max-duration` (integer)
 - Added config key `max-duration-allow-unknown` (boolean)
 - Added function `util.compose()`
