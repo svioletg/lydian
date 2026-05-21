@@ -36,6 +36,9 @@ configured prefix accordingly.
 - Added config key `max-duration` (integer)
 - Added config key `max-duration-allow-unknown` (boolean)
 - Added function `util.compose()`
+- Added support for validator functions in `config.Config` fields, which can be given with the
+  `'validators'` key of a given field's `metadata` argument as a single function or iterable of
+  functions
 
 ### Fixed
 
