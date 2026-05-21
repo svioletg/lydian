@@ -125,7 +125,7 @@ configured prefix accordingly.
 - Debug command `debug read` can now access the new global `perms` object
 - Running the `lydian` command without a `lydian-config.toml` present will now offer to create
   `.env` and enter your token in addition to creating the TOML and `permissions.yml` files
-- `config.Config` fields' `metadata` dictionary now expected the `converter` key in place of
+- `config.Config` fields' `metadata` dictionary now expects the `converter` key in place of
   `envcov`, and will be used more generally
 - Config key `max-filesize` now additionally accepts a string of a value and unit, like `"50 MB"` or
   `1gb`
