@@ -16,7 +16,7 @@ from typing import Annotated, Any, ClassVar, Literal, cast, get_args, get_origin
 from zoneinfo import ZoneInfo
 
 from discord.ext import commands, tasks
-from maybetype import Maybe, maybe
+from maybetype import Maybe, Result, maybe
 
 from lydian.errors import AssuranceError
 
@@ -216,7 +216,16 @@ class DataclassUpdateMixin:
             elif t_origin:
                 typ = t_origin
 
-            validator = fld.metadata.get('validator', lambda x: x)
+            validators = fld.metadata.get('validators', ())
+            if not isinstance(validators, Iterable):
+                validators = [validators]
+
+            def validate[T](validators: Iterable[Callable[[T], Result[T, str]]], key: str, value: T) -> T:
+                for func in validators:
+                    if not (result := func(value)):
+                        raise ValueError(f'Invalid value for key {key}: {result.unwrap_err()}')
+                return value
+
             if hasattr(typ, 'update'):
                 if t_origin is not dict:
                     getattr(self, k).update(v, on_missing=on_missing)
@@ -224,9 +233,9 @@ class DataclassUpdateMixin:
                     getattr(self, k).update(v)
             # If the field is a Literal then just because it's the right type doesn't mean it's the right value
             elif isinstance(v, typ) and not is_literal:
-                setattr(self, k, validator(v))
+                setattr(self, k, validate(validators, k, v))
             else:
-                converted = validator(fld.metadata.get('converter', typ)(v))
+                converted = validate(validators, k, fld.metadata.get('converter', typ)(v))
                 if is_literal and (converted not in t_args):
                     raise ValueError(f'Expected one of {','.join(repr(i) for i in t_args)}: {converted!r}')
                 setattr(self, k, converted)
