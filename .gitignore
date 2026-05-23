@@ -20,6 +20,7 @@ token.txt
 
 # Other
 testenv/
-*.log
 .ignore/
+/_*
+*.log
 build
