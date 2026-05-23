@@ -72,7 +72,9 @@ class InterceptHandler(logging.Handler):
 # Redirect discord.py logs to our logger
 discord_logger = logging.getLogger('discord')
 discord_logger.setLevel(config.logging.log_level)
-logging.getLogger('discord.http').setLevel(config.logging.log_level)
+# These generate huge debug logs
+logging.getLogger('discord.gateway').setLevel(logging.INFO)
+logging.getLogger('discord.http').setLevel(logging.INFO)
 discord_logger.addHandler(InterceptHandler())
 
 intents = discord.Intents.default()
