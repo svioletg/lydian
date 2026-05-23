@@ -6,8 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Version changelogs may have an extra "Overview" section before the sections defined by *Keep a
-Changelog* to more briefly describe end-user changes, while the rest of the changelog more
-verbosely describes internal changes.
+Changelog* to more briefly describe end-user changes, while the rest of the changelog more verbosely
+describes internal changes. Backwards-incompatible changes will be listed at the top of the overview
+section.
 
 Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
 configured prefix accordingly.
@@ -16,7 +17,11 @@ configured prefix accordingly.
 
 ### Overview
 
-- A duration limit for media items can now be set using the `max-duration` config key, which
+> [!IMPORTANT] Breaking changes
+> - TOML configuration keys now use underscores (`_`) instead of hyphens (`-`)
+> - Config key `log_level` under `logging` is now `level`
+
+- [feature] A duration limit for media items can now be set using the `max-duration` config key, which
   specifies the limit in seconds using a positive integer (setting to 0 will disable the limit)
   - `max-duration-allow-unknown` specifies whether tracks with an unknown duration can be played
     or not when a duration limit is in place, defaulting to `false`
@@ -24,13 +29,13 @@ configured prefix accordingly.
     - To save time on queueing, Lydian does not fetch a track's duration until it needs to, meaning
       items queued from a playlist URL won't have their duration checked against the limit until
       they are next in line
-- `lydian` can now be run with the `-V` or `--version` option to display the installed Lydian
+- [feature] `lydian` can now be run with the `-V` or `--version` option to display the installed Lydian
   version and exit without starting the bot
-- Fixed filesize strings in the config with single digits raising an error due to a typo in the
-  regex used to match them
-- The "now playing" view now shows the approximate current timestamp of the playing media
+- [feature] The "now playing" view now shows the approximate current timestamp of the playing media
   - Slight network delays will likely cause this number to be slightly inaccurate, but it should
     remain close enough for reference
+- [fix] Fixed filesize strings in the config with single digits raising an error due to a typo in the
+  regex used to match them
 
 ### Added
 
@@ -38,6 +43,10 @@ configured prefix accordingly.
   - When used, Lydian's version is printed out and the script immediately exits
 - Added config key `max-duration` (integer)
 - Added config key `max-duration-allow-unknown` (boolean)
+- Added class `config.Config.ConfigField`
+- Added class `config.Config.ConfigFieldMeta`
+- Added method `config.Config.set()`
+- Added property `config.Config.fields`
 - Added function `util.compose()`
 - Added support for validator functions in `config.Config` fields, which can be given with the
   `'validators'` key of a given field's `metadata` argument as a single function or iterable of
@@ -49,6 +58,14 @@ configured prefix accordingly.
 - `cogs.voice.MediaItem.duration_str` now returns `?:??` for an unknown duration instead of `None`
 - `cogs.voice.MediaItem.embed()` now accepts an optional `timestamp` keyword argument to show the
   current time alongside its duration
+- TOML configuration keys are now in `snake_case` instead of `kebab-case`; though the latter is more
+  common in TOML, it's ultimately unnecessary to keep converting keys between the two cases where
+  needed
+
+### Removed
+
+- Removed mixin class `util.DataclassUpdateMixin`
+  - Only used for updating the configuration object, which now handles updating in its own class
 
 ### Fixed
 

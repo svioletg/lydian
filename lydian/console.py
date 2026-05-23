@@ -527,5 +527,5 @@ class LydianConsole(BotConsole):
 bot_console = LydianConsole(None)
 
 if __name__ == '__main__':
-    setup_logger(config.logging.log_level)
+    setup_logger(config.logging.level)
     asyncio.run(bot_console.start_loop())

@@ -11,18 +11,6 @@ from lydian.const import TESTS_DIR
 def test_init() -> None:
     assert Config()
 
-def test_update() -> None:
-    inst = Config()
-    new_vote_percentage: int = 70
-    inst.vote_skipping.percentage = new_vote_percentage
-
-    inst.update({'prefix': '$', 'logging': {'log_level': 'ERROR'}, 'vote_skipping': {'enabled': False}})
-    assert inst.prefix == '$'
-    assert inst.logging.log_level == 'ERROR'
-    assert inst.vote_skipping.enabled is False
-    # Assert only the given fields were updated
-    assert inst.vote_skipping.percentage == new_vote_percentage
-
 def test_dump(tmpdir: Path) -> None:
     inst = Config()
     toml_dest: Path = tmpdir / 'config.toml'
@@ -33,8 +21,8 @@ def test_dump(tmpdir: Path) -> None:
     # Check that it can be parsed back into valid TOML to begin with before trying the specialized stuff
     assert (parsed := tm.parse(dumped))
     assert inst.prefix == parsed['prefix']
-    assert inst.vote_skipping.enabled == parsed['vote-skipping']['enabled']
-    assert inst.logging.log_level == parsed['logging']['log-level']
+    assert inst.vote_skipping.enabled == parsed['vote_skipping']['enabled']
+    assert inst.logging.level == parsed['logging']['level']
     assert inst.debug == parsed['debug']
 
 def test_env_to_bool() -> None:
@@ -48,7 +36,7 @@ def test_update_from_toml() -> None:
     assert inst.prefix == '$'
     assert inst.vote_skipping.threshold_type == 'exact'
     assert inst.vote_skipping.exact == 2  # noqa: PLR2004
-    assert inst.logging.log_level == 'WARNING'
+    assert inst.logging.level == 'WARNING'
 
 def test_update_from_environment() -> None:
     inst = Config()
@@ -56,8 +44,8 @@ def test_update_from_environment() -> None:
     env: dict[str, Any] = {'LYDIAN_LOG_LEVEL': 'WARNING'}
 
     inst.update_from_environment(env)
-    assert isinstance(inst.logging.log_level, LogLevel)
-    assert inst.logging.log_level == 'WARNING'
+    assert isinstance(inst.logging.level, LogLevel)
+    assert inst.logging.level == 'WARNING'
 
 @pytest.mark.parametrize(('url', 'expected'),
     [

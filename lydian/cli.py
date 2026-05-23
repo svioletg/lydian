@@ -46,7 +46,7 @@ def clear_dl_dir() -> None:
 
 @cli.callback()
 def main() -> None:  # noqa: D103
-    setup_logger(config.logging.log_level)
+    setup_logger(config.logging.level)
 
 if __name__ == '__main__':
     cli()

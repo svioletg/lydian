@@ -5,23 +5,23 @@ import sys
 import warnings
 from argparse import ArgumentParser
 from collections import OrderedDict
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Generator, Iterable, Mapping
 from dataclasses import Field, asdict, dataclass, field, fields, is_dataclass
+from functools import cached_property
 from pathlib import Path
-from typing import Any, Literal, Self, cast
+from typing import Any, Literal, Self, TypedDict, cast, get_args, get_origin
 from zoneinfo import ZoneInfo
 
 import tomlkit as tm
-from benedict.core import unflatten
+from benedict import benedict
 from dotenv import load_dotenv
 from maybetype import Err, Ok, Result, maybe
 from tomlkit.exceptions import ConvertError
 from tomlkit.items import InlineTable
 from tomlkit.items import Item as TOMLItem
-from tomlkit.toml_document import TOMLDocument
 
 from lydian.const import CONFIG_PATH, LogLevel
-from lydian.util import DataclassUpdateMixin, FromStr, get_dataclass_fields, partition, wrap_paragraphs
+from lydian.util import FromStr, get_dataclass_fields, is_annotated, partition, wrap_paragraphs
 
 TOML_KEY_REGEX: re.Pattern[str] = re.compile(r'^\[?([\w.-]+)\]?', flags=re.MULTILINE)
 TOML_TABLE_KEY_REGEX: re.Pattern[str] = re.compile(r'\[([\w.-]+)\]', flags=re.MULTILINE)
@@ -41,7 +41,7 @@ def _toml_encoder(obj: object) -> TOMLItem:
         return tm.string(maybe(obj.tzname(None)).unwrap(f'Failed to get tzname from ZoneInfo: {obj!r}'))
     if is_dataclass(obj) and not isinstance(obj, type):
         tb = tm.table()
-        tb.update({k.replace('_', '-'):v for k, v in asdict(obj).items()})
+        tb.update(asdict(obj))
         return tb
     raise ConvertError(f'Cannot convert object of type {type(obj)}: {obj!r}')
 
@@ -79,8 +79,34 @@ def _validator_max(maximum: float) -> Callable[[float], bool]:
 
 _validate_positive = _validator_min(0)
 
+class ConfigFieldMeta[T](TypedDict):
+    """Metadata object for :py:class:`Config` fields."""
+
+    env: str | None
+    """Environment variable name (without the ``LYDIAN_`` prefix) corresponding to this field.
+
+    Config fields can only be set by the environment when this key is present. Setting this key will require ``parser``
+    to be set as well, which in this case should take a ``str`` and return the expected value.
+    """
+    converter: Callable[[object], object]
+    """A function which takes the value parsed from TOML or environment variable string value and returns the field's
+    type."""
+    validators: Iterable[Callable[[T], Result[T, str]]]
+    """An iterable of functions which take the field's type (after being parsed with ``converter``) and return ``Ok``
+    with the passed value if valid, or ``Err`` with a message string."""
+
+class ConfigField[T](Field[T]):
+    """Class used to specify the ``metadata`` attribute type for :py:class:`Config` fields.
+
+    Note that ``Config`` fields are still ``Field`` instances, and are not actually instances of this class, but those
+    fields are expected to use :py:class:`ConfigFieldMeta` for their ``metadata`` values, so this is used for stronger
+    typing.
+    """
+
+    metadata: ConfigFieldMeta[T]
+
 @dataclass(kw_only=True)
-class MediaFilterConfig(DataclassUpdateMixin):
+class MediaFilterConfig:
     """Configuration for whitelisting or blacklisting input URLs and extractors."""
 
     allowed_extractors: list[str] = field(default_factory=lambda: ['default'],
@@ -93,7 +119,7 @@ class MediaFilterConfig(DataclassUpdateMixin):
             + ' Prefix an expression with a hyphen (-) to blacklist it instead.')
 
 @dataclass(kw_only=True)
-class VoteSkippingConfig(DataclassUpdateMixin):
+class VoteSkippingConfig:
     """Configuration for track vote-skipping."""
 
     enabled: bool = True
@@ -102,10 +128,10 @@ class VoteSkippingConfig(DataclassUpdateMixin):
     exact: int = 3
 
 @dataclass(kw_only=True)
-class LoggingConfig(DataclassUpdateMixin):
+class LoggingConfig:
     """Configuration for logging."""
 
-    log_level: LogLevel = field(default=LogLevel.INFO, metadata={
+    level: LogLevel = field(default=LogLevel.INFO, metadata={
         'env': 'LOG_LEVEL',
         'converter': lambda s: LogLevel(s.upper()),
     })
@@ -115,7 +141,7 @@ class LoggingConfig(DataclassUpdateMixin):
     )
 
 @dataclass(kw_only=True)
-class Config(DataclassUpdateMixin):
+class Config:
     """Dataclass which handles project-wide configuration and can save or load values via TOML.
 
     The ``doc`` value of a field, if not empty, will be used as a TOML comment preceding the key.
@@ -141,27 +167,27 @@ class Config(DataclassUpdateMixin):
     command_aliases: dict[str, list[str]] = field(default_factory=_default_command_aliases)
     max_duration: int = field(default=0,
         doc='Maximum duration (in seconds) of media that can be played by the bot. Set to 0 for no limit.',
-        metadata={'validators': _validate_positive},
+        metadata={'validators': [_validate_positive]},
     )
     max_duration_allow_unknown: bool = field(default=False,
         doc="Whether to allow media whose duration couldn't be retrieved when max-duration is more than 0.")
     max_filesize: int = field(default=20_000_000,
         doc='Maximum filesize in bytes for media that can be downloaded by the bot.'
             + ' Will have no effect when streaming media (stream-media = true).',
-        metadata={'converter': FromStr.filesize, 'validators': _validate_positive},
+        metadata={'converter': FromStr.filesize, 'validators': [_validate_positive]},
     )
     max_playlist_length: int = field(default=20,
         doc='Maximum number of items that can be added from a single playlist link.',
-        metadata={'validators': _validate_positive},
+        metadata={'validators': [_validate_positive]},
     )
     max_queue_length: int = field(default=100,
         doc='Maximum number of items that can be added to the media queue.',
-        metadata={'validators': _validate_positive},
+        metadata={'validators': [_validate_positive]},
     )
     media_dir_warn_threshold: int = field(default=100_000_000,
         doc='Total size in bytes that downloaded media can take up before a warning is emitted at bot'
             + ' startup. Set to -1 to disable the warning entirely.',
-        metadata={'converter': FromStr.filesize, 'validators': _validator_min(-1)},
+        metadata={'converter': FromStr.filesize, 'validators': [_validator_min(-1)]},
     )
     stream_media: bool = field(default=True,
         doc='Whether to stream media instead of downloading it to disk and playing the file.',
@@ -169,17 +195,22 @@ class Config(DataclassUpdateMixin):
     inactivity_timeout: int = field(default=120,
         doc='How long in seconds the bot can be inactive (not playing anything and the queue is empty) before'
             + ' disconnecting. Set to -1 to never disconnect for inactivity.',
-        metadata={'validators': _validator_min(-1)},
+        metadata={'validators': [_validator_min(-1)]},
     )
     lonely_timeout: int = field(default=120,
         doc='How long in seconds the bot can be the only user in a voice channel before disconnecting.'
             + ' Set to -1 to never disconnect in this case.',
-        metadata={'validators': _validator_min(-1)},
+        metadata={'validators': [_validator_min(-1)]},
     )
 
     media_filter: MediaFilterConfig = field(default_factory=MediaFilterConfig)
     vote_skipping: VoteSkippingConfig = field(default_factory=VoteSkippingConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
+
+    @cached_property
+    def fields(self) -> dict[str, ConfigField]:
+        """A dictionary of dotted field keypaths to their field objects."""
+        return cast('dict[str, ConfigField]', get_dataclass_fields(self))
 
     @classmethod
     def from_toml(cls, toml_str: str) -> Self:
@@ -197,6 +228,23 @@ class Config(DataclassUpdateMixin):
         return (True if not filter_yes else any(re.match(pattern, url) for pattern in filter_yes)) \
             and not any(re.match(pattern[1:], url) for pattern in filter_no)
 
+    def set(self, keypath: str | list[str], val: object) -> None:
+        """Sets an attribute by a dotted keypath or iterable of keys to the given value.
+
+        No type checking or validation is performed by this method. ``AttribueError`` is raised if the attribute does
+        not exist.
+        """
+        *parts, stem = keypath.split('.') if isinstance(keypath, str) else keypath
+
+        target = self
+        for p in parts:
+            target = getattr(target, p)
+
+        if not hasattr(target, stem):
+            raise AttributeError(f'{keypath!r}: no attribute {stem!r} for object {target!r}')
+
+        setattr(target, stem, val)
+
     def to_toml(self, fp: str | Path | None = None, *, add_comments: bool = True) -> str:
         """Returns this object converted into a TOML string.
 
@@ -209,16 +257,15 @@ class Config(DataclassUpdateMixin):
         doc.add(tm.nl())
 
         comments: dict[str, dict[str, str]] = {}
-        for name, f in get_dataclass_fields(self).items():
-            comments[name] = {}
-            if env_var := f.metadata.get('env'):
-                comments[name]['inline'] = f'env: LYDIAN_{env_var}'
-            if f.doc:
-                comments[name]['pre'] = f'{name.split('.')[-1]}: {f.doc}'
+        if add_comments:
+            for name, f in self.fields.items():
+                comments[name] = {}
+                if env_var := f.metadata.get('env'):
+                    comments[name]['inline'] = f'env: LYDIAN_{env_var}'
+                if f.doc:
+                    comments[name]['post'] = f'{name.split('.')[-1]}: {f.doc}'
 
         for fld in fields(self):
-            toml_key: str = fld.name.replace('_', '-')
-
             if fld.type is MediaFilterConfig:
                 data: InlineTable = tm.item(asdict(getattr(self, fld.name)))
                 data['allowed_extractors'] = [tm.string(s, literal=True) for s in data['allowed_extractors'].unwrap()]
@@ -226,7 +273,7 @@ class Config(DataclassUpdateMixin):
             else:
                 data = getattr(self, fld.name)
 
-            doc.add(toml_key, data)
+            doc.add(fld.name, data)
 
         toml_string: str = doc.as_string() + '\n'
         if add_comments:
@@ -248,8 +295,7 @@ class Config(DataclassUpdateMixin):
         # An empty dictionary should still be allowed if passed, so no "env or os.environ"
         env = maybe(env).unwrap_or(os.environ)
 
-        supported_fields: dict[str, Field] = {k:v for k, v in get_dataclass_fields(self).items() if 'env' in v.metadata}
-        update_map: dict[str, Any] = {}
+        supported_fields: dict[str, Field] = {k:v for k, v in self.fields.items() if 'env' in v.metadata}
         for name, fld in supported_fields.items():
             if not (env_val := env.get(f'LYDIAN_{fld.metadata['env']}')):
                 continue
@@ -268,20 +314,78 @@ class Config(DataclassUpdateMixin):
             if not isinstance(val, cast('type', fld.type)):
                 raise TypeError(f'Invalid type for field "{name}": {val!r}')
 
-            update_map[name] = val
+            self.set(name, val)
 
-        self.update(unflatten(update_map, '.'))
+    @staticmethod
+    def _check_type_with_field[T](value: object, fld: ConfigField[T]) -> T:
+        """Parses a value according to the given field and ensures it is the correct type.
+
+        :raises TypeError:
+            This value is the wrong type for this field, and the parser (if present) could not convert it to such.
+        :raises ValueError:
+            An invalid value was given, likely a validator failed or an unexpected value was given for a ``Literal``.
+        """
+        if isinstance(fld.type, str):
+            raise TypeError(f'type attribute of field is str: {fld!r}')
+
+        typ = fld.type
+        t_args = get_args(typ)
+
+        # Annotated types don't do anything special for config fields, just take the type
+        if is_annotated(typ):
+            typ = t_args[0]
+            t_args = get_args(typ)
+
+        # Parse
+        t_origin = get_origin(typ) or typ
+        parsed = fld.metadata.get('converter', lambda x: x)(value)
+        if (t_origin is Literal):
+            if parsed not in t_args:
+                raise ValueError(f'Invalid value for Literal[{', '.join(repr(i) for i in t_args)}] type: {value!r}')
+        elif not isinstance(parsed, t_origin):
+            raise TypeError(f'Incorrect type for config field "{fld.name}" of type {fld.type}: {value!r}')
+
+        parsed = cast('T', parsed)
+
+        # Validate
+        for func in fld.metadata.get('validators', ()):
+            if not (result := func(parsed)):
+                raise ValueError(f'Invalid value for config field "{fld.name}": {result.unwrap_err()}')
+
+        return parsed
 
     def update_from_toml(self, toml_str: str, *, on_missing: Literal['raise', 'warn', 'continue'] = 'warn') -> None:
         """Update the config using values from a TOML string.
 
         :param on_missing: Whether to raise, warn, or ignore unrecognized keys.
         """
-        loaded: TOMLDocument = tm.parse(toml_str)
-        self.update(
-            loaded.unwrap(),
-            on_missing=UnknownConfigKeyWarning.emit if on_missing == 'warn' else on_missing,
+        loaded: benedict[str, Any] = benedict(tm.parse(toml_str))
+        # If a field's type is dict, it's a dynamic dictionary that we don't want to check each individual key of
+        dict_field_keys: list[str] = [k for k, v in self.fields.items() if get_origin(v.type) is dict]
+
+        to_search: Generator[str] = (
+            kp for kp in loaded.keypaths()
+            if not any(kp.startswith(pref + '.') for pref in dict_field_keys)
         )
+
+        for key in to_search:
+            if not (fld := self.fields.get(key)):
+                match on_missing:
+                    case 'raise':
+                        raise KeyError(f'Unknown config key: {key}')
+                    case 'warn':
+                        warnings.warn(f'Unknown config key: {key}', UnknownConfigKeyWarning, stacklevel=2)
+                        continue
+                    case 'continue':
+                        continue
+                    case _:
+                        raise ValueError(f'Unexpected on_missing value: {on_missing!r}')
+
+            if hasattr(fld.type, '__dataclass_fields__'):
+                # Dataclass attributes will get set through their individual keypaths
+                continue
+
+            self.set(key, self._check_type_with_field(loaded[key], fld))
 
 def add_comments_to_toml(toml: str, comment_map: dict[str, dict[str, str]], comment_width: int = 80) -> str:
     """Returns a TOML string with comments added to every key in ``comment_map``.
@@ -305,7 +409,7 @@ def add_comments_to_toml(toml: str, comment_map: dict[str, dict[str, str]], comm
                 .unwrap(f'Failed to match TOML table key name from line: {last_line}') \
                 .group(1) + '.'
         if (m := TOML_KEY_REGEX.match(ln)) \
-            and ((key := f'{table_prefix}{m.group(1)}'.replace('-', '_')) in comment_map):
+            and ((key := f'{table_prefix}{m.group(1)}') in comment_map):
             key_line_map[key] = n
         last_line = ln
 

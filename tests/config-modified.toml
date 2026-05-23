@@ -1,13 +1,11 @@
-# discord-vc-bot configuration
-
 prefix = "$"
 
-[vote-skipping]
+[vote_skipping]
 enabled = true
-threshold-type = "exact"
+threshold_type = "exact"
 percentage = 50
 exact = 2
 
 [logging]
-log-level = "WARNING"
+level = "WARNING"
 utc = true

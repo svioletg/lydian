@@ -16,7 +16,7 @@ from typing import Annotated, Any, ClassVar, Literal, cast, get_args, get_origin
 from zoneinfo import ZoneInfo
 
 from discord.ext import commands, tasks
-from maybetype import Maybe, Result, maybe
+from maybetype import Maybe, maybe
 
 from lydian.errors import AssuranceError
 
@@ -152,93 +152,6 @@ class Cache[K, V]:
         """Adds or replaces the value of ``key`` with ``value`` and the given optional expiration date."""
         expires = expires if expires is not None else self._default_expiration
         self._data[key] = CachedObject(value, expires=expires)
-
-class DataclassUpdateMixin:
-    """Adds an ``update`` method to a dataclass which can update its contents similar to ``dict.update``."""
-
-    def _update_with_parameterized_type(self, key: str, val: object, typ: type) -> None:
-        origin = maybe(get_origin(typ)).unwrap(f'Not a parameterized type: {typ!r}')
-        args = get_args(typ)
-        if not isinstance(val, origin):
-            raise TypeError(f'Expected type {typ}: {val!r}')
-
-        if origin is list:
-            list_type = args[0]
-            for i in val:
-                if not isinstance(i, list_type):
-                    raise TypeError(f'Expected type {typ} in list: {i!r}')
-        if origin is dict:
-            kt, vt = args
-            vt_args = get_args(typ)
-            if vt_args:
-                vt = get_origin(vt)
-            for k, v in val.items():
-                if not isinstance(k, kt):
-                    raise TypeError(f'Expected type {kt} for dict key: {k!r}')
-                if not isinstance(v, vt):
-                    raise TypeError(f'Expected type {vt} for dict value of key {k!r}: {v!r}')
-
-        setattr(self, key, val)
-
-    def update(self,  # noqa: C901
-            d: dict[str, Any],
-            *,
-            on_missing: Callable[[str], None] | Literal['raise', 'continue'] = 'continue',
-        ) -> None:
-        """Updates field values as per ``d``, attempting to convert values to the correct type.
-
-        :param on_missing: What to do when encountering a key present in ``d`` that is not present in the dataclass
-            being updated. ``'continue'`` skips the key silently, ``raise`` raises ``KeyError`` with the key value, or
-            if given a ``Callable``, it is called with the key value before skipping the key.
-        """
-        if not hasattr(self, '__dataclass_fields__'):
-            raise AttributeError(
-                f'{self.__class__.__name__} must be mixed into a class that has __dataclass_fields__: {self!r}',
-            )
-
-        for k, v in d.items():
-            k = k.replace('-', '_')  # noqa: PLW2901
-            if not (fld := cast('dict[str, Field[Any]]', self.__dataclass_fields__).get(k)):
-                if callable(on_missing):
-                    on_missing(k)
-                    continue
-                if on_missing == 'continue':
-                    continue
-                raise KeyError(k)
-
-            typ = cast('type', fld.type)
-            t_origin = get_origin(typ)
-            t_args = get_args(typ)
-
-            if is_literal := (t_origin is Literal):
-                # Making an assumption that a Literal type only consists of the same type
-                typ = type(t_args[0])
-            elif t_origin:
-                typ = t_origin
-
-            validators = fld.metadata.get('validators', ())
-            if not isinstance(validators, Iterable):
-                validators = [validators]
-
-            def validate[T](validators: Iterable[Callable[[T], Result[T, str]]], key: str, value: T) -> T:
-                for func in validators:
-                    if not (result := func(value)):
-                        raise ValueError(f'Invalid value for key {key}: {result.unwrap_err()}')
-                return value
-
-            if hasattr(typ, 'update'):
-                if t_origin is not dict:
-                    getattr(self, k).update(v, on_missing=on_missing)
-                else:
-                    getattr(self, k).update(v)
-            # If the field is a Literal then just because it's the right type doesn't mean it's the right value
-            elif isinstance(v, typ) and not is_literal:
-                setattr(self, k, validate(validators, k, v))
-            else:
-                converted = validate(validators, k, fld.metadata.get('converter', typ)(v))
-                if is_literal and (converted not in t_args):
-                    raise ValueError(f'Expected one of {','.join(repr(i) for i in t_args)}: {converted!r}')
-                setattr(self, k, converted)
 
 class FromStr:
     """Provides various methods for converting string values of an expected pattern to other types."""

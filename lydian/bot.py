@@ -71,8 +71,8 @@ class InterceptHandler(logging.Handler):
 
 # Redirect discord.py logs to our logger
 discord_logger = logging.getLogger('discord')
-discord_logger.setLevel(config.logging.log_level)
-logging.getLogger('discord.http').setLevel(config.logging.log_level)
+discord_logger.setLevel(config.logging.level)
+logging.getLogger('discord.http').setLevel(config.logging.level)
 discord_logger.addHandler(InterceptHandler())
 
 intents = discord.Intents.default()
@@ -199,7 +199,7 @@ async def async_main() -> int:
         return 1 if prompt_bot_setup() else 0
 
     setup_logger(
-        config.logging.log_level,
+        config.logging.level,
         logs_dir=LOGS_DIR,
         log_in_utc=config.logging.utc,
     )
