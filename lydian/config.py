@@ -71,10 +71,10 @@ def to_validator[T](func: Callable[[T], bool], err: str) -> Callable[[T], Result
     """Transforms ``func`` to return a result of either the passed value or an error message."""
     return lambda x: Ok(x) if func(x) else Err(err)
 
-def _validator_min(minimum: float) -> Callable[[float], bool]:
+def _validator_min(minimum: float) -> Callable[[float], Result[object, str]]:
     return lambda x: Ok(x) if x >= minimum else Err(f'Must be >= {minimum}: {x!r}')
 
-def _validator_max(maximum: float) -> Callable[[float], bool]:
+def _validator_max(maximum: float) -> Callable[[float], Result[object, str]]:
     return lambda x: Ok(x) if x <= maximum else Err(f'Must be <= {maximum}: {x!r}')
 
 _validate_positive = _validator_min(0)

@@ -24,6 +24,7 @@ dependencies = [
     "rich>=15.0.0",
     "strictyaml>=1.7.3",
     "tomlkit>=0.15.0",
+    "ty>=0.0.39",
     "typer>=0.24.1",
     "urllib3>=2.7.0,<3.0",
     "yt-dlp>=2026.3.17",
