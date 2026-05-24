@@ -32,6 +32,7 @@ configured prefix accordingly.
 - [feature] `lydian` can now be run with the `-V` or `--version` option to display the installed Lydian
   version and exit without starting the bot
 - [feature] The "now playing" view now shows the approximate current timestamp of the playing media
+  (#13)
   - Slight network delays will likely cause this number to be slightly inaccurate, but it should
     remain close enough for reference
 - [fix] Fixed filesize strings in the config with single digits raising an error due to a typo in the
@@ -62,6 +63,8 @@ configured prefix accordingly.
   common in TOML, it's ultimately unnecessary to keep converting keys between the two cases where
   needed
 - `const.LogLevel` is now an `IntEnum` subclass instead of `StrEnum`
+- `config.Config` updating and loading from TOML is now handled in the class itself in a simpler
+  fashion than using `util.DataclassUpdateMixin` (#26)
 
 ### Removed
 
@@ -71,6 +74,8 @@ configured prefix accordingly.
 ### Fixed
 
 - Fixed single-digit filesize numbers in TOML config not matching pattern
+- Queue no longer stops when encountering an error, will now skip problematic items until one can be
+  played or the queue is empty (#25)
 
 ## [0.6.0] - 2026-05-19
 
