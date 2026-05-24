@@ -22,7 +22,7 @@ def test_dump(tmpdir: Path) -> None:
     assert (parsed := tm.parse(dumped))
     assert inst.prefix == parsed['prefix']
     assert inst.vote_skipping.enabled == parsed['vote_skipping']['enabled']
-    assert inst.logging.level == parsed['logging']['level']
+    assert inst.logging.level == LogLevel(parsed['logging']['level'])
     assert inst.debug == parsed['debug']
 
 def test_env_to_bool() -> None:
@@ -36,7 +36,7 @@ def test_update_from_toml() -> None:
     assert inst.prefix == '$'
     assert inst.vote_skipping.threshold_type == 'exact'
     assert inst.vote_skipping.exact == 2  # noqa: PLR2004
-    assert inst.logging.level == 'WARNING'
+    assert inst.logging.level.name == 'WARNING'
 
 def test_update_from_environment() -> None:
     inst = Config()
@@ -45,7 +45,7 @@ def test_update_from_environment() -> None:
 
     inst.update_from_environment(env)
     assert isinstance(inst.logging.level, LogLevel)
-    assert inst.logging.level == 'WARNING'
+    assert inst.logging.level.name == 'WARNING'
 
 @pytest.mark.parametrize(('url', 'expected'),
     [
