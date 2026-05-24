@@ -131,10 +131,12 @@ class VoteSkippingConfig:
 class LoggingConfig:
     """Configuration for logging."""
 
-    level: LogLevel = field(default=LogLevel.INFO, metadata={
-        'env': 'LOG_LEVEL',
-        'converter': lambda s: LogLevel(s.upper()),
-    })
+    level: LogLevel = field(default=LogLevel.INFO,
+        doc='Minimum "level" of logs to show in terminal output. In ascending order, one of:'
+            + f' {',  '.join(f'"{level.name}"' for level in LogLevel)}.'
+            + f'\nCan also be their corresponding integer levels: {', '.join(f'{level.value}' for level in LogLevel)}',
+        metadata={'env': 'LOG_LEVEL', 'converter': lambda s: LogLevel[s.upper()]},
+    )
     utc: bool = field(default=True,
         doc="Whether to show log timestamps in UTC. If false, they are shown in your system's local time.",
         metadata={'env': 'LOG_UTC'},

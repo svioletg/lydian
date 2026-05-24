@@ -61,6 +61,7 @@ configured prefix accordingly.
 - TOML configuration keys are now in `snake_case` instead of `kebab-case`; though the latter is more
   common in TOML, it's ultimately unnecessary to keep converting keys between the two cases where
   needed
+- `const.LogLevel` is now an `IntEnum` subclass instead of `StrEnum`
 
 ### Removed
 

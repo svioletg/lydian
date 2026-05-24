@@ -1,7 +1,7 @@
 """Constant or singleton values for use across the rest of the package."""
 import re
 import sys
-from enum import StrEnum
+from enum import IntEnum, StrEnum
 from importlib.metadata import metadata
 from pathlib import Path
 
@@ -95,12 +95,12 @@ class EmojiStr(StrEnum):
     IN    = emojize(':inbox_tray:', language='alias')
     OUT   = emojize(':outbox_tray:', language='alias')
 
-class LogLevel(StrEnum):  # noqa: D101
-    TRACE = 'TRACE'
-    DEBUG = 'DEBUG'
-    INFO = 'INFO'
-    WARNING = 'WARNING'
-    ERROR = 'ERROR'
+class LogLevel(IntEnum):  # noqa: D101
+    TRACE   = 5
+    DEBUG   = 10
+    INFO    = 20
+    WARNING = 30
+    ERROR   = 40
 
 def clear_tmp_dir() -> None:
     """Removes all contents of the directory defined by ``const.TMP_DIR``."""
@@ -136,8 +136,8 @@ def _stdout_log_filter(record: loguru.Record) -> bool:
     return record['level'].name != 'CONSOLE'
 
 def setup_logger(
-        stdout_level: str = 'INFO',
-        file_level: str = 'DEBUG',
+        stdout_level: int | str = 'INFO',
+        file_level: int | str = 'DEBUG',
         logs_dir: str | Path | None = DEFAULT_LOGS_DIR,
         *,
         log_in_utc: bool = False,
