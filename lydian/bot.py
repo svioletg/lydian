@@ -71,7 +71,7 @@ class InterceptHandler(logging.Handler):
 
 # Redirect discord.py logs to our logger
 discord_logger = logging.getLogger('discord')
-discord_logger.setLevel(config.logging.log_level)
+discord_logger.setLevel(config.logging.level)
 # These generate huge debug logs
 logging.getLogger('discord.gateway').setLevel(logging.INFO)
 logging.getLogger('discord.http').setLevel(logging.INFO)
@@ -201,7 +201,7 @@ async def async_main() -> int:
         return 1 if prompt_bot_setup() else 0
 
     setup_logger(
-        config.logging.log_level,
+        config.logging.level,
         logs_dir=LOGS_DIR,
         log_in_utc=config.logging.utc,
     )

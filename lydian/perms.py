@@ -9,11 +9,10 @@ import discord
 import strictyaml as yaml
 
 from lydian.const import PERMISSIONS_PATH
-from lydian.util import DataclassUpdateMixin
 
 
 @dataclass
-class CommandPermissions(DataclassUpdateMixin):
+class CommandPermissions:
     """Represents permission rules for an individual bot command."""
 
     whitelist: bool
@@ -32,7 +31,7 @@ def _default_command_permissions_dict() -> dict[str, CommandPermissions]:
     return {'.default': CommandPermissions(whitelist=False)}
 
 @dataclass
-class Permissions(DataclassUpdateMixin):
+class Permissions:
     """Permission rules for the bot."""
 
     _yaml_schema: ClassVar[yaml.Map] = yaml.Map({
