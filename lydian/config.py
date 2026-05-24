@@ -297,7 +297,7 @@ class Config:
         # An empty dictionary should still be allowed if passed, so no "env or os.environ"
         env = maybe(env).unwrap_or(os.environ)
 
-        supported_fields: dict[str, Field] = {k:v for k, v in self.fields.items() if 'env' in v.metadata}
+        supported_fields: dict[str, ConfigField] = {k:v for k, v in self.fields.items() if 'env' in v.metadata}
         for name, fld in supported_fields.items():
             if not (env_val := env.get(f'LYDIAN_{fld.metadata['env']}')):
                 continue
