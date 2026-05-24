@@ -59,7 +59,10 @@ percentage = 50
 exact = 3
 
 [logging]
-level = "INFO" # env: LYDIAN_LOG_LEVEL
+level = 20 # env: LYDIAN_LOG_LEVEL
+# level: Minimum "level" of logs to show in terminal output. In ascending order,
+#    one of: "TRACE",  "DEBUG",  "INFO",  "WARNING",  "ERROR".
+#    Can also be their corresponding integer levels: 5, 10, 20, 30, 40
 utc = true # env: LYDIAN_LOG_UTC
 # utc: Whether to show log timestamps in UTC. If false, they are shown in your
 #    system's local time.
