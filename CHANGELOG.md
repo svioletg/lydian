@@ -77,6 +77,12 @@ configured prefix accordingly.
 - Queue no longer stops when encountering an error, will now skip problematic items until one can be
   played or the queue is empty (#25)
 
+## [0.6.1] - 2026-05-25
+
+### Fixed
+
+- Fixed Lydian completely failing on Windows due to an issue with a path highlighter (#28)
+
 ## [0.6.0] - 2026-05-19
 
 ### Added

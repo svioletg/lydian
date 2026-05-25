@@ -73,7 +73,7 @@ class ConsoleHighlighter(Highlighter):
     """Custom highlighter class for the ``rich`` console."""
 
     def highlight(self, text: Text) -> None:  # noqa: D102
-        if m := re.search(fr'{Path.cwd()}', str(text)):
+        if m := re.search(fr'{str(Path.cwd()).replace('\\', '\\\\')}', str(text)):
             text.stylize('cwd', m.start(0), m.end(0))
 
 class EmojiStr(StrEnum):
