@@ -698,6 +698,9 @@ class VoiceCog(commands.Cog):
             await self._resume_or_start(ctx, voice)
             return
 
+        if self._play_calls.qsize():
+            await ctx.send(embed=embed_info('Your play request is pending.'), ephemeral=True, delete_after=10)
+
         await self._play_calls.put((ctx, url))
 
     @alias_from_config
