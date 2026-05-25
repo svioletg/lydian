@@ -1,5 +1,12 @@
 # Lydian (Discord Bot) <!-- omit in toc -->
 
+![Required Python version](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fsvioletg%2Flydian-discord-bot%2Frefs%2Fheads%2Fmain%2Fpyproject.toml
+)
+![Build status, main branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian-discord-bot/lint-test.yml?branch=main&label=build%20(main)
+)
+![Build status, dev branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian-discord-bot/lint-test.yml?branch=dev&label=build%20(dev)
+)
+
 > [!WARNING]
 > Lydian is currently in a beta state, before its v1.0.0 release it may be unstable or subject to
 > a number of bugs. [Pre-releases](https://github.com/svioletg/lydian-discord-bot/releases) should
