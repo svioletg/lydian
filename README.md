@@ -8,13 +8,15 @@
 Lydian is a Discord bot for playing music. It uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) to
 extract info and download media from URLs, and thus will support [any source that yt-dlp
 supports](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md). Lydian does not support
-Spotify links.
-
-Documentation: <https://lydian-discord-bot.readthedocs.io/en/latest/>
+Spotify links. Use the `-help` command to see all available commands, or `-help <command>` to see
+information on a specific command. The bot's queue only clears when `-clear` is used or the bot is
+shut down.
 
 Bug reports, feature suggestions, questions: <https://github.com/svioletg/lydian-discord-bot/issues>
 
-View the project's status board: <https://github.com/users/svioletg/projects/6/views/1>
+Project board: <https://github.com/users/svioletg/projects/6/views/1>
+
+Docs: <https://lydian-discord-bot.readthedocs.io/en/latest/>
 
 > [!IMPORTANT]
 > Lydian is designed to be used in only one server at a time. Trying to play music in two or more
@@ -24,6 +26,8 @@ View the project's status board: <https://github.com/users/svioletg/projects/6/v
 
 - [Setup: Discord](#setup-discord)
 - [Setup: Lydian](#setup-lydian)
+  - [Setup with `uv`](#setup-with-uv)
+  - [Setup without `uv`](#setup-without-uv)
 - [Usage: Running the bot](#usage-running-the-bot)
 - [Usage: Bot console commands](#usage-bot-console-commands)
   - [`debug read`](#debug-read)
@@ -51,25 +55,64 @@ The bot permissions you'll need to tick are:
 
 ## Setup: Lydian
 
-Install [Python](https://www.python.org/) version 3.14 or higher. If you're using MacOS or Linux, I
-recommend using [pyenv](https://github.com/pyenv/pyenv#installation). The bot is structed as a
-Python package, so you can install it using this command:
+Lydian requires Python 3.14 or higher. If you haven't installed Python or aren't sure how to manage
+multiple versions or virtual environments, using
+[uv](https://docs.astral.sh/uv/getting-started/installation/) is recommended.
+
+You will need to install [git](https://git-scm.com/install/) to install Lydian as a python package.
+
+### Setup with `uv`
+
+<details><summary>Click to show</summary>
+
+1. Install uv per the "Standalone installer" instructions here:
+   <https://docs.astral.sh/uv/getting-started/installation/>
+2. Run `uv python install 3.14`.
+3. Create a directory to run Lydian in, then navigate to it in your terminal.
+4. Run `uv venv` to create a virtual environment, which will keep Lydian contained to your current
+   directory.
+5. Run `uv pip install git+https://github.com/svioletg/lydian-discord-bot.git` to install Lydian
+   in this directory.
+   - This will install the most recent available version of Lydian. If you want to install a
+     specific version, add an `@` to the end of the URL followed by a
+     [tag name](https://github.com/svioletg/lydian-discord-bot/tags).
+6. Once installed, run `uv run lydian --version` and ensure it outputs "Lydian v[your version]"
+
+You can now start the bot by running `uv run lydian` in this directory, at which points it should
+handle the rest of the setup via a few prompts. You can also use `uv run lydian-manage` or
+`uv run lydian-cli` for a small collection of Lydian-related utilities. Keep in mind that you will
+need to preface every Lydian command with `uv run` and ensure you are in this directory.
+
+Lydian can be updated in the future by running the same installation command above with the `-U`
+option: `uv pip install -U git+https://github.com/svioletg/lydian-discord-bot.git`
+
+</details>
+
+### Setup without `uv`
+
+<details><summary>Click to show</summary>
+
+The bot is structured as a Python package, so you can install it using `pip`:
 
 ```bash
 pip install git+https://github.com/svioletg/lydian-discord-bot.git
 ```
 
-This will install Lydian and its commands to your virtual environment if one is active, otherwise
-it'll be available in your global Python environment. The bot can be updated in the future by
-running this same command with `-U` added after `install`.
+This will install Lydian and its commands (`lydian` and `lydian-manage`) to your virtual environment
+if one is active, otherwise it'll be available in your global Python environment. The bot can be
+updated in the future by running this same command with `-U` added after `install`.
 
 ```bash
 pip install -U git+https://github.com/svioletg/lydian-discord-bot.git
 ```
 
+</details>
+
 You must provide your bot's token via the `LYDIAN_TOKEN` environment variable. The recommended way
 to do this is by creating a text file called `.env` in the directory you'll run the bot from, and
-write in `LYDIAN_TOKEN=<token>` where `<token>` should be replaced with your real bot token.
+write in `LYDIAN_TOKEN=<token>` where `<token>` should be replaced with your real bot token. Running
+`lydian` without a `lydian-config.toml` file present in the current directory will give you a prompt
+to input your token into, and the `.env` file will be created automatically.
 
 > [!NOTE]
 > Make sure that the file is named *exactly* `.env`, and not `.env.txt` or anything else. If you're
