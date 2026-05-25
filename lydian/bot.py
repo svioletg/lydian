@@ -48,13 +48,10 @@ class InterceptHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord) -> None:  # noqa: D102
         # Get corresponding Loguru level if it exists.
-        try:
-            level: str | int = logger.level(record.levelname).name
-        except ValueError:
-            level = record.levelno
+        level: str = logger.level(record.levelname).name
 
         if record.funcName.startswith('_'):
-            level = LogLevel.DEBUG
+            level = LogLevel.DEBUG.name
 
         # Find caller from where originated the logged message.
         frame, depth = inspect.currentframe(), 0
