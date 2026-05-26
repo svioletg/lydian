@@ -9,7 +9,8 @@ from collections.abc import Callable, Generator, Iterable, Mapping
 from dataclasses import Field, asdict, dataclass, field, fields, is_dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Literal, Self, TypedDict, cast, get_args, get_origin
+from types import NoneType
+from typing import Any, Literal, Self, TypedDict, Union, cast, get_args, get_origin
 from zoneinfo import ZoneInfo
 
 import tomlkit as tm
@@ -17,7 +18,6 @@ from benedict import benedict
 from dotenv import load_dotenv
 from maybetype import Err, Ok, Result, maybe
 from tomlkit.exceptions import ConvertError
-from tomlkit.items import InlineTable
 from tomlkit.items import Item as TOMLItem
 
 from lydian.const import CONFIG_PATH, LogLevel
@@ -27,6 +27,9 @@ TOML_KEY_REGEX: re.Pattern[str] = re.compile(r'^\[?([\w.-]+)\]?', flags=re.MULTI
 TOML_TABLE_KEY_REGEX: re.Pattern[str] = re.compile(r'\[([\w.-]+)\]', flags=re.MULTILINE)
 
 load_dotenv()
+
+TOML_NONE: str = 'null'
+"""A special dedicated string value for representing None in TOML."""
 
 class UnknownConfigKeyWarning(Warning):
     """Emitted when a key is found in TOML that is not present in the :py:class:`Config` dataclass."""
@@ -167,8 +170,8 @@ class Config:
         metadata={'env': 'DEBUG'},
     )
     command_aliases: dict[str, list[str]] = field(default_factory=_default_command_aliases)
-    max_duration: int = field(default=0,
-        doc='Maximum duration (in seconds) of media that can be played by the bot. Set to 0 for no limit.',
+    max_duration: int | None = field(default=None,
+        doc=f'Maximum duration (in seconds) of media that can be played by the bot. Set to {TOML_NONE!r} for no limit.',
         metadata={'validators': [_validate_positive]},
     )
     max_duration_allow_unknown: bool = field(default=False,
@@ -186,23 +189,23 @@ class Config:
         doc='Maximum number of items that can be added to the media queue.',
         metadata={'validators': [_validate_positive]},
     )
-    media_dir_warn_threshold: int = field(default=100_000_000,
+    media_dir_warn_threshold: int | None = field(default=100_000_000,
         doc='Total size in bytes that downloaded media can take up before a warning is emitted at bot'
-            + ' startup. Set to -1 to disable the warning entirely.',
-        metadata={'converter': FromStr.filesize, 'validators': [_validator_min(-1)]},
+            + f' startup. Set to {TOML_NONE!r} to disable the warning entirely.',
+        metadata={'converter': FromStr.filesize, 'validators': [_validate_positive]},
     )
     stream_media: bool = field(default=True,
         doc='Whether to stream media instead of downloading it to disk and playing the file.',
     )
-    inactivity_timeout: int = field(default=120,
+    inactivity_timeout: int | None = field(default=120,
         doc='How long in seconds the bot can be inactive (not playing anything and the queue is empty) before'
-            + ' disconnecting. Set to -1 to never disconnect for inactivity.',
-        metadata={'validators': [_validator_min(-1)]},
+            + f' disconnecting. Set to {TOML_NONE!r} to never disconnect for inactivity.',
+        metadata={'validators': [_validate_positive]},
     )
-    lonely_timeout: int = field(default=120,
+    lonely_timeout: int | None = field(default=120,
         doc='How long in seconds the bot can be the only user in a voice channel before disconnecting.'
-            + ' Set to -1 to never disconnect in this case.',
-        metadata={'validators': [_validator_min(-1)]},
+            + f' Set to {TOML_NONE!r} to never disconnect in this case.',
+        metadata={'validators': [_validate_positive]},
     )
 
     media_filter: MediaFilterConfig = field(default_factory=MediaFilterConfig)
@@ -269,11 +272,14 @@ class Config:
 
         for fld in fields(self):
             if fld.type is MediaFilterConfig:
-                data: InlineTable = tm.item(asdict(getattr(self, fld.name)))
+                data = tm.item(asdict(getattr(self, fld.name)))
                 data['allowed_extractors'] = [tm.string(s, literal=True) for s in data['allowed_extractors'].unwrap()]
                 data['allowed_urls'] = [tm.string(s, literal=True) for s in data['allowed_urls'].unwrap()]
             else:
                 data = getattr(self, fld.name)
+
+            if data is None:
+                data = tm.string(TOML_NONE, literal=True)
 
             doc.add(fld.name, data)
 
@@ -319,7 +325,7 @@ class Config:
             self.set(name, val)
 
     @staticmethod
-    def _check_type_with_field[T](value: object, fld: ConfigField[T]) -> T:
+    def _check_type_with_field[T](value: object, fld: ConfigField[T]) -> T | None:  # noqa: C901
         """Parses a value according to the given field and ensures it is the correct type.
 
         :raises TypeError:
@@ -339,7 +345,13 @@ class Config:
             t_args = get_args(typ)
 
         # Parse
-        t_origin = get_origin(typ) or typ
+        if (t_origin := get_origin(typ) or typ) is Union:
+            if (len(t_args) != 2) or (t_args[1] is not NoneType):  # noqa: PLR2004
+                raise TypeError(f'Union types are only supported for config fields if the union is T | None: {typ!r}')
+            if value == TOML_NONE:
+                return None
+            t_origin = t_args[0]
+
         parsed = fld.metadata.get('converter', lambda x: x)(value)
         if (t_origin is Literal):
             if parsed not in t_args:

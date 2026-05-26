@@ -401,10 +401,10 @@ class VoiceCog(commands.Cog):
             voice = _assert_voice_client(self.bot.voice_clients[0])
             # Handle auto disconnect timers
             self.inactive = (not self.queue) and (not voice.is_playing()) and (not voice.is_paused())
-            if (config.inactivity_timeout > -1) and self.time_inactive >= config.inactivity_timeout:
+            if (config.inactivity_timeout is not None) and self.time_inactive >= config.inactivity_timeout:
                 logger.info(f'Bot has been inactive for {self.time_inactive} seconds; disconnecting')
                 await voice.disconnect()
-            elif (config.lonely_timeout > -1) and self.time_alone >= config.lonely_timeout:
+            elif (config.lonely_timeout is not None) and self.time_alone >= config.lonely_timeout:
                 logger.info(f'Bot has been alone for {self.time_alone} seconds; disconnecting')
                 await voice.disconnect()
 
