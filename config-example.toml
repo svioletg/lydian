@@ -5,9 +5,9 @@ debug = false # env: LYDIAN_DEBUG
 # debug: Enables various commands and features intended for developers. See the
 #    README for a full description of what debug mode does:
 #    https://github.com/svioletg/lydian-discord-bot/blob/main/README.md
-max_duration = 'null'
+max_duration = 'n/a'
 # max_duration: Maximum duration (in seconds) of media that can be played by the
-#    bot. Set to 'null' for no limit.
+#    bot. Set to 'n/a' for no limit.
 max_duration_allow_unknown = false
 # max_duration_allow_unknown: Whether to allow media whose duration couldn't be
 #    retrieved when max-duration is more than 0.
@@ -22,18 +22,18 @@ max_queue_length = 100
 #    queue.
 media_dir_warn_threshold = 100000000
 # media_dir_warn_threshold: Total size in bytes that downloaded media can take
-#    up before a warning is emitted at bot startup. Set to 'null' to disable the
+#    up before a warning is emitted at bot startup. Set to 'n/a' to disable the
 #    warning entirely.
 stream_media = true
 # stream_media: Whether to stream media instead of downloading it to disk and
 #    playing the file.
 inactivity_timeout = 120
 # inactivity_timeout: How long in seconds the bot can be inactive (not playing
-#    anything and the queue is empty) before disconnecting. Set to 'null' to
+#    anything and the queue is empty) before disconnecting. Set to 'n/a' to
 #    never disconnect for inactivity.
 lonely_timeout = 120
 # lonely_timeout: How long in seconds the bot can be the only user in a voice
-#    channel before disconnecting. Set to 'null' to never disconnect in this
+#    channel before disconnecting. Set to 'n/a' to never disconnect in this
 #    case.
 
 [command_aliases]

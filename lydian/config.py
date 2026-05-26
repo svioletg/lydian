@@ -28,7 +28,7 @@ TOML_TABLE_KEY_REGEX: re.Pattern[str] = re.compile(r'\[([\w.-]+)\]', flags=re.MU
 
 load_dotenv()
 
-TOML_NONE: str = 'null'
+TOML_NONE: str = 'n/a'
 """A special dedicated string value for representing None in TOML."""
 
 class UnknownConfigKeyWarning(Warning):
