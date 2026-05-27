@@ -1,4 +1,4 @@
-from lydian.const import PROJECT_VERSION
+from lydian import __version__
 
 # Configuration file for the Sphinx documentation builder.
 #
@@ -10,7 +10,7 @@ from lydian.const import PROJECT_VERSION
 
 project = 'lydian-discord-bot'
 author = 'Seth "Violet" Gibbs'
-release = PROJECT_VERSION
+release = __version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

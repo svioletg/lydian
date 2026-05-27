@@ -2,7 +2,6 @@
 import re
 import sys
 from enum import IntEnum, StrEnum
-from importlib.metadata import metadata
 from pathlib import Path
 
 import loguru
@@ -14,7 +13,6 @@ from rich.highlighter import Highlighter
 from rich.text import Text
 from rich.theme import Theme
 
-PROJECT_VERSION: str = metadata('lydian-discord-bot')['version']
 GH_REPO: str = 'https://github.com/svioletg/lydian-discord-bot'
 GH_ISSUES: str = GH_REPO + '/issues'
 

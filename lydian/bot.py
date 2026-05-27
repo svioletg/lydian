@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 from loguru import logger
 from rich.prompt import Confirm
 
+from lydian import __version__
 from lydian.cogs.debug import DebugCog
 from lydian.cogs.general import GeneralCog
 from lydian.cogs.util import embed_error, embed_info
@@ -29,7 +30,6 @@ from lydian.const import (
     DOTENV_PATH,
     LOGS_DIR,
     PERMISSIONS_PATH,
-    PROJECT_VERSION,
     LogLevel,
     clear_tmp_dir,
     create_directories,
@@ -203,7 +203,7 @@ async def async_main() -> int:
     )
 
     logger.debug('Logging started')
-    logger.info(f'Lydian v{PROJECT_VERSION}')
+    logger.info(f'Lydian v{__version__}')
 
     if config.logging.utc:
         logger.info('Log times are set to UTC')
@@ -249,7 +249,7 @@ def main() -> None:  # noqa: D103
     print_version: bool = args.version
 
     if print_version:
-        screen.print(f'Lydian v{PROJECT_VERSION}')
+        screen.print(f'Lydian v{__version__}')
         sys.exit()
 
     sys.exit(asyncio.run(async_main()))
