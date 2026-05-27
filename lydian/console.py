@@ -20,6 +20,7 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.patch_stdout import patch_stdout
 from rich.markup import escape
 
+from lydian import __version__
 from lydian.config import config
 from lydian.const import debug_context, screen, setup_logger
 from lydian.perms import perms
@@ -521,6 +522,11 @@ class LydianConsole(BotConsole):
     def uptime(self, /) -> None:
         """Prints how long the bot has been running for."""
         screen.print(f'Bot has been running for {precisedelta(datetime.now(UTC) - debug_context['bot-start-time'])}')
+
+    @command()
+    def version(self, /) -> None:
+        """Prints the version of Lydian that is currently running."""
+        screen.print(f'Lydian v{__version__}')
 
     #endregion COMMANDS
 
