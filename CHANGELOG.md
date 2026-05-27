@@ -20,6 +20,10 @@ configured prefix accordingly.
 - Added debug bot commands `-argstr` and `-argint`
 - Added command methods `cogs.debug.DebugCog.argstr()` and `cogs.debug.DebugCog.argint()`
 
+### Changed
+
+- Bot command `-hello` now accepts aliases
+
 ## [0.7.0] - 2026-05-25
 
 ### Overview

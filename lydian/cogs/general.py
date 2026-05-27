@@ -1,7 +1,7 @@
 """General-purpose commands."""
 from discord.ext import commands
 
-from lydian.cogs.util import embed_info
+from lydian.cogs.util import alias_from_config, embed_info
 
 
 class GeneralCog(commands.Cog):
@@ -10,7 +10,8 @@ class GeneralCog(commands.Cog):
     def __init__(self, bot: commands.bot.Bot) -> None:
         self.bot = bot
 
-    @commands.command()
+    @alias_from_config
+    @commands.command(aliases=[])
     async def hello(self, ctx: commands.Context) -> None:
-        """Test command."""
+        """Sends a simple 'Hello, world!' message to test that the bot is active."""
         await ctx.send(embed=embed_info('Hello, world!'))
