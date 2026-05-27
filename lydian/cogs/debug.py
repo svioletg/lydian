@@ -82,3 +82,13 @@ class DebugCog(commands.Cog):
             raise TypeError(f'Expected type discord.Member: {ctx.author!r}')
         debug_context['capture.user'] = ctx.author
         await ctx.send(embed=embed_ok(''))
+
+    @commands.command(checks=[debug_enabled])
+    async def argstr(self, ctx: commands.Context, text: str) -> None:
+        """Takes one string argument and echoes it back."""
+        await ctx.send(text)
+
+    @commands.command(checks=[debug_enabled])
+    async def argint(self, ctx: commands.Context, num: int) -> None:
+        """Takes one integer argument and echoes its ``repr``."""
+        await ctx.send(repr(num))

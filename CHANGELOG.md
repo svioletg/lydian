@@ -13,6 +13,13 @@ section.
 Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
 configured prefix accordingly.
 
+## [Unreleased]
+
+### Added
+
+- Added debug bot commands `-argstr` and `-argint`
+- Added command methods `cogs.debug.DebugCog.argstr()` and `cogs.debug.DebugCog.argint()`
+
 ## [0.7.0] - 2026-05-25
 
 ### Overview
