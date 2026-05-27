@@ -296,8 +296,8 @@ class BotConsoleMeta(type):
 
     def __new__(cls, name: str, bases: tuple[type, ...], attrs: dict[str, Any]) -> BotConsoleMeta:  # noqa: D102
         attrs['prompt_prefix'] = '> '
-        attrs['commands']: benedict[str, Any] = benedict(keypath_separator=' ')
-        attrs['commandlist']: list[ConsoleCommand] = []
+        attrs['commands'] = benedict(keypath_separator=' ')
+        attrs['commandlist'] = []
 
         new_cls = super().__new__(cls, name, bases, attrs)
 
