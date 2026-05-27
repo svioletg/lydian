@@ -24,6 +24,7 @@ configured prefix accordingly.
 
 ### Changed
 
+- Package version is now set dynamically using `__version__` from `__init__.py`
 - Bot command `-hello` now accepts aliases
 
 ## [0.7.0] - 2026-05-25
