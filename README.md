@@ -2,9 +2,14 @@
 
 ![Required Python version](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fsvioletg%2Flydian-discord-bot%2Frefs%2Fheads%2Fmain%2Fpyproject.toml
 )
-![Build status, main branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian-discord-bot/lint-test.yml?branch=main&label=build%20(main)
+![Build, main branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian-discord-bot/build.yml?branch=main&label=build%20(main)
 )
-![Build status, dev branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian-discord-bot/lint-test.yml?branch=dev&label=build%20(dev)
+![Tests, main branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian-discord-bot/lint-test.yml?branch=main&label=tests%20(main)
+)
+
+![Build, dev branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian-discord-bot/build.yml?branch=dev&label=build%20(dev)
+)
+![Tests, dev branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian-discord-bot/lint-test.yml?branch=dev&label=tests%20(dev)
 )
 
 > [!WARNING]
