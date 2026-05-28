@@ -119,8 +119,18 @@ async def on_command_error(ctx: commands.Context, exc: Exception) -> None:
         # Will clutter up the traceback, just use the exception this was raised from
         exc = exc.original
 
-    await ctx.send(embed=embed_error('An unexpected error occurred.', 'Check logs for details.'))
-    logger.error(f'{exc}\n{''.join(traceback.format_exception(exc)).strip()}')
+    if isinstance(exc, commands.errors.MissingRequiredArgument):
+        await ctx.send(embed=embed_error('Not enough command arguments given', str(exc)))
+    elif isinstance(exc, commands.errors.BadArgument):
+        await ctx.send(embed=embed_error('Invalid command arguments given', str(exc.__cause__ or exc)))
+        logger.debug(f'Bad argument given, full traceback to follow ({exc})')
+        logger.debug(''.join(traceback.format_exception(exc.__cause__ or exc)))
+    else:
+        await ctx.send(embed=embed_error(
+            'An unexpected error occurred.',
+            f'Message: `{exc}`\nCheck logs for details.',
+        ))
+        logger.error(f'{exc}\n{''.join(traceback.format_exception(exc)).strip()}')
 
 @bot.event
 async def on_ready() -> None:  # noqa: D103

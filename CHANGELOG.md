@@ -28,6 +28,7 @@ configured prefix accordingly.
 
 - Package version is now set dynamically using `__version__` from `__init__.py`
 - Bot command `-hello` now accepts aliases
+- The discord.py exceptions `BadArgument` and `MissingRequiredArgument` are now properly handled
 
 ## [0.7.0] - 2026-05-25
 
