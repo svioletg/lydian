@@ -17,7 +17,6 @@ dependencies = [
     "prompt-toolkit>=3.0.52",
     "py-maybetype==0.12.0",
     "pynacl>=1.6.2,<1.7",
-    "pytest-mock>=3.15.1",
     "python-benedict>=0.36.0",
     "python-dotenv>=1.2.2",
     "rich>=15.0.0",
@@ -37,6 +36,7 @@ dynamic = ["version"]
 [project.optional-dependencies]
 dev = [
     "pytest>=9.0.3",
+    "pytest-mock>=3.15.1",
     "ruff>=0.15.12",
     "ty>=0.0.39",
 ]

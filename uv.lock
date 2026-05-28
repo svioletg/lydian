@@ -481,7 +481,6 @@ wheels = [
 
 [[package]]
 name = "lydian-discord-bot"
-version = "0.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "davey" },
@@ -492,7 +491,6 @@ dependencies = [
     { name = "prompt-toolkit" },
     { name = "py-maybetype" },
     { name = "pynacl" },
-    { name = "pytest-mock" },
     { name = "python-benedict" },
     { name = "python-dotenv" },
     { name = "rich" },
@@ -506,6 +504,7 @@ dependencies = [
 [package.optional-dependencies]
 dev = [
     { name = "pytest" },
+    { name = "pytest-mock" },
     { name = "ruff" },
     { name = "ty" },
 ]
@@ -529,7 +528,7 @@ requires-dist = [
     { name = "py-maybetype", specifier = "==0.12.0" },
     { name = "pynacl", specifier = ">=1.6.2,<1.7" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=9.0.3" },
-    { name = "pytest-mock", specifier = ">=3.15.1" },
+    { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.15.1" },
     { name = "python-benedict", specifier = ">=0.36.0" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "rich", specifier = ">=15.0.0" },
