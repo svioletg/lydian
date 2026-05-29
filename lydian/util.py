@@ -5,6 +5,7 @@ used by any module.
 """
 import re
 import textwrap
+import traceback
 from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from dataclasses import Field, fields, is_dataclass
 from datetime import UTC, datetime, timedelta, tzinfo
@@ -288,6 +289,10 @@ def dirsize_counted(source_dir: str | Path) -> tuple[int, dict[Literal['dir', 'f
         total_bytes += fp.stat().st_size
 
     return total_bytes, count
+
+def exc_str(exc: BaseException) -> str:
+    """Returns the traceback for ``exc`` as a string."""
+    return ''.join(traceback.format_exception(exc)).strip()
 
 def expect[T](value: T | None) -> T:
     """Returns ``value``, raising ``ValueError`` if ``None``."""

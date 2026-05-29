@@ -23,6 +23,7 @@ configured prefix accordingly.
 - Added command methods `cogs.debug.DebugCog.argstr()` and `cogs.debug.DebugCog.argint()`
 - Added command methods `cogs.general.GeneralCog.repo()` and `cogs.general.GeneralCog.issues()`
 - Added method `console.LydianConsole.version()`
+- Added function `util.exc_str()`
 
 ### Changed
 

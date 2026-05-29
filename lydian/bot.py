@@ -4,7 +4,6 @@ import inspect
 import logging
 import os
 import sys
-import traceback
 from argparse import ArgumentParser
 from datetime import UTC, datetime
 from getpass import getpass
@@ -39,7 +38,7 @@ from lydian.const import (
 )
 from lydian.errors import AbortCommand
 from lydian.perms import PERMISSIONS_DEFAULT, perms
-from lydian.util import dirsize, get_background_tasks, get_leaves
+from lydian.util import dirsize, exc_str, get_background_tasks, get_leaves
 
 load_dotenv('.env')
 
@@ -107,7 +106,11 @@ async def on_error(event: str, *_: object, **__: object) -> None:
         return
 
     logger.error(f'An error occurred during event {event!r}')
-    logger.error(f'{exc}\n{''.join(traceback.format_exception(exc)).strip()}')
+
+    if exc is None:
+        logger.error('Failed to get exception from sys.exc_info')
+    else:
+        logger.error(f'{exc}\n{exc_str(exc)}')
 
 @bot.event
 async def on_command_error(ctx: commands.Context, exc: Exception) -> None:
@@ -124,13 +127,13 @@ async def on_command_error(ctx: commands.Context, exc: Exception) -> None:
     elif isinstance(exc, commands.errors.BadArgument):
         await ctx.send(embed=embed_error('Invalid command arguments given', str(exc.__cause__ or exc)))
         logger.debug(f'Bad argument given, full traceback to follow ({exc})')
-        logger.debug(''.join(traceback.format_exception(exc.__cause__ or exc)))
+        logger.debug(exc_str(exc.__cause__ or exc))
     else:
         await ctx.send(embed=embed_error(
             'An unexpected error occurred.',
             f'Message: `{exc}`\nCheck logs for details.',
         ))
-        logger.error(f'{exc}\n{''.join(traceback.format_exception(exc)).strip()}')
+        logger.error(f'{exc}\n{exc_str(exc)}')
 
 @bot.event
 async def on_ready() -> None:  # noqa: D103
