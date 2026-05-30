@@ -4,7 +4,7 @@ prefix = "-"
 debug = false # env: LYDIAN_DEBUG
 # debug: Enables various commands and features intended for developers. See the
 #    README for a full description of what debug mode does:
-#    https://github.com/svioletg/lydian-discord-bot/blob/main/README.md
+#    https://github.com/svioletg/lydian/blob/main/README.md
 max_duration = 0
 # max_duration: Maximum duration (in seconds) of media that can be played by the
 #    bot. Set to 0 for no limit.

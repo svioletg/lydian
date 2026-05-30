@@ -1,4 +1,4 @@
-lydian-discord-bot documentation
+Lydian documentation
 ================================
 
 .. toctree::

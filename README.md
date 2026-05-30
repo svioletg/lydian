@@ -1,20 +1,20 @@
 # Lydian (Discord Bot) <!-- omit in toc -->
 
-![Required Python version](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fsvioletg%2Flydian-discord-bot%2Frefs%2Fheads%2Fmain%2Fpyproject.toml
+![Required Python version](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fsvioletg%2Flydian%2Frefs%2Fheads%2Fmain%2Fpyproject.toml
 )
-![Build, main branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian-discord-bot/build.yml?branch=main&label=build%20(main)
+![Build, main branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian/build.yml?branch=main&label=build%20(main)
 )
-![Tests, main branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian-discord-bot/lint-test.yml?branch=main&label=tests%20(main)
+![Tests, main branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian/lint-test.yml?branch=main&label=tests%20(main)
 )
 
-![Build, dev branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian-discord-bot/build.yml?branch=dev&label=build%20(dev)
+![Build, dev branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian/build.yml?branch=dev&label=build%20(dev)
 )
-![Tests, dev branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian-discord-bot/lint-test.yml?branch=dev&label=tests%20(dev)
+![Tests, dev branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian/lint-test.yml?branch=dev&label=tests%20(dev)
 )
 
 > [!WARNING]
 > Lydian is currently in a beta state, before its v1.0.0 release it may be unstable or subject to
-> a number of bugs. [Pre-releases](https://github.com/svioletg/lydian-discord-bot/releases) should
+> a number of bugs. [Pre-releases](https://github.com/svioletg/lydian/releases) should
 > work reasonably well, but it should likely be kept to smaller servers for the time being.
 
 Lydian is a Discord bot for playing music. It uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) to
@@ -24,11 +24,11 @@ Spotify links. Use the `-help` command to see all available commands, or `-help 
 information on a specific command. The bot's queue only clears when `-clear` is used or the bot is
 shut down.
 
-Bug reports, feature suggestions, questions: <https://github.com/svioletg/lydian-discord-bot/issues>
+Bug reports, feature suggestions, questions: <https://github.com/svioletg/lydian/issues>
 
 Project board: <https://github.com/users/svioletg/projects/6/views/1>
 
-Docs: <https://lydian-discord-bot.readthedocs.io/en/latest/>
+Docs: <https://lydian.readthedocs.io/en/latest/>
 
 > [!IMPORTANT]
 > Lydian is designed to be used in only one server at a time. Trying to play music in two or more
@@ -83,11 +83,11 @@ You will need to install [git](https://git-scm.com/install/) to install Lydian a
 3. Create a directory to run Lydian in, then navigate to it in your terminal.
 4. Run `uv venv` to create a virtual environment, which will keep Lydian contained to your current
    directory.
-5. Run `uv pip install git+https://github.com/svioletg/lydian-discord-bot.git` to install Lydian
+5. Run `uv pip install git+https://github.com/svioletg/lydian.git` to install Lydian
    in this directory.
    - This will install the most recent available version of Lydian. If you want to install a
      specific version, add an `@` to the end of the URL followed by a
-     [tag name](https://github.com/svioletg/lydian-discord-bot/tags).
+     [tag name](https://github.com/svioletg/lydian/tags).
 6. Once installed, run `uv run lydian --version` and ensure it outputs "Lydian v[your version]"
 
 You can now start the bot by running `uv run lydian` in this directory, at which points it should
@@ -96,7 +96,7 @@ handle the rest of the setup via a few prompts. You can also use `uv run lydian-
 need to preface every Lydian command with `uv run` and ensure you are in this directory.
 
 Lydian can be updated in the future by running the same installation command above with the `-U`
-option: `uv pip install -U git+https://github.com/svioletg/lydian-discord-bot.git`
+option: `uv pip install -U git+https://github.com/svioletg/lydian.git`
 
 </details>
 
@@ -107,7 +107,7 @@ option: `uv pip install -U git+https://github.com/svioletg/lydian-discord-bot.gi
 The bot is structured as a Python package, so you can install it using `pip`:
 
 ```bash
-pip install git+https://github.com/svioletg/lydian-discord-bot.git
+pip install git+https://github.com/svioletg/lydian.git
 ```
 
 This will install Lydian and its commands (`lydian` and `lydian-manage`) to your virtual environment
@@ -115,7 +115,7 @@ if one is active, otherwise it'll be available in your global Python environment
 updated in the future by running this same command with `-U` added after `install`.
 
 ```bash
-pip install -U git+https://github.com/svioletg/lydian-discord-bot.git
+pip install -U git+https://github.com/svioletg/lydian.git
 ```
 
 </details>

@@ -163,7 +163,7 @@ class Config:
     debug: bool = field(default=False,
         doc='Enables various commands and features intended for developers.'
             + ' See the README for a full description of what debug mode does:'
-            + ' https://github.com/svioletg/lydian-discord-bot/blob/main/README.md',
+            + ' https://github.com/svioletg/lydian/blob/main/README.md',
         metadata={'env': 'DEBUG'},
     )
     command_aliases: dict[str, list[str]] = field(default_factory=_default_command_aliases)

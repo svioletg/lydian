@@ -1,7 +1,7 @@
 ---
 name: Feature request
 about: Request a new feature or modification to an existing feature
-title: "[feature] "
+title: ''
 labels: enhancement
 assignees: svioletg
 
