@@ -5,7 +5,7 @@ from argparse import ArgumentParser
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from lydian.const import screen
+from lydian.const import GH_ISSUES, screen
 from lydian.util import pos_to_linepos
 
 PROJECT_DIR: Path = Path('lydian').absolute()
@@ -17,7 +17,7 @@ ISSUE_REGEX: re.Pattern[str] = re.compile(
     r'\bhttps://github.com/(?P<user>[\w-]+)/(?P<repo>[\w-]+)/issues/(?P<n>\d+)\b',
     flags=re.MULTILINE,
 )
-DEFAULT_ISSUE_LINK_TMPL: str = 'https://github.com/svioletg/lydian-discord-bot/issues/{}'
+DEFAULT_ISSUE_LINK_TMPL: str = GH_ISSUES + '/{}'
 
 @dataclass
 class Todo:  # noqa: D101

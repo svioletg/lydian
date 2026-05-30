@@ -306,7 +306,7 @@ configured prefix accordingly.
 - Added function `cli.abort()`
 - Added function `cli.clear_dl_dir()`
 - Added decorator function `cogs.util.alias_from_config()`
-  ([#3](https://github.com/svioletg/lydian-discord-bot/issues/3))
+  ([#3](https://github.com/svioletg/lydian/issues/3))
 - Added function `cogs.util.confirm()`
 - Added function `const._stdout_log_filter()`
 - Added function `util.dirsize_counted()`
