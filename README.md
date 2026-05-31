@@ -13,9 +13,12 @@
 )
 
 > [!WARNING]
-> Lydian is currently in a beta state, before its v1.0.0 release it may be unstable or subject to
+> Lydian is currently in a beta state, before its v1.0.0 release it may be unstable and subject to
 > a number of bugs. [Pre-releases](https://github.com/svioletg/lydian/releases) should
 > work reasonably well, but it should likely be kept to smaller servers for the time being.
+>
+> If you do encounter bugs, please [check the existing issues](https://github.com/svioletg/lydian/issues)
+> to see if it's been reported already, and open a new issue if it hasn't.
 
 Lydian is a Discord bot for playing music. It uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) to
 extract info and download media from URLs, and thus will support [any source that yt-dlp
@@ -24,7 +27,7 @@ Spotify links. Use the `-help` command to see all available commands, or `-help 
 information on a specific command. The bot's queue only clears when `-clear` is used or the bot is
 shut down.
 
-Bug reports, feature suggestions, questions: <https://github.com/svioletg/lydian/issues>
+Bug reports, feature suggestions, questions: <https://github.com/svioletg/lydian/issues/new>
 
 Project board: <https://github.com/users/svioletg/projects/6/views/1>
 
