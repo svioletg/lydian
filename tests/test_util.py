@@ -1,4 +1,4 @@
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import Field, dataclass, field
 from datetime import UTC, datetime, timedelta, tzinfo
 from pathlib import Path
@@ -258,7 +258,29 @@ def test_strftimestamp(
 
     assert util.strftimestamp(timestamp, **kwargs) == expected
 
+@pytest.mark.parametrize(('data', 'kwargs', 'expected'),
+    [
+        ([], {}, ''),
+        ([('a', 1), ('b.', 2), ('c..', 3)], {},
+"""\
+a   1
+b.  2
+c.. 3
+"""),
+        ([('a', 1), ('b.', 2), ('c..', 3)], {'header': ('Letter', 'Number')},
+"""\
+Letter Number
+-------------
+a      1
+b.     2
+c..    3
+"""),
+    ],
+)
+def test_tabulate(data: Sequence[tuple[object, ...]], kwargs: dict[str, Any], expected: str) -> None:
+    assert util.tabulate(data, **kwargs) == expected
+
 def test_wrap_paragraphs() -> None:
     text = 'Lorem ipsum\ndolor sit amet, consectetur adipiscing elit.'
     expected = 'Lorem ipsum\ndolor sit amet,\nconsectetur\nadipiscing elit.'
-    assert '\n'.join(util.wrap_paragraphs(text, width=20)) == expected
+    assert '\n'.join(util.wrap_paragraphs(text, width=20)) == expected.strip('\n')
