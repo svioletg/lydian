@@ -32,6 +32,10 @@ configured prefix accordingly.
 - The discord.py exceptions `BadArgument` and `MissingRequiredArgument` are now properly handled
 - Logging methods in `cogs.voice.YTDLLogHandler` now log with `depth=2` for more accuracy
 
+### Fixed
+
+- Fixed `util.tabulate()` raising an error for empty data (#32)
+
 ## [0.7.0] - 2026-05-25
 
 ### Overview
