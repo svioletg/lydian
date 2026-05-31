@@ -395,6 +395,10 @@ def iter_columns[T, U](
         except IndexError:
             return default
 
+    if not data:
+        yield from ()
+        return
+
     height: int = len(data)
     width: int = len(data[0]) if default is ... else max(map(len, data))
 
@@ -525,20 +529,25 @@ def tabulate(  # noqa: C901
     :param strip: A regular expression matching characters to strip out of the rendered string before calculating its
         length, e.g. for stripping non-visible characters like color escape codes.
     """
+    if (not data) and (not header):
+        return ''
+
     if isinstance(strip, str):
         strip = re.compile(strip)
 
     justify = justify or str.ljust
 
     if not isinstance(justify, tuple):
-        justify = (justify,) * len(data[0])
+        justify = (justify,) * len((data or [expect(header)])[0])
 
     justify = cast('tuple[Callable[[str, int], str], ...]', justify)
 
     rendered: list[tuple[str, ...]] = [tuple(render(cell) for cell in row) for row in data]
     col_widths: list[int] = [
         max(map(len, (strip.sub('', cell) for cell in column) if strip else column))
-        for column in iter_columns(rendered)
+        for column in iter_columns(rendered or [expect(header)])
+        # Our earlier check guarantees that at least one of header or data has values, and if data is empty then
+        # rendered is empty, thus header isn't empty
     ]
     for n, width in enumerate(col_widths):
         if header:
@@ -551,22 +560,26 @@ def tabulate(  # noqa: C901
     table: list[str] = [vborder * table_width] if vborder else []
 
     if header:
-        table.append(
-            hsep.join(just(cell, width) for cell, width, just in zip(header, col_widths, justify, strict=True)),
-        )
+        table.append(hsep.join(
+            just(cell, width)
+            for cell, width, just in zip(header, col_widths, justify, strict=True)
+        ).rstrip(' '))
         if head_sep:
-            table.append(head_sep * table_width)
+            table.append((head_sep * table_width).rstrip(' '))
 
     for row in rendered:
-        table.append(hsep.join(just(cell, width) for cell, width, just in zip(row, col_widths, justify, strict=True)))
+        table.append(hsep.join(
+            just(cell, width)
+            for cell, width, just in zip(row, col_widths, justify, strict=True)
+        ).rstrip(' '))
         if vsep:
-            table.append(vsep * table_width)
+            table.append((vsep * table_width).rstrip(' '))
 
     if vsep:
         table.pop()
 
     if vborder:
-        table.append(vborder * table_width)
+        table.append((vborder * table_width).rstrip(' '))
 
     return '\n'.join(table)
 

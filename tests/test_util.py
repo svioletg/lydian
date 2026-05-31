@@ -165,6 +165,8 @@ def test_is_annotated() -> None:
     assert util.is_annotated(Annotated[str, 'Description'])
 
 def test_iter_columns() -> None:
+    assert list(util.iter_columns([])) == []
+
     table = [
         [1, 2, 3],
         [4, 5, 6],
@@ -261,6 +263,11 @@ def test_strftimestamp(
 @pytest.mark.parametrize(('data', 'kwargs', 'expected'),
     [
         ([], {}, ''),
+        ([], {'header': ('Letter', 'Number')},
+"""\
+Letter Number
+-------------
+"""),
         ([('a', 1), ('b.', 2), ('c..', 3)], {},
 """\
 a   1
@@ -278,7 +285,7 @@ c..    3
     ],
 )
 def test_tabulate(data: Sequence[tuple[object, ...]], kwargs: dict[str, Any], expected: str) -> None:
-    assert util.tabulate(data, **kwargs) == expected
+    assert util.tabulate(data, **kwargs) == expected.strip('\n')
 
 def test_wrap_paragraphs() -> None:
     text = 'Lorem ipsum\ndolor sit amet, consectetur adipiscing elit.'
