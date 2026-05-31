@@ -41,20 +41,20 @@ class YTDLLogHandler:
         if 'File is larger than max-filesize' in msg:
             raise FileSizeLimitError(msg.removeprefix('[download] '))
         if msg.startswith('[debug]'):
-            logger.debug('[YoutubeDL] ' + msg)
+            logger.opt(depth=2).debug('[YoutubeDL] ' + msg)
         else:
             self.info(msg)
 
     def info(self, msg: str) -> None:  # noqa: D102
         if YTDL_DOWNLOAD_PROGRESS_REGEX.search(msg):
             return
-        logger.info('[YoutubeDL] ' + msg)
+        logger.opt(depth=2).info('[YoutubeDL] ' + msg)
 
     def warning(self, msg: str) -> None:  # noqa: D102
-        logger.warning('[YoutubeDL] ' + msg)
+        logger.opt(depth=2).warning('[YoutubeDL] ' + msg)
 
     def error(self, msg: str) -> None:  # noqa: D102
-        logger.error('[YoutubeDL]', msg)
+        logger.opt(depth=2).error('[YoutubeDL]', msg)
 
 YTDL_FORMAT_OPTIONS: dict[str, Any] = {
     'logger': YTDLLogHandler(),
@@ -627,6 +627,8 @@ class VoiceCog(commands.Cog):
 
         :param exc: An exception raised during playback which caused the player to halt, if any.
         """
+        logger.debug('Player has stopped')
+
         self.now_playing = None
 
         if exc:
