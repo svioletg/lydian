@@ -4,6 +4,7 @@ import inspect
 import shlex
 from asyncio.tasks import Task
 from collections.abc import Callable
+from copy import copy
 from datetime import UTC, datetime
 from itertools import zip_longest
 from types import EllipsisType, NoneType
@@ -22,7 +23,7 @@ from rich.markup import escape
 
 from lydian import __version__
 from lydian.config import config
-from lydian.const import debug_context, screen, setup_logger
+from lydian.const import debug_context, debug_store, screen, setup_logger
 from lydian.perms import perms
 from lydian.util import expect, get_annotation, is_annotated, join_trailing, tabulate, wrap_paragraphs
 
@@ -415,6 +416,11 @@ class LydianConsole(BotConsole):
         self.bot = bot or AsyncMock(Bot)
         self.prompt_prefix = prompt
 
+        self.debug_read_shortcuts: dict[str, str] = {
+            '?': 'dbg.',
+            '$': 'store.',
+        }
+
     #region COMMANDS
 
     @command()
@@ -438,18 +444,46 @@ class LydianConsole(BotConsole):
         The expression will have access to Python's built-ins, the global "config" and "perms" objects, and a "dbg"
         dictionary which stores references to various things specifically for debugging or development usage.
 
-        For convenience, "?" can be used in place of "dbg." at the beginning of the expression, e.g. "?bot.user" is
-        parsed as "dbg.bot.user".
+        If the first character of the expression matches any of the following, it will be expanded to the corresponding
+        text before being evaluated:
+
+        - ``?`` -> ``dbg.``
+        - ``$`` -> ``store.``
 
         :param expr: The expression to evaluate.
         :param log: Whether to log this evaluation (as DEBUG-level) or just print it to the screen.
         """
         print_fn = logger.debug if log else screen.print
 
-        eval_globals: dict[str, Any] = {'config': config, 'perms': perms, 'dbg': debug_context}
+        eval_globals: dict[str, Any] = {
+            'config': config,
+            'perms': perms,
+            'dbg': debug_context,
+            'store': debug_store,
+        }
+
+        if expr == 'store':
+            if not debug_store:
+                print_fn('(empty)')
+            else:
+                print_fn(tabulate(
+                    [(k, f'[dim](ref)[/] {v[0]}' if v[1] == 'ref' else repr(v[0])) for k, v in debug_store.items()],
+                ))
+            return
+
         parsed_expr: str = expr
-        if parsed_expr[0] == '?':
-            parsed_expr = parsed_expr.replace('?', 'dbg.', count=1)
+        if expansion := self.debug_read_shortcuts.get(parsed_expr[0]):
+            parsed_expr = parsed_expr.replace(parsed_expr[0], expansion, count=1)
+
+        if parsed_expr.startswith('store.'):
+            store_key: str = parsed_expr.removeprefix('store.')
+            if store_key not in debug_store:
+                logger.error(f'store does not have key {store_key!r}')
+                return
+            val, typ = debug_store[store_key]
+            copied: bool = typ == 'copy'
+            print_fn(f'{'store' if copied else 'dbg'}.{val} == {(val if copied else debug_context[val])!r}')
+            return
 
         try:
             # Can't be ast.literal_eval, we explicitly need access to some outside variables
@@ -458,6 +492,24 @@ class LydianConsole(BotConsole):
         except Exception as e:  # noqa: BLE001
             # The full traceback for this case is usually unnecessary
             logger.error(f'{e.__class__.__name__}: {e}')
+
+    @command(enabled=config.debug, group='debug')
+    def debug_store(self, to_store: str, dest_key: str, /) -> None:
+        """Stores to ``dest_key`` either the value of a debug context key or the key itself.
+
+        In other words, with this command you can either store a copy of a debug value into the ``store`` dictionary
+        at ``dest_key``, or you can store the key itself to act as a shortcut for accessing the value, both of which
+        can then be later retrieved through ``debug read``. To do the latter, prefix ``to_store`` with an ampersand
+        (``&``)—this ampersand is only to indicate to this command that you want to store a shortcut, it will not be
+        needed when retrieving it via ``debug read``.
+
+        If the ``dest_key`` already exists in ``store`` (regardless if copy or shortcut), it will be replaced with the
+        new given value.
+        """
+        do_copy: bool = not to_store.startswith('&')
+        debug_store[dest_key] = stored = (copy(debug_context[to_store]), 'copy') if do_copy \
+            else (to_store.removeprefix('&'), 'ref')
+        screen.print(f'Stored {'copy of value' if do_copy else 'key shortcut'} {stored[0]!r} to store key {dest_key!r}')
 
     @staticmethod
     def task_status(task: Task) -> str:
@@ -534,4 +586,6 @@ bot_console = LydianConsole(None)
 
 if __name__ == '__main__':
     setup_logger(config.logging.level)
+    debug_context['a'] = 4
+    debug_context['b'] = [1, 2, 3]
     asyncio.run(bot_console.start_loop())
