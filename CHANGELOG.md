@@ -15,9 +15,16 @@ configured prefix accordingly.
 
 ## [Unreleased]
 
+### Overview
+
+- Lydian can now optionally check for new releases at startup, toggled with the `check_for_updates`
+  configuration key (or `LYDIAN_CHECK_UPDATES` environment variable)
+
 ### Added
 
+- Added config key `check_for_updates` (boolean)
 - Added console command `version`
+- Added module `update`
 - Added debug bot commands `-argstr` and `-argint`
 - Added bot commands `-repo` and `-issues`
 - Added command methods `cogs.debug.DebugCog.argstr()` and `cogs.debug.DebugCog.argint()`

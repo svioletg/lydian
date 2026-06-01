@@ -5,6 +5,8 @@ debug = false # env: LYDIAN_DEBUG
 # debug: Enables various commands and features intended for developers. See the
 #    README for a full description of what debug mode does:
 #    https://github.com/svioletg/lydian/blob/main/README.md
+check_for_updates = true # env: LYDIAN_CHECK_UPDATES
+# check_for_updates: Whether to check for new releases of Lydian at startup.
 max_duration = 0
 # max_duration: Maximum duration (in seconds) of media that can be played by the
 #    bot. Set to 0 for no limit.
