@@ -23,7 +23,7 @@ configured prefix accordingly.
 ### Added
 
 - Added config key `check_for_updates` (boolean)
-- Added console command `version`
+- Added console commands `updates`, `version`
 - Added module `update`
 - Added debug bot commands `-argstr` and `-argint`
 - Added bot commands `-repo` and `-issues`
