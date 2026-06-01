@@ -76,7 +76,7 @@ def check_for_updates(current: str | Version | None = None, *, output: bool = Tr
     releases = get_releases()
     newer_releases = tuple(takewhile(lambda i: Version(i['tag_name']) > current, releases))
     if not newer_releases:
-        print_fn(f'[ok]No releases since v{current}; you are up to date[/].')
+        print_fn(f'[ok]No releases since v{current}; you are up to date.[/]')
         return False
 
     latest = newer_releases[0]
