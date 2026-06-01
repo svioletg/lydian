@@ -17,12 +17,14 @@ configured prefix accordingly.
 
 ### Added
 
+- Added debug console command `debug store`
 - Added console command `version`
 - Added debug bot commands `-argstr` and `-argint`
 - Added bot commands `-repo` and `-issues`
 - Added command methods `cogs.debug.DebugCog.argstr()` and `cogs.debug.DebugCog.argint()`
 - Added command methods `cogs.general.GeneralCog.repo()` and `cogs.general.GeneralCog.issues()`
 - Added method `console.LydianConsole.version()`
+- Added method `console.LydianConsole._debug_evaluate_in_context()`
 - Added function `util.exc_str()`
 
 ### Changed
