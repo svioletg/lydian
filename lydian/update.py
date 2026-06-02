@@ -13,7 +13,6 @@ from typing import Any, ClassVar, Literal, Self
 import requests
 from packaging.version import Version
 from requests import Response
-from rich.markup import escape
 
 from lydian import __version__
 from lydian.const import GH_REPO, screen
@@ -102,6 +101,9 @@ def check_for_updates(current: str | Version | None = None, *, output: bool = Tr
         normal operation should always be left as ``None``, in which case :py:data:`lydian.__version__` is used.
     :param output: Whether to print out messages regarding the version status.
     :param timeout: The timeout in seconds for the GitHub API request.
+
+    :raises requests.exceptions.ConnectTimeout:
+        The GitHub API request timed out.
     """
     if current is None:
         current = Version(__version__)
@@ -114,7 +116,7 @@ def check_for_updates(current: str | Version | None = None, *, output: bool = Tr
     print_fn('Getting release information...')
 
     releases = get_releases(timeout=timeout)
-    newer_releases = tuple(takewhile(lambda i: Version(i['tag_name']) > current, releases))
+    newer_releases = tuple(takewhile(lambda r: Version(r['tag_name']) > current, releases))
     if not newer_releases:
         print_fn(f'[ok]No releases since v{current}; you are up to date.[/]')
         return False
@@ -122,20 +124,22 @@ def check_for_updates(current: str | Version | None = None, *, output: bool = Tr
     latest = newer_releases[0]
     latest_date: datetime = datetime.fromisoformat(latest['published_at'])
 
-    print_fn(f'[info]A new release is available: {latest['tag_name']}* (released {latest_date})[/]')
+    tag_str: str = latest['tag_name'] + ('*' if latest['prerelease'] else '')
+
+    print_fn(f'[info]A new release is available: {tag_str} (released {latest_date})[/]')
 
     if latest['prerelease']:
-        print_fn('    [warn]*This is a pre-release, and may not be stable enough for general use yet.[/]')
+        print_fn('    [warn]*This is a pre-release, and may not be stable enough for general use.[/]')
 
     for comment in ReleaseComment.from_body(latest['body']):
-        wrapped: str = textwrap.fill(
-            comment.content,
-            width=80,
-            subsequent_indent=f'{' ' * (len(comment.type) + 3)}    ',
-        )
-        print_fn(f'    [{comment.style}]{escape(f'[{comment.type.upper()}]')} {wrapped}[/]')
+        print_fn(textwrap.indent(comment.block(label='inline'), '    '))
 
-    print_fn(f'[info](You are {len(newer_releases)} releases behind.)[/]')
+    release_timeline_str: str = ', '.join([
+        f'[ok](latest) {latest['tag_name']}[/][dim]',
+        *(r['tag_name'] for r in newer_releases[1:]),
+    ])
+
+    print_fn(f'[info](You are {len(newer_releases)} release(s) behind: {release_timeline_str}[/])[/]')
     print_fn(f'Details: [bright_cyan]{latest['html_url']}[/]')
     print_fn(f'Update with pip: [bright_yellow]pip install git+{GH_REPO}.git[/]')
 
