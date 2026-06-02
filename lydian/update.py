@@ -85,19 +85,23 @@ class ReleaseComment:
 
         return f'[{self.style}]{wrapped}[/]'
 
-def get_releases() -> list[dict[str, Any]]:
-    """Returns a list of Lydian's GitHub releases."""
-    response: Response = requests.get(GH_REPO_API_ROOT + '/releases', timeout=10)
+def get_releases(*, timeout: int = 10) -> list[dict[str, Any]]:
+    """Returns a list of Lydian's GitHub releases.
+
+    :param timeout: The timeout in seconds for the GitHub API request.
+    """
+    response: Response = requests.get(GH_REPO_API_ROOT + '/releases', timeout=timeout)
     response.raise_for_status()
 
     return response.json()
 
-def check_for_updates(current: str | Version | None = None, *, output: bool = True) -> bool:
+def check_for_updates(current: str | Version | None = None, *, output: bool = True, timeout: int = 10) -> bool:
     """Checks for releases with versions newer than ``current``, returning ``True`` if they exist.
 
     :param current: The "current" version to compare against. This parameter is available for testing purposes, but in
         normal operation should always be left as ``None``, in which case :py:data:`lydian.__version__` is used.
     :param output: Whether to print out messages regarding the version status.
+    :param timeout: The timeout in seconds for the GitHub API request.
     """
     if current is None:
         current = Version(__version__)
@@ -109,7 +113,7 @@ def check_for_updates(current: str | Version | None = None, *, output: bool = Tr
     print_fn('Checking for updates...')
     print_fn('Getting release information...')
 
-    releases = get_releases()
+    releases = get_releases(timeout=timeout)
     newer_releases = tuple(takewhile(lambda i: Version(i['tag_name']) > current, releases))
     if not newer_releases:
         print_fn(f'[ok]No releases since v{current}; you are up to date.[/]')
