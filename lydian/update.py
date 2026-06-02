@@ -17,16 +17,17 @@ from rich.markup import escape
 
 from lydian import __version__
 from lydian.const import GH_REPO, screen
+from lydian.util import wrap_paragraphs
 
 GH_API_ROOT: str = 'https://api.github.com'
 GH_REPO_API_ROOT: str = GH_API_ROOT + '/repos/svioletg/lydian'
 
-@dataclass
+@dataclass(frozen=True)
 class ReleaseComment:
     """Dataclass used for specially-parsed comments from GitHub release markdown."""
 
     _regex: ClassVar[re.Pattern[str]] = re.compile(
-        r'<!-- (?P<type>summary|important|note|warning|security): (?P<content>.+?) -->',
+        r'<!-- (?P<type>summary|important|note|warning|security):\s*(?P<content>.+?)\s*-->',
         flags=re.DOTALL,
     )
     _markup_map: ClassVar[dict[str, str]] = {
@@ -48,6 +49,41 @@ class ReleaseComment:
     def from_body(cls, body: str) -> list[Self]:
         """Returns a list of ``ReleaseComment`` instances parsed from a release body."""
         return [cls(**m.groupdict()) for m in cls._regex.finditer(body)]  # ty:ignore[invalid-argument-type]
+
+    def block(self, *, width: int = 80, label: Literal['inline', 'block', 'auto'] = 'auto') -> str:
+        r"""Returns the comment content wrapped and marked up for printing.
+
+        :param width: How many columns to wrap the text at.
+        :param label: How the label (e.g. ``[SUMMARY]``) should be formatted. ``'inline'`` puts the label directly
+            before the content with a single space following it (``[SUMMARY] Text content...``). ``'block'`` places a
+            newline between the label and content (``[SUMMARY]\nText content...``). ``'auto'`` will use the ``'inline'``
+            style if it can fit in one line (dictated by ``width``), otherwise the ``'block'`` style is used; if the
+            content has any newlines in it already, ``'block'`` is used.
+        """
+        text: str = f'[{self.type.upper()}]\n{self.content}'
+
+        indent: str
+
+        if label == 'auto':
+            label = 'block' if ('\n' in self.content) or (len(text) > width) else 'inline'
+
+        match label:
+            case 'inline':
+                text = text.replace('\n', ' ', count=1)
+                indent = f'{' ' * (len(self.type) + 3)}'
+            case 'block':
+                indent = ''
+            case _:
+                raise ValueError(f"argument label expected one of 'inline', 'block', 'auto': {label!r}")
+
+        wrapped: str = '\n'.join(wrap_paragraphs(
+            text,
+            width=width,
+            subsequent_indent=indent, # +3 for the two square brackets and a space
+            indent_mode='single',
+        ))
+
+        return f'[{self.style}]{wrapped}[/]'
 
 def get_releases() -> list[dict[str, Any]]:
     """Returns a list of Lydian's GitHub releases."""
