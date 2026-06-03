@@ -582,7 +582,13 @@ class VoiceCog(commands.Cog):
                 # Make sure play_now is consumed so it doesn't try to queue on the next loop
                 play_now = None
 
+                if progress_msg:
+                    await progress_msg.edit(embed=embed_info('Getting media info...', item.url))
+                else:
+                    progress_msg = await ctx.send(embed=embed_info('Getting media info...', item.url))
+
                 if (not item.duration) or (item.thumbnail_url):
+                    logger.debug(f'Refreshing MediaItem info: {item}')
                     item.refresh()
 
                 # Check against the duration limit, if any
@@ -597,10 +603,7 @@ class VoiceCog(commands.Cog):
                         continue
 
                 logger.debug(f'Getting YTDLSource from: {item.url}')
-                if progress_msg:
-                    await progress_msg.edit(embed=embed_info('Downloading...', item.url))
-                else:
-                    progress_msg = await ctx.send(embed=embed_info('Downloading...', item.url))
+                await progress_msg.edit(embed=embed_info('Downloading...', item.url))
 
                 try:
                     source = await YTDLSource.from_url(item.url, stream=config.stream_media)

@@ -37,6 +37,7 @@ configured prefix accordingly.
   - `COLOR_OK` → `EMBED_COLOR_OK`
   - `COLOR_WARN` → `EMBED_COLOR_WARN`
   - `COLOR_ERROR` → `EMBED_COLOR_ERROR`
+- A status message is now sent when retrieving info for a track before downloading begins (#30)
 
 ### Fixed
 
