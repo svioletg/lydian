@@ -19,8 +19,8 @@ from lydian.cogs.util import alias_from_config, confirm, embed_error, embed_info
 from lydian.config import config
 from lydian.const import (
     COLOR_ESCAPE_REGEX,
-    COLOR_INFO,
     DL_DIR,
+    EMBED_COLOR_INFO,
     GH_ISSUES,
     QUEUE_MAX_PER_PAGE,
     YTDL_DOWNLOAD_PROGRESS_REGEX,
@@ -186,7 +186,7 @@ class MediaItem:
                 (f'Queued by {self.user.mention}\n' if self.user else '')
                 + f'{time_display}\n'
                 + self.url,
-            color=COLOR_INFO,
+            color=EMBED_COLOR_INFO,
         ).set_thumbnail(url=self.thumbnail_url)
 
     def refresh_copy(self, *, store_cache: bool = True) -> Self:
@@ -810,7 +810,7 @@ class VoiceCog(commands.Cog):
         queue_embed = discord.Embed(
             title='Queue' + (f' (Page {page}/{pages})' if pages > 1 else ''),
             description=embed_desc,
-            color=COLOR_INFO,
+            color=EMBED_COLOR_INFO,
         )
 
         if self.now_playing:
