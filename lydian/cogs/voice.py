@@ -546,9 +546,9 @@ class VoiceCog(commands.Cog):
         return Ok(items)
 
     async def advance_queue(self, ctx: commands.Context, *, play_now: MediaItem | None = None) -> int | None:  # noqa: C901
-        """Plays the next item in the queue, returning how many items had to be skipped if any.
+        """Plays the next item in the queue, returning how many items had to be skipped or ``None`` if locked.
 
-        Returns ``None`` without advancing if the queue is empty and ``play_now`` is ``None``.
+        If the queue is empty and ``play_now`` is ``None``, 0 is returned.
         If the bot is paused or playing audio, it will be stopped and the current media is skipped.
         If the queue item cannot be played (e.g. due to filesize or duration limit), the next item will be tried until
         either the player starts successfully or the queue is empty. The count of how many times this occurs is
