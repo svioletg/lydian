@@ -84,7 +84,7 @@ class ReleaseComment:
 
         return f'[{self.style}]{wrapped}[/]'
 
-def get_releases(*, timeout: int = 10) -> list[dict[str, Any]]:
+def get_releases(*, timeout: float = 10) -> list[dict[str, Any]]:
     """Returns a list of Lydian's GitHub releases.
 
     :param timeout: The timeout in seconds for the GitHub API request.
@@ -94,7 +94,7 @@ def get_releases(*, timeout: int = 10) -> list[dict[str, Any]]:
 
     return response.json()
 
-def check_for_updates(current: str | Version | None = None, *, output: bool = True, timeout: int = 10) -> bool:
+def check_for_updates(current: str | Version | None = None, *, output: bool = True, timeout: float = 10) -> bool:
     """Checks for releases with versions newer than ``current``, returning ``True`` if they exist.
 
     :param current: The "current" version to compare against. This parameter is available for testing purposes, but in
