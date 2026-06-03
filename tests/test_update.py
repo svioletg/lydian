@@ -1,4 +1,12 @@
-from lydian.update import ReleaseComment
+import json
+from typing import Any
+
+import pytest
+import responses
+from requests.exceptions import ConnectTimeout
+
+from lydian.const import TESTS_DIR
+from lydian.update import GH_REPO_API_ROOT, ReleaseComment, check_for_updates, get_releases
 
 SAMPLE_BODY: str = """<!-- summary: Release summary. -->
 <!-- important: This is crucial. -->
@@ -26,6 +34,38 @@ https://github.com/svioletg/lydian/compare/v0.1.0..v0.2.0
 
 - Nullam eu nulla ac metus pellentesque tempor ac tempor justo
 """
+
+RELEASES_JSON: list[dict[str, Any]] = json.loads(
+    (TESTS_DIR / 'data/github-api-lydian-releases.json').read_text('utf-8'),
+)
+
+RELEASES_RESPONSE: responses.Response = responses.Response(
+    'GET',
+    GH_REPO_API_ROOT + '/releases',
+    json=RELEASES_JSON,
+    status=200,
+)
+
+@responses.activate
+def test_get_releases() -> None:
+    responses.add(RELEASES_RESPONSE)
+
+    assert get_releases() == RELEASES_JSON
+
+def test_get_releases_timeout() -> None:
+    with pytest.raises(ConnectTimeout):
+        get_releases(timeout=0.001)
+
+@responses.activate
+def test_check_for_updates() -> None:
+    responses.add(RELEASES_RESPONSE)
+
+    assert check_for_updates('0.7.0', output=False) is False
+    assert check_for_updates('0.6.0', output=False) is True
+
+def test_check_for_updates_timeout() -> None:
+    with pytest.raises(ConnectTimeout):
+        check_for_updates(output=False, timeout=0.001)
 
 def test_release_comment() -> None:
     comment = ReleaseComment('summary', 'Summary content.')
