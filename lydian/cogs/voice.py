@@ -758,6 +758,7 @@ class VoiceCog(commands.Cog):
                 self.stopped_track = None
             else:
                 await ctx.send(embed=embed_info('Nothing to skip.'))
+                return
 
         await self.advance_queue(ctx)
 
