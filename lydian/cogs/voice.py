@@ -750,16 +750,18 @@ class VoiceCog(commands.Cog):
     @commands.command(aliases=[])
     async def skip(self, ctx: commands.Context) -> None:
         """Skips the currently playing media."""
-        voice = _assert_voice_client(ctx.voice_client)
+        to_skip: MediaItem | None = self.now_playing or self.stopped_track
 
-        if (not voice.is_paused()) and (not voice.is_playing()):
-            if self.stopped_track:
-                # Skip the stopped track
-                self.stopped_track = None
-            else:
-                await ctx.send(embed=embed_info('Nothing to skip.'))
-                return
+        if not to_skip:
+            await ctx.send(embed=embed_info('Nothing to skip.'))
+            return
 
+        self.stopped_track = None
+
+        await ctx.send(
+            embed=embed_info(f'{EmojiStr.SKIP} Skipping...', f'*{to_skip.title}*\n{to_skip.url}'),
+            delete_after=10,
+        )
         await self.advance_queue(ctx)
 
     @alias_from_config
