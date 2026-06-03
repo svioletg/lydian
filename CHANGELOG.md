@@ -20,9 +20,14 @@ configured prefix accordingly.
 - Added config key `bot_console` (bool)
 - Added console command `version`
 - Added debug bot commands `-argstr` and `-argint`
-- Added bot commands `-repo` and `-issues`
+- Added bot commands:
+  - `-issues`
+  - `-repo`
+  - `-shuffle`
+- Added attribute `cogs.voice.VoiceCog.shuffle`
 - Added command methods `cogs.debug.DebugCog.argstr()` and `cogs.debug.DebugCog.argint()`
 - Added command methods `cogs.general.GeneralCog.repo()` and `cogs.general.GeneralCog.issues()`
+- Added command method `cogs.voice.VoiceCog.toggle_shuffle()`
 - Added method `console.LydianConsole.version()`
 - Added function `util.exc_str()`
 

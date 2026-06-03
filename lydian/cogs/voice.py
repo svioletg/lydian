@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from datetime import timedelta
 from math import ceil
 from pathlib import Path
-from typing import Any, ClassVar, Self, cast, override
+from random import randint
+from typing import Any, ClassVar, Literal, Self, cast, override
 
 import discord
 import yt_dlp
@@ -306,6 +307,10 @@ class MediaQueue(UserList[MediaItem]):
         """Pops the item at the front of the list."""
         return self.pop(0)
 
+    def poprandom(self) -> MediaItem:
+        """Pops a random item in the list and returns it."""
+        return self.pop(randint(0, len(self) - 1))
+
 def _assert_discord_member(user: discord.User | discord.Member) -> discord.Member:
     """Returns a ``discord.User | discord.Member`` value casted to ``discord.Member``.
 
@@ -352,6 +357,8 @@ class VoiceCog(commands.Cog):
         For this purpose, the bot being paused still counts as playing media. The bot connecting to a voice channel
         without having been in one previously will also set this to ``False``.
         """
+        self.shuffle: bool = False
+        """If ``True``, a random item is pulled from the queue instead of the next one when advancing."""
 
         # Timers/counters
         self.time_inactive: int = 0
@@ -578,7 +585,7 @@ class VoiceCog(commands.Cog):
                 if (not self.queue) and (not play_now):
                     return 0
 
-                item = play_now or self.queue.popleft()
+                item = play_now or (self.queue.poprandom() if self.shuffle else self.queue.popleft())
                 # Make sure play_now is consumed so it doesn't try to queue on the next loop
                 play_now = None
 
@@ -683,7 +690,7 @@ class VoiceCog(commands.Cog):
         """Shows the currently playing track."""
         if self.now_playing:
             await ctx.send(embed=self.now_playing.embed(
-                f'{EmojiStr.PLAY} Playing: ',
+                f'{f'{EmojiStr.SHUFFLE} ' if self.shuffle else ''}{EmojiStr.PLAY} Playing: ',
                 timestamp=self.now_playing_timer.elapsed(),
             ))
         else:
@@ -785,6 +792,22 @@ class VoiceCog(commands.Cog):
         self.stop_player(voice)
 
     @alias_from_config
+    @commands.command('shuffle', aliases=[])
+    async def toggle_shuffle(self, ctx: commands.Context, state: Literal['on', 'off'] | None = None) -> None:
+        """Turns shuffle mode on or off, or shows whether shuffle is enabled if a state is not given.
+
+        When active, a random item is chosen from the existing media queue when a track finishes or is skipped.
+        """
+        if state is None:
+            await ctx.send(embed=embed_info(
+                f'Shuffle is currently {'enabled' if self.shuffle else 'disabled'}.',
+                'Use `shuffle on` or `shuffle off` to change this.',
+            ))
+            return
+        self.shuffle = state == 'on'
+        await ctx.send(embed=embed_info(f'{EmojiStr.SHUFFLE} Shuffle {'enabled' if self.shuffle else 'disabled'}.'))
+
+    @alias_from_config
     @commands.command('queue', aliases=[])
     async def show_queue(self, ctx: commands.Context, page: int = 1) -> None:
         """Shows the queue."""
@@ -812,6 +835,9 @@ class VoiceCog(commands.Cog):
             queue_slice = tuple(self.queue)[page_start:page_end]
             embed_desc = f'Showing items #{page_start + 1} to #{min(page_end, len(self.queue))}' \
                 + f' out of {len(self.queue)}'
+
+        if self.shuffle:
+            embed_desc += f'\n{EmojiStr.SHUFFLE} **Shuffle is enabled**'
 
         queue_embed = discord.Embed(
             title='Queue' + (f' (Page {page}/{pages})' if pages > 1 else ''),
