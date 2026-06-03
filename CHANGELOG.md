@@ -31,6 +31,11 @@ configured prefix accordingly.
 - Bot command `-hello` now accepts aliases
 - The discord.py exceptions `BadArgument` and `MissingRequiredArgument` are now properly handled
 - Logging methods in `cogs.voice.YTDLLogHandler` now log with `depth=2` for more accuracy
+- Renamed in `const`:
+  - `COLOR_INFO` → `EMBED_COLOR_INFO`
+  - `COLOR_OK` → `EMBED_COLOR_OK`
+  - `COLOR_WARN` → `EMBED_COLOR_WARN`
+  - `COLOR_ERROR` → `EMBED_COLOR_ERROR`
 
 ### Fixed
 
