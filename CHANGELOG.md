@@ -17,6 +17,7 @@ configured prefix accordingly.
 
 ### Added
 
+- Added config key `bot_console` (bool)
 - Added console command `version`
 - Added debug bot commands `-argstr` and `-argint`
 - Added bot commands `-repo` and `-issues`

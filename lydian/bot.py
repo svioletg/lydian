@@ -236,10 +236,12 @@ async def async_main() -> int:
     create_directories()
     clear_tmp_dir()
 
-    _, pending = await asyncio.wait(
-        (asyncio.create_task(thread_bot()), asyncio.create_task(thread_console())),
-        return_when=asyncio.FIRST_COMPLETED,
-    )
+    asyncio_tasks: list[asyncio.Task] = [asyncio.create_task(thread_bot())]
+
+    if config.bot_console:
+        asyncio_tasks.append(asyncio.create_task(thread_console()))
+
+    _, pending = await asyncio.wait(asyncio_tasks, return_when=asyncio.FIRST_COMPLETED)
 
     tasklist: list[tasks.Loop] = debug_context['tasklist']
 

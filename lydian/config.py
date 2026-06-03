@@ -166,6 +166,9 @@ class Config:
             + ' https://github.com/svioletg/lydian/blob/main/README.md',
         metadata={'env': 'DEBUG'},
     )
+    bot_console: bool = field(default=True,
+        doc="Enables Lydian's interactive console while running.",
+        metadata={'env': 'BOT_CONSOLE', 'converter': env_to_bool})
     command_aliases: dict[str, list[str]] = field(default_factory=_default_command_aliases)
     max_duration: int = field(default=0,
         doc='Maximum duration (in seconds) of media that can be played by the bot. Set to 0 for no limit.',
