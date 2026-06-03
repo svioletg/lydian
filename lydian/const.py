@@ -88,12 +88,13 @@ class EmojiStr(StrEnum):
     CANCEL  = emojize(':heavy_multiplication_x:', language='alias')
 
     # Media
-    PLAY  = emojize(':arrow_forward:', language='alias')
-    PAUSE = emojize(':pause_button:', language='alias')
-    STOP  = emojize(':stop_button:', language='alias')
-    SKIP  = emojize(':fast_forward:', language='alias')
-    IN    = emojize(':inbox_tray:', language='alias')
-    OUT   = emojize(':outbox_tray:', language='alias')
+    PLAY    = emojize(':arrow_forward:', language='alias')
+    PAUSE   = emojize(':pause_button:', language='alias')
+    STOP    = emojize(':stop_button:', language='alias')
+    SKIP    = emojize(':fast_forward:', language='alias')
+    IN      = emojize(':inbox_tray:', language='alias')
+    OUT     = emojize(':outbox_tray:', language='alias')
+    SHUFFLE = emojize(':twisted_rightwards_arrows:', language='alias')
 
 class LogLevel(IntEnum):  # noqa: D101
     TRACE   = 5

@@ -13,6 +13,14 @@ section.
 Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
 configured prefix accordingly.
 
+## [Unreleased]
+
+### Added
+
+- Added bot command `-shuffle`
+- Added attribute `cogs.voice.VoiceCog.shuffle`
+- Added command method `cogs.voice.VoiceCog.toggle_shuffle()`
+
 ## [0.7.0] - 2026-05-25
 
 ### Overview
