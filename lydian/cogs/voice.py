@@ -122,6 +122,9 @@ class MediaItem:
     user: discord.Member | None = None
     """The discord user who requested this item, if any."""
 
+    def __str__(self) -> str:  # noqa: D105
+        return f'MediaItem({self.title!r}, {self.url!r}, duration={self.duration!r})'
+
     @property
     def duration_str(self) -> str:
         """Return a formatted string of the duration, returning '?:??' if no duration is set."""
