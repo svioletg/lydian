@@ -1,4 +1,5 @@
 """Checks for TODO comments in all ``*.py`` files in a directory."""
+import itertools
 import re
 import sys
 from argparse import ArgumentParser
@@ -38,12 +39,10 @@ class Todo:  # noqa: D101
         """
         return '\n'.join(ln.strip() for ln in self.file.read_text('utf-8')[self.span[0]:self.span[1] + 1].splitlines())
 
-def find_todos(source_dir: str | Path, *, recursive: bool = False) -> list[Todo]:
-    """Searches all ``*.py`` files in a directory for ``# TODO`` lines, returning a list of ``Todo`` objects."""
-    source_dir = Path(source_dir)
-
+def find_todos(*paths: str | Path, recursive: bool = False) -> list[Todo]:
+    """Searches all ``*.py`` files in the given directories for TODO lines, returning a list of ``Todo`` objects."""
     todos: list[Todo] = []
-    for fp in (source_dir.rglob if recursive else source_dir.glob)('*.py'):
+    for fp in itertools.chain(*(Path(dp).rglob('*.py') if recursive else Path(dp).glob('*.py') for dp in paths)):
         ftext: str = fp.read_text('utf-8')
         for m in TODO_REGEX.finditer(ftext):
             header: str = m.group('header')
@@ -62,14 +61,14 @@ def find_todos(source_dir: str | Path, *, recursive: bool = False) -> list[Todo]
 
 def main() -> int:  # noqa: D103
     parser = ArgumentParser()
-    parser.add_argument('source_dir', type=Path, metavar='dir')
+    parser.add_argument('source_dirs', type=Path, metavar='dirs', nargs='+')
     parser.add_argument('--recursive', '-r', action='store_true')
     parser.add_argument('--author', type=str, help='Only prints TODOs from this author.')
     parser.add_argument('--no-author', action='store_true',
         help='Only prints TODOs with no author. Overrides --author.')
 
     args = parser.parse_args()
-    source_dir: Path = args.source_dir
+    source_dirs: list[Path] = args.source_dirs
     recursive: bool = args.recursive
     author: str | None = args.author
     no_author: bool = args.no_author
@@ -81,7 +80,7 @@ def main() -> int:  # noqa: D103
             return False
         return True
 
-    todos: list[Todo] = [t for t in find_todos(source_dir, recursive=recursive) if _filter(t)]
+    todos: list[Todo] = [t for t in find_todos(*source_dirs, recursive=recursive) if _filter(t)]
 
     if todos:
         for todo in todos:

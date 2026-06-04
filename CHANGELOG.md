@@ -43,6 +43,9 @@ configured prefix accordingly.
   - `COLOR_WARN` → `EMBED_COLOR_WARN`
   - `COLOR_ERROR` → `EMBED_COLOR_ERROR`
 - A status message is now sent when retrieving info for a track before downloading begins (#30)
+- Tool `todos` now accepts multiple directories to search
+- `tools.todos.find_todos()` now takes a variable positional argument `paths` instead of the single
+  positional argument `source_dir`, still `str | Path`
 
 ### Fixed
 
