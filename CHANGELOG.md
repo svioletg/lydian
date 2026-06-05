@@ -10,6 +10,11 @@ Changelog* to more briefly describe end-user changes, while the rest of the chan
 describes internal changes. Backwards-incompatible changes will be listed at the top of the overview
 section.
 
+Module names omit the leading `lydian.` for the sake of brevity, so if a changelog references
+`cogs.voice.VoiceCog`, the fully qualified path would be `lydian.cogs.voice.VoiceCog`. The two
+exceptions to this are the non-`lydian` modules `tools` and `tests`, which use their fully qualified
+paths. `lydian` does not contain any modules named `tools` or `tests`, to avoid confusion.
+
 Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
 configured prefix accordingly.
 
@@ -29,6 +34,9 @@ configured prefix accordingly.
 - Added command methods `cogs.general.GeneralCog.repo()` and `cogs.general.GeneralCog.issues()`
 - Added command method `cogs.voice.VoiceCog.toggle_shuffle()`
 - Added method `console.LydianConsole.version()`
+- Added classmethod `tools.todos.Todo.parse_todos()`
+  - Parses `Todo` objects directly from a string without needing file paths
+- Added method `tools.todos.Todo.with_file()`
 - Added function `util.exc_str()`
 
 ### Changed
@@ -44,8 +52,12 @@ configured prefix accordingly.
   - `COLOR_ERROR` → `EMBED_COLOR_ERROR`
 - A status message is now sent when retrieving info for a track before downloading begins (#30)
 - Tool `todos` now accepts multiple directories to search
-- `tools.todos.find_todos()` now takes a variable positional argument `paths` instead of the single
-  positional argument `source_dir`, still `str | Path`
+- In `tools.todos`:
+  - `Todo.content` is now an attribute and not a method
+  - `Todo.header` is now a cached property and no longer accepted as a constructor argument
+  - `Todo.file` is now an optional attribute
+  - `find_todos()` now takes a variable positional argument `paths` instead of the single
+    positional argument `source_dir`, still `str | Path`
 
 ### Fixed
 
