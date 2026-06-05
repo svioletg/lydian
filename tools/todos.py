@@ -4,7 +4,9 @@ import re
 import sys
 from argparse import ArgumentParser
 from dataclasses import dataclass, field
+from functools import cached_property
 from pathlib import Path
+from textwrap import dedent
 from typing import Self
 
 from lydian.const import GH_ISSUES, screen
@@ -23,8 +25,6 @@ DEFAULT_ISSUE_LINK_TMPL: str = GH_ISSUES + '/{}'
 
 @dataclass
 class Todo:  # noqa: D101
-    header: str
-    """The first line of this TODO."""
     content: str
     span: tuple[int, int]
     """The start and end index of the original string content this TODO covers."""
@@ -33,17 +33,23 @@ class Todo:  # noqa: D101
     issues: list[str] = field(default_factory=list)
     """URLs to any referenced issues in the TODO."""
 
+    def __post_init__(self) -> None:  # noqa: D105
+        self.content = dedent(self.content)
+
+    @cached_property
+    def header(self) -> str:
+        """The first line of ``content``."""
+        return self.content.split('\n', maxsplit=1)[0]
+
     @classmethod
     def parse_todos(cls, content: str) -> list[Self]:
         """Parses ``Todo`` objects from ``content``."""
         todos: list[Self] = []
         for m in TODO_REGEX.finditer(content):
-            header: str = m.group('header')
             author: str | None = m.group('author')
             span = m.span()
             span = (span[0] + len(m.group(0).split('#')[0]), span[1])
             todos.append(cls(
-                header,
                 m.group(0),
                 span,
                 author=author,
