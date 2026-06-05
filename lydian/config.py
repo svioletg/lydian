@@ -169,13 +169,13 @@ class Config:
     )
     check_for_updates: bool = field(default=True,
         doc='Whether to check for new releases of Lydian at startup.',
-        metadata={'env': 'CHECK_UPDATES', 'converter_env': env_to_bool})
+        metadata={'env': 'CHECK_UPDATES'})
     check_for_stable_only: bool = field(default=True,
         doc='Whether to exclude pre-releases when checking for updates.',
-        metadata={'env': 'CHECK_STABLE_ONLY', 'converter_env': env_to_bool})
+        metadata={'env': 'CHECK_STABLE_ONLY'})
     bot_console: bool = field(default=True,
         doc="Enables Lydian's interactive console while running.",
-        metadata={'env': 'BOT_CONSOLE', 'converter_env': env_to_bool})
+        metadata={'env': 'BOT_CONSOLE'})
     command_aliases: dict[str, list[str]] = field(default_factory=_default_command_aliases)
     max_duration: int = field(default=0,
         doc='Maximum duration (in seconds) of media that can be played by the bot. Set to 0 for no limit.',
