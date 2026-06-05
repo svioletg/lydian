@@ -99,11 +99,18 @@ def get_releases(*, timeout: float = 10) -> list[dict[str, Any]]:
 
     return response.json()
 
-def check_for_updates(current: str | Version | None = None, *, output: bool = True, timeout: float = 10) -> bool:
+def check_for_updates(
+        current: str | Version | None = None,
+        *,
+        stable: bool = False,
+        output: bool = True,
+        timeout: float = 10,
+    ) -> bool:
     """Checks for releases with versions newer than ``current``, returning ``True`` if they exist.
 
     :param current: The "current" version to compare against. This parameter is available for testing purposes, but in
         normal operation should always be left as ``None``, in which case :py:data:`lydian.__version__` is used.
+    :param stable: Whether to exclude pre-releases from the check.
     :param output: Whether to print out messages regarding the version status.
     :param timeout: The timeout in seconds for the GitHub API request.
 
@@ -123,9 +130,13 @@ def check_for_updates(current: str | Version | None = None, *, output: bool = Tr
     print_fn('Getting release information...')
 
     releases = get_releases(timeout=timeout)
-    newer_releases = tuple(takewhile(lambda r: Version(r['tag_name']) > current, releases))
+    newer_releases = takewhile(lambda r: Version(r['tag_name']) > current, releases)
+    if stable:
+        newer_releases = filter(lambda r: not r['prerelease'], newer_releases)
+    newer_releases = tuple(newer_releases)
+
     if not newer_releases:
-        print_fn(f'[ok]No releases since v{current}; you are up to date.[/]')
+        print_fn(f'[ok]No {'stable ' if stable else ' '}releases since v{current}; you are up to date.[/]')
         return False
 
     latest = newer_releases[0]
@@ -136,7 +147,7 @@ def check_for_updates(current: str | Version | None = None, *, output: bool = Tr
     print_fn(f'[info]A new release is available: {tag_str} (released {latest_date})[/]')
 
     if latest['prerelease']:
-        print_fn('    [warn]*This is a pre-release, and may not be stable enough for general use.[/]')
+        print_fn('    [warn]*This is a pre-release; it may be unstable or have unexpected bugs.[/]')
 
     for comment in ReleaseComment.from_body(latest['body']):
         print_fn(textwrap.indent(comment.block(label='inline'), '    '))
