@@ -23,6 +23,7 @@ configured prefix accordingly.
 ### Overview
 
 > **Breaking changes**
+>
 > - Some TOML configuration keys are now properly nullable, using the `'n/a'` value to indicate
 >   such.
 >   - Config keys `max_duration`, `media_dir_warn_threshold`, `inactivity_timeout`, and
@@ -36,6 +37,7 @@ configured prefix accordingly.
 - The media queue now has a shuffle mode, use `-shuffle <on|off>` to enable or disable it.
 - Lydian now includes exception arguments in "unexpected error" messages.
   - Full tracebacks are still only available in Lydian's logs.
+- A temporary (deletes after 10 seconds) message is now sent when skipping a track
 
 ### Added
 
@@ -96,7 +98,8 @@ configured prefix accordingly.
 
 ### Overview
 
-> [!IMPORTANT] Breaking changes
+> **Breaking changes**
+>
 > - TOML configuration keys now use underscores (`_`) instead of hyphens (`-`)
 > - Config key `log_level` under `logging` is now `level`
 
