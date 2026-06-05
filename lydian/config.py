@@ -89,8 +89,18 @@ class ConfigFieldMeta[T](TypedDict):
     to be set as well, which in this case should take a ``str`` and return the expected value.
     """
     converter: Callable[[object], object]
-    """A function which takes the value parsed from TOML or environment variable string value and returns the field's
+    """A function which takes the value parsed from TOML or an environment variable string value and returns the field's
     type."""
+    converter_env: Callable[[str], object]
+    """A converter function called when parsing an environment variable string value.
+
+    Defaults to ``converter`` if not given.
+    """
+    converter_toml: Callable[[object], object]
+    """A converter function called when parsing a TOML value.
+
+    Defaults to ``converter`` if not given.
+    """
     validators: Iterable[Callable[[T], Result[T, str]]]
     """An iterable of functions which take the field's type (after being parsed with ``converter``) and return ``Ok``
     with the passed value if valid, or ``Err`` with a message string."""
@@ -147,16 +157,7 @@ class Config:
     """Dataclass which handles project-wide configuration and can save or load values via TOML.
 
     The ``doc`` value of a field, if not empty, will be used as a TOML comment preceding the key.
-
-    A field's ``metadata`` can optionally specify any of these keys:
-
-    - ``converter``: A function which takes the value parsed from TOML and returns the field's type, allowing for things
-        like filesize fields taking strings (e.g. "10 MB") and converting them to an ``int`` of bytes.
-    - ``env``: Environment variable name (without the ``LYDIAN_`` prefix) corresponding to this field. Config fields
-        can only be set by the environment when this key is present. Setting this key will require ``parser`` to be set
-        as well, which in this case should take a ``str`` and return the expected value.
-    - ``validators``: A function or an iterable of functions which take the field's type (after being parsed with
-        ``converter``) and return ``Ok`` with the passed value if valid, or ``Err`` with a message string.
+    See :py:class:`ConfigFieldMeta` for details on how a field's ``metadata`` is used.
     """
 
     prefix: str = '-'
@@ -168,13 +169,13 @@ class Config:
     )
     check_for_updates: bool = field(default=True,
         doc='Whether to check for new releases of Lydian at startup.',
-        metadata={'env': 'CHECK_UPDATES', 'converter': env_to_bool})
+        metadata={'env': 'CHECK_UPDATES', 'converter_env': env_to_bool})
     check_for_stable_only: bool = field(default=True,
         doc='Whether to exclude pre-releases when checking for updates.',
-        metadata={'env': 'CHECK_STABLE_ONLY', 'converter': env_to_bool})
+        metadata={'env': 'CHECK_STABLE_ONLY', 'converter_env': env_to_bool})
     bot_console: bool = field(default=True,
         doc="Enables Lydian's interactive console while running.",
-        metadata={'env': 'BOT_CONSOLE', 'converter': env_to_bool})
+        metadata={'env': 'BOT_CONSOLE', 'converter_env': env_to_bool})
     command_aliases: dict[str, list[str]] = field(default_factory=_default_command_aliases)
     max_duration: int = field(default=0,
         doc='Maximum duration (in seconds) of media that can be played by the bot. Set to 0 for no limit.',
@@ -312,7 +313,7 @@ class Config:
                 continue
 
             converter: Callable[[str], Any] | None
-            if converter := fld.metadata.get('converter'):
+            if converter := fld.metadata.get('converter_env', fld.metadata.get('converter')):
                 if not callable(converter):
                     raise TypeError(f'Config field "{name}" parser must be callable: {converter!r}')
             elif fld.type is bool:
@@ -349,7 +350,7 @@ class Config:
 
         # Parse
         t_origin = get_origin(typ) or typ
-        parsed = fld.metadata.get('converter', lambda x: x)(value)
+        parsed = fld.metadata.get('converter_toml', fld.metadata.get('converter', lambda x: x))(value)
         if (t_origin is Literal):
             if parsed not in t_args:
                 raise ValueError(f'Invalid value for Literal[{', '.join(repr(i) for i in t_args)}] type: {value!r}')

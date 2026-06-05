@@ -41,6 +41,7 @@ configured prefix accordingly.
   - `-repo`
   - `-shuffle`
 - Added attribute `cogs.voice.VoiceCog.shuffle`
+- Added attributes `converter_env` and `converter_toml` to `config.ConfigFieldMeta`
 - Added command methods `cogs.debug.DebugCog.argstr()` and `cogs.debug.DebugCog.argint()`
 - Added command methods `cogs.general.GeneralCog.repo()` and `cogs.general.GeneralCog.issues()`
 - Added command method `cogs.voice.VoiceCog.toggle_shuffle()`
