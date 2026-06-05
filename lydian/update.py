@@ -88,6 +88,11 @@ def get_releases(*, timeout: float = 10) -> list[dict[str, Any]]:
     """Returns a list of Lydian's GitHub releases.
 
     :param timeout: The timeout in seconds for the GitHub API request.
+
+    :raises requests.exceptions.ConnectTimeout:
+        The GitHub API request timed out.
+    :raises requests.exceptions.HTTPError:
+        The GitHub API request returned a non-200 status.
     """
     response: Response = requests.get(GH_REPO_API_ROOT + '/releases', timeout=timeout)
     response.raise_for_status()
@@ -104,6 +109,8 @@ def check_for_updates(current: str | Version | None = None, *, output: bool = Tr
 
     :raises requests.exceptions.ConnectTimeout:
         The GitHub API request timed out.
+    :raises requests.exceptions.HTTPError:
+        The GitHub API request returned a non-200 status.
     """
     if current is None:
         current = Version(__version__)
