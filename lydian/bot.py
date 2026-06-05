@@ -224,7 +224,7 @@ async def async_main() -> int:
     else:
         logger.info("Log times are set to the system's local time")
 
-    if (config.media_dir_warn_threshold > -1) \
+    if (config.media_dir_warn_threshold is not None) \
         and (media_size_total := dirsize(DL_DIR)) > config.media_dir_warn_threshold:
         logger.warning(f'Media directory is taking up {media_size_total} bytes, exceeding the threshold of'
         + f' {config.media_dir_warn_threshold}')
