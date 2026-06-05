@@ -172,6 +172,23 @@ class FromStr:
         flags=re.IGNORECASE,
     )
 
+    @staticmethod
+    def to_bool(s: str) -> bool:
+        """Returns a string value parsed to ``bool``, case-insensitive.
+
+        - ``False``: ``'0'``, ``'false'``
+        - ``True``: ``'1'``, ``'true'``
+
+        :raises ValueError:
+            ``s`` is not one of the valid options.
+        """
+        s = s.strip().lower()
+        if s in ['0', 'false']:
+            return False
+        if s in ['1', 'true']:
+            return True
+        raise ValueError(f"Expected 0, 1, 'false', or 'true' for boolean environment variable: {s!r}")
+
     @classmethod
     def filesize(cls, value: str | int) -> int:
         """Parses a filesize string into an ``int`` representing bytes, or returns the value if given ``int``.

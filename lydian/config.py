@@ -47,19 +47,6 @@ def _toml_encoder(obj: object) -> TOMLItem:
 
 tm.register_encoder(_toml_encoder)
 
-def env_to_bool(s: str) -> bool:
-    """Returns an environment variable value parsed to a ``bool``.
-
-    - False: ``0``, ``'false'`` (any case)
-    - True: ``1``, ``'true'`` (any case)
-    """
-    s = s.strip().lower()
-    if s in ['0', 'false']:
-        return False
-    if s in ['1', 'true']:
-        return True
-    raise ValueError(f"Expected 0, 1, 'false', or 'true' for boolean environment variable: {s!r}")
-
 def _default_command_aliases() -> dict[str, list[str]]:
     return {
         'help': ['h'],
@@ -317,7 +304,7 @@ class Config:
                 if not callable(converter):
                     raise TypeError(f'Config field "{name}" parser must be callable: {converter!r}')
             elif fld.type is bool:
-                converter = env_to_bool
+                converter = FromStr.to_bool
             else:
                 converter = cast('type', fld.type)
 
