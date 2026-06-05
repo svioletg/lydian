@@ -346,7 +346,7 @@ class Config:
 
         # Parse
         if (t_origin := get_origin(typ) or typ) is Union:
-            if (len(t_args) != 2) or (t_args[1] is not NoneType):  # noqa: PLR2004
+            if not ((len(t_args) == 2) and (t_args[1] is NoneType)):  # noqa: PLR2004
                 raise TypeError(f'Union types are only supported for config fields if the union is T | None: {typ!r}')
             if value == TOML_NONE:
                 return None
