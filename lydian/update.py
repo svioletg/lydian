@@ -167,7 +167,7 @@ def check_for_updates(
 def main() -> int:
     """Checks if a release of Lydian is available with a newer version, returning 1 if so, otherwise 0."""
     screen.print(f'You are running Lydian v{__version__}.')
-    return int(check_for_updates('0.1.0', stable=config.check_for_stable_only))
+    return int(check_for_updates(stable=config.check_for_stable_only))
 
 if __name__ == '__main__':
     sys.exit(main())
