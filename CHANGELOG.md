@@ -22,6 +22,12 @@ configured prefix accordingly.
 
 ### Overview
 
+> **Breaking changes**
+> - Some TOML configuration keys are now properly nullable, using the `'n/a'` value to indicate
+>   such.
+>   - Config keys `max_duration`, `media_dir_warn_threshold`, `inactivity_timeout`, and
+>     `lonely_timeout` now use `'n/a'` instead of `-1` or `0` to indicate they should be disabled
+
 - Lydian can now optionally check for new releases at startup, toggled with the `check_for_updates`
   configuration key (or `LYDIAN_CHECK_UPDATES` environment variable).
   - You can check for updates manually by running `lydian-update`.
