@@ -12,7 +12,7 @@ from lydian.util import expect, pos_to_linepos
 
 PROJECT_DIR: Path = Path('lydian').absolute()
 TODO_REGEX: re.Pattern[str] = re.compile(
-    r'^ *(?P<header># TODO\((?P<author>.+?)\):.*)$(?:\n\s*#.*$)*',
+    r'^ *(?P<header># TODO(?:\((?P<author>.+?)\))?:.*)$(?:\n *#.*$)*',
     flags=re.MULTILINE,
 )
 ISSUE_REGEX: re.Pattern[str] = re.compile(
