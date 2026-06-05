@@ -190,7 +190,7 @@ class FromStr:
         raise ValueError(f"Expected 0, 1, 'false', or 'true' for boolean environment variable: {s!r}")
 
     @classmethod
-    def filesize(cls, value: str | int) -> int:
+    def to_filesize(cls, value: str | int) -> int:
         """Parses a filesize string into an ``int`` representing bytes, or returns the value if given ``int``.
 
         The calculated bytes will be floored to ``int``.

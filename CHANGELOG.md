@@ -70,7 +70,8 @@ configured prefix accordingly.
   - `Todo.file` is now an optional attribute
   - `find_todos()` now takes a variable positional argument `paths` instead of the single
     positional argument `source_dir`, still `str | Path`
-- Moved `config.env_to_bool` to `util.FromStr.to_bool`
+- Moved function `config.env_to_bool()` to `util.FromStr.to_bool()`
+- Renamed classmethod `util.FromStr.filesize()` to `util.FromStr.to_filesize()`
 
 ### Fixed
 

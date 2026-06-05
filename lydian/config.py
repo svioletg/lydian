@@ -173,7 +173,7 @@ class Config:
     max_filesize: int = field(default=20_000_000,
         doc='Maximum filesize in bytes for media that can be downloaded by the bot.'
             + ' Will have no effect when streaming media (stream-media = true).',
-        metadata={'converter': FromStr.filesize, 'validators': [_validate_positive]},
+        metadata={'converter': FromStr.to_filesize, 'validators': [_validate_positive]},
     )
     max_playlist_length: int = field(default=20,
         doc='Maximum number of items that can be added from a single playlist link.',
@@ -186,7 +186,7 @@ class Config:
     media_dir_warn_threshold: int = field(default=100_000_000,
         doc='Total size in bytes that downloaded media can take up before a warning is emitted at bot'
             + ' startup. Set to -1 to disable the warning entirely.',
-        metadata={'converter': FromStr.filesize, 'validators': [_validator_min(-1)]},
+        metadata={'converter': FromStr.to_filesize, 'validators': [_validator_min(-1)]},
     )
     stream_media: bool = field(default=True,
         doc='Whether to stream media instead of downloading it to disk and playing the file.',
