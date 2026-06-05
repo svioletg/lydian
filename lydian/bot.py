@@ -38,6 +38,7 @@ from lydian.const import (
 )
 from lydian.errors import AbortCommand
 from lydian.perms import PERMISSIONS_DEFAULT, perms
+from lydian.update import check_for_updates
 from lydian.util import dirsize, exc_str, get_background_tasks, get_leaves
 
 load_dotenv('.env')
@@ -227,6 +228,11 @@ async def async_main() -> int:
         and (media_size_total := dirsize(DL_DIR)) > config.media_dir_warn_threshold:
         logger.warning(f'Media directory is taking up {media_size_total} bytes, exceeding the threshold of'
         + f' {config.media_dir_warn_threshold}')
+
+    if config.check_for_updates:
+        screen.print('-' * 20)
+        check_for_updates()
+        screen.print('-' * 20)
 
     logger.info('Starting...')
 

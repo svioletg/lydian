@@ -166,6 +166,12 @@ class Config:
             + ' https://github.com/svioletg/lydian/blob/main/README.md',
         metadata={'env': 'DEBUG'},
     )
+    check_for_updates: bool = field(default=True,
+        doc='Whether to check for new releases of Lydian at startup.',
+        metadata={'env': 'CHECK_UPDATES', 'converter': env_to_bool})
+    check_for_stable_only: bool = field(default=True,
+        doc='Whether to exclude pre-releases when checking for updates.',
+        metadata={'env': 'CHECK_STABLE_ONLY', 'converter': env_to_bool})
     bot_console: bool = field(default=True,
         doc="Enables Lydian's interactive console while running.",
         metadata={'env': 'BOT_CONSOLE', 'converter': env_to_bool})
