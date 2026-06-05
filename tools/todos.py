@@ -5,9 +5,10 @@ import sys
 from argparse import ArgumentParser
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Self
 
 from lydian.const import GH_ISSUES, screen
-from lydian.util import pos_to_linepos
+from lydian.util import expect, pos_to_linepos
 
 PROJECT_DIR: Path = Path('lydian').absolute()
 TODO_REGEX: re.Pattern[str] = re.compile(
@@ -24,39 +25,47 @@ DEFAULT_ISSUE_LINK_TMPL: str = GH_ISSUES + '/{}'
 class Todo:  # noqa: D101
     header: str
     """The first line of this TODO."""
-    file: Path
+    content: str
     span: tuple[int, int]
-    """The start and end index of file content this TODO covers."""
+    """The start and end index of the original string content this TODO covers."""
+    file: Path | None = None
     author: str | None = None
     issues: list[str] = field(default_factory=list)
     """URLs to any referenced issues in the TODO."""
 
-    def content(self) -> str:
-        """Returns the full content of this TODO.
-
-        This method will re-read the content from ``file`` when called.
-        The returned content will include the leading ``#`` on each line, but surrounding whitespace is stripped.
-        """
-        return '\n'.join(ln.strip() for ln in self.file.read_text('utf-8')[self.span[0]:self.span[1] + 1].splitlines())
-
-def find_todos(*paths: str | Path, recursive: bool = False) -> list[Todo]:
-    """Searches all ``*.py`` files in the given directories for TODO lines, returning a list of ``Todo`` objects."""
-    todos: list[Todo] = []
-    for fp in itertools.chain(*(Path(dp).rglob('*.py') if recursive else Path(dp).glob('*.py') for dp in paths)):
-        ftext: str = fp.read_text('utf-8')
-        for m in TODO_REGEX.finditer(ftext):
+    @classmethod
+    def parse_todos(cls, content: str) -> list[Self]:
+        """Parses ``Todo`` objects from ``content``."""
+        todos: list[Self] = []
+        for m in TODO_REGEX.finditer(content):
             header: str = m.group('header')
             author: str | None = m.group('author')
             span = m.span()
             span = (span[0] + len(m.group(0).split('#')[0]), span[1])
-            todos.append(Todo(
+            todos.append(cls(
                 header,
-                fp,
+                m.group(0),
                 span,
                 author=author,
                 issues=[im.group(0) for im in ISSUE_REGEX.finditer(m.group(0))] \
                     + [DEFAULT_ISSUE_LINK_TMPL.format(s.lstrip('0')) for s in re.findall(r'#(\d+)', m.group(0))],
             ))
+
+        return todos
+
+    def with_file(self, file: Path) -> Self:
+        """Sets this instance's ``file`` attribute and returns the instance."""
+        self.file = file
+
+        return self
+
+def find_todos(*paths: str | Path, recursive: bool = False) -> list[Todo]:
+    """Searches all ``*.py`` files in the given directories for TODO lines, returning a list of ``Todo`` objects."""
+    todos: list[Todo] = []
+    for fp in itertools.chain(*(Path(dp).rglob('*.py') if recursive else Path(dp).glob('*.py') for dp in paths)):
+        content: str = fp.read_text('utf-8')
+        todos.extend(todo.with_file(fp) for todo in Todo.parse_todos(content))
+
     return todos
 
 def main() -> int:  # noqa: D103
@@ -84,8 +93,8 @@ def main() -> int:  # noqa: D103
 
     if todos:
         for todo in todos:
-            linepos: tuple[int, int] = pos_to_linepos(todo.file.read_text('utf-8'), todo.span[0])
-            screen.print(f'TODO in [bold]{todo.file}:{linepos[0] + 1}:{linepos[1] + 1}[/]: [cyan]{todo.content()}[/]')
+            linepos: tuple[int, int] = pos_to_linepos(expect(todo.file).read_text('utf-8'), todo.span[0])
+            screen.print(f'TODO in [bold]{todo.file}:{linepos[0] + 1}:{linepos[1] + 1}[/]: [cyan]{todo.content}[/]')
         screen.print(f'Found {len(todos)} TODOs.')
         return 1
 
