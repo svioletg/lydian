@@ -23,7 +23,13 @@ configured prefix accordingly.
 ### Overview
 
 - Lydian can now optionally check for new releases at startup, toggled with the `check_for_updates`
-  configuration key (or `LYDIAN_CHECK_UPDATES` environment variable)
+  configuration key (or `LYDIAN_CHECK_UPDATES` environment variable).
+  - You can check for updates manually by running `lydian-update`.
+  - By default, pre-releases are skipped during this check. Set the `check_for_stable_only` config
+    key to `false` to include pre-releases.
+- The media queue now has a shuffle mode, use `-shuffle <on|off>` to enable or disable it.
+- Lydian now includes exception arguments in "unexpected error" messages.
+  - Full tracebacks are still only available in Lydian's logs.
 
 ### Added
 
@@ -31,7 +37,7 @@ configured prefix accordingly.
   - env: `LYDIAN_BOT_CONSOLE`
 - Added config key `check_for_updates` (boolean)
   - env: `LYDIAN_CHECK_UPDATES`
-- Added config key `check_for_prerelease` (boolean)
+- Added config key `check_for_stable_only` (boolean)
   - env: `LYDIAN_CHECK_STABLE_ONLY`
 - Added console commands `version` and `updates`
 - Added module `update`
@@ -72,10 +78,13 @@ configured prefix accordingly.
     positional argument `source_dir`, still `str | Path`
 - Moved function `config.env_to_bool()` to `util.FromStr.to_bool()`
 - Renamed classmethod `util.FromStr.filesize()` to `util.FromStr.to_filesize()`
+- Unexpected errors caught in `bot.on_command_error` now have their exception args sent along with
+  the bot's message instead of only saying to check the logs
 
 ### Fixed
 
 - Fixed `util.tabulate()` raising an error for empty data (#32)
+- Fixed `todos` dev tool skipping `# TODO` lines with no author (#33)
 
 ## [0.7.0] - 2026-05-25
 
