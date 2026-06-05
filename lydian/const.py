@@ -220,6 +220,7 @@ def setup_rich_console() -> Console:
     return Console(
         highlighter=ConsoleHighlighter(),
         theme=theme,
+        emoji=False,
     )
 
 screen: Console = setup_rich_console()
