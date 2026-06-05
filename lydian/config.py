@@ -169,6 +169,9 @@ class Config:
     check_for_updates: bool = field(default=True,
         doc='Whether to check for new releases of Lydian at startup.',
         metadata={'env': 'CHECK_UPDATES', 'converter': env_to_bool})
+    check_for_stable_only: bool = field(default=True,
+        doc='Whether to exclude pre-releases when checking for updates.',
+        metadata={'env': 'CHECK_STABLE_ONLY', 'converter': env_to_bool})
     command_aliases: dict[str, list[str]] = field(default_factory=_default_command_aliases)
     max_duration: int = field(default=0,
         doc='Maximum duration (in seconds) of media that can be played by the bot. Set to 0 for no limit.',

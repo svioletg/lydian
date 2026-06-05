@@ -7,6 +7,9 @@ debug = false # env: LYDIAN_DEBUG
 #    https://github.com/svioletg/lydian/blob/main/README.md
 check_for_updates = true # env: LYDIAN_CHECK_UPDATES
 # check_for_updates: Whether to check for new releases of Lydian at startup.
+check_for_prerelease = false # env: LYDIAN_UNSTABLE_OK
+# check_for_prerelease: Whether to include pre-releases (potentially unstable)
+#    when checking for updates.
 max_duration = 0
 # max_duration: Maximum duration (in seconds) of media that can be played by the
 #    bot. Set to 0 for no limit.

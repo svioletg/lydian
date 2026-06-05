@@ -15,6 +15,7 @@ from packaging.version import Version
 from requests import Response
 
 from lydian import __version__
+from lydian.config import config
 from lydian.const import GH_REPO, screen
 from lydian.util import wrap_paragraphs
 
@@ -136,7 +137,7 @@ def check_for_updates(
     newer_releases = tuple(newer_releases)
 
     if not newer_releases:
-        print_fn(f'[ok]No {'stable ' if stable else ' '}releases since v{current}; you are up to date.[/]')
+        print_fn(f'[ok]No {'stable ' if stable else ''}releases since v{current}; you are up to date.[/]')
         return False
 
     latest = newer_releases[0]
@@ -166,7 +167,7 @@ def check_for_updates(
 def main() -> int:
     """Checks if a release of Lydian is available with a newer version, returning 1 if so, otherwise 0."""
     screen.print(f'You are running Lydian v{__version__}.')
-    return int(check_for_updates())
+    return int(check_for_updates('0.1.0', stable=config.check_for_stable_only))
 
 if __name__ == '__main__':
     sys.exit(main())

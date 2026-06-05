@@ -23,6 +23,9 @@ configured prefix accordingly.
 ### Added
 
 - Added config key `check_for_updates` (boolean)
+  - env: `LYDIAN_CHECK_UPDATES`
+- Added config key `check_for_prerelease` (boolean)
+  - env: `LYDIAN_CHECK_STABLE_ONLY`
 - Added console commands `updates`, `version`
 - Added module `update`
 - Added debug bot commands `-argstr` and `-argint`
