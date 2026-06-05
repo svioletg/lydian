@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 import responses
-from requests.exceptions import ConnectTimeout
+from requests.exceptions import ConnectTimeout, HTTPError
 
 from lydian.const import TESTS_DIR
 from lydian.update import GH_REPO_API_ROOT, ReleaseComment, check_for_updates, get_releases
@@ -39,18 +39,32 @@ RELEASES_JSON: list[dict[str, Any]] = json.loads(
     (TESTS_DIR / 'data/github-api-lydian-releases.json').read_text('utf-8'),
 )
 
-RELEASES_RESPONSE: responses.Response = responses.Response(
+RELEASES_RESPONSE_200: responses.Response = responses.Response(
     'GET',
     GH_REPO_API_ROOT + '/releases',
     json=RELEASES_JSON,
     status=200,
 )
 
+RELEASES_RESPONSE_404: responses.Response = responses.Response(
+    'GET',
+    GH_REPO_API_ROOT + '/releases',
+    json=RELEASES_JSON,
+    status=404,
+)
+
 @responses.activate
 def test_get_releases() -> None:
-    responses.add(RELEASES_RESPONSE)
+    responses.add(RELEASES_RESPONSE_200)
 
     assert get_releases() == RELEASES_JSON
+
+@responses.activate
+def test_get_releases_error() -> None:
+    responses.add(RELEASES_RESPONSE_404)
+
+    with pytest.raises(HTTPError):
+        get_releases()
 
 def test_get_releases_timeout() -> None:
     with pytest.raises(ConnectTimeout):
@@ -58,10 +72,17 @@ def test_get_releases_timeout() -> None:
 
 @responses.activate
 def test_check_for_updates() -> None:
-    responses.add(RELEASES_RESPONSE)
+    responses.add(RELEASES_RESPONSE_200)
 
     assert check_for_updates('0.7.0', output=False) is False
     assert check_for_updates('0.6.0', output=False) is True
+
+@responses.activate
+def test_check_for_updates_error() -> None:
+    responses.add(RELEASES_RESPONSE_404)
+
+    with pytest.raises(HTTPError):
+        check_for_updates()
 
 def test_check_for_updates_timeout() -> None:
     with pytest.raises(ConnectTimeout):
