@@ -3,6 +3,10 @@ import pytest
 from lydian.util import FromStr
 
 
+def test_to_bool() -> None:
+    assert FromStr.to_bool('0') is FromStr.to_bool('false') is FromStr.to_bool('faLSE') is False
+    assert FromStr.to_bool('1') is FromStr.to_bool('true') is FromStr.to_bool('trUE') is True
+
 @pytest.mark.parametrize(('s', 'expected'),
     [
         ('1 b',          1),
@@ -29,10 +33,10 @@ from lydian.util import FromStr
         ('10 kbb',       ValueError('Filesize string does not match expected pattern')),
     ],
 )
-def test_filesize(s: str, expected: int | Exception) -> None:
+def test_to_filesize(s: str, expected: int | Exception) -> None:
     for i in (s, s.upper()):
         if isinstance(expected, Exception):
             with pytest.raises(expected.__class__, match=expected.args[0]):
-                FromStr.filesize(i)
+                FromStr.to_filesize(i)
         else:
-            assert FromStr.filesize(i) == expected
+            assert FromStr.to_filesize(i) == expected

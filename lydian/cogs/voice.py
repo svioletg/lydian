@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from datetime import timedelta
 from math import ceil
 from pathlib import Path
-from typing import Any, ClassVar, Self, cast, override
+from random import randint
+from typing import Any, ClassVar, Literal, Self, cast, override
 
 import discord
 import yt_dlp
@@ -19,8 +20,8 @@ from lydian.cogs.util import alias_from_config, confirm, embed_error, embed_info
 from lydian.config import config
 from lydian.const import (
     COLOR_ESCAPE_REGEX,
-    COLOR_INFO,
     DL_DIR,
+    EMBED_COLOR_INFO,
     GH_ISSUES,
     QUEUE_MAX_PER_PAGE,
     YTDL_DOWNLOAD_PROGRESS_REGEX,
@@ -121,6 +122,9 @@ class MediaItem:
     user: discord.Member | None = None
     """The discord user who requested this item, if any."""
 
+    def __str__(self) -> str:  # noqa: D105
+        return f'MediaItem({self.title!r}, {self.url!r}, duration={self.duration!r})'
+
     @property
     def duration_str(self) -> str:
         """Return a formatted string of the duration, returning '?:??' if no duration is set."""
@@ -186,7 +190,7 @@ class MediaItem:
                 (f'Queued by {self.user.mention}\n' if self.user else '')
                 + f'{time_display}\n'
                 + self.url,
-            color=COLOR_INFO,
+            color=EMBED_COLOR_INFO,
         ).set_thumbnail(url=self.thumbnail_url)
 
     def refresh_copy(self, *, store_cache: bool = True) -> Self:
@@ -306,6 +310,10 @@ class MediaQueue(UserList[MediaItem]):
         """Pops the item at the front of the list."""
         return self.pop(0)
 
+    def poprandom(self) -> MediaItem:
+        """Pops a random item in the list and returns it."""
+        return self.pop(randint(0, len(self) - 1))
+
 def _assert_discord_member(user: discord.User | discord.Member) -> discord.Member:
     """Returns a ``discord.User | discord.Member`` value casted to ``discord.Member``.
 
@@ -352,6 +360,8 @@ class VoiceCog(commands.Cog):
         For this purpose, the bot being paused still counts as playing media. The bot connecting to a voice channel
         without having been in one previously will also set this to ``False``.
         """
+        self.shuffle: bool = False
+        """If ``True``, a random item is pulled from the queue instead of the next one when advancing."""
 
         # Timers/counters
         self.time_inactive: int = 0
@@ -401,10 +411,10 @@ class VoiceCog(commands.Cog):
             voice = _assert_voice_client(self.bot.voice_clients[0])
             # Handle auto disconnect timers
             self.inactive = (not self.queue) and (not voice.is_playing()) and (not voice.is_paused())
-            if (config.inactivity_timeout > -1) and self.time_inactive >= config.inactivity_timeout:
+            if (config.inactivity_timeout is not None) and self.time_inactive >= config.inactivity_timeout:
                 logger.info(f'Bot has been inactive for {self.time_inactive} seconds; disconnecting')
                 await voice.disconnect()
-            elif (config.lonely_timeout > -1) and self.time_alone >= config.lonely_timeout:
+            elif (config.lonely_timeout is not None) and self.time_alone >= config.lonely_timeout:
                 logger.info(f'Bot has been alone for {self.time_alone} seconds; disconnecting')
                 await voice.disconnect()
 
@@ -546,9 +556,9 @@ class VoiceCog(commands.Cog):
         return Ok(items)
 
     async def advance_queue(self, ctx: commands.Context, *, play_now: MediaItem | None = None) -> int | None:  # noqa: C901
-        """Plays the next item in the queue, returning how many items had to be skipped if any.
+        """Plays the next item in the queue, returning how many items had to be skipped or ``None`` if locked.
 
-        Returns ``None`` without advancing if the queue is empty and ``play_now`` is ``None``.
+        If the queue is empty and ``play_now`` is ``None``, 0 is returned.
         If the bot is paused or playing audio, it will be stopped and the current media is skipped.
         If the queue item cannot be played (e.g. due to filesize or duration limit), the next item will be tried until
         either the player starts successfully or the queue is empty. The count of how many times this occurs is
@@ -578,11 +588,17 @@ class VoiceCog(commands.Cog):
                 if (not self.queue) and (not play_now):
                     return 0
 
-                item = play_now or self.queue.popleft()
+                item = play_now or (self.queue.poprandom() if self.shuffle else self.queue.popleft())
                 # Make sure play_now is consumed so it doesn't try to queue on the next loop
                 play_now = None
 
+                if progress_msg:
+                    await progress_msg.edit(embed=embed_info('Getting media info...', item.url))
+                else:
+                    progress_msg = await ctx.send(embed=embed_info('Getting media info...', item.url))
+
                 if (not item.duration) or (item.thumbnail_url):
+                    logger.debug(f'Refreshing MediaItem info: {item}')
                     item.refresh()
 
                 # Check against the duration limit, if any
@@ -597,10 +613,7 @@ class VoiceCog(commands.Cog):
                         continue
 
                 logger.debug(f'Getting YTDLSource from: {item.url}')
-                if progress_msg:
-                    await progress_msg.edit(embed=embed_info('Downloading...', item.url))
-                else:
-                    progress_msg = await ctx.send(embed=embed_info('Downloading...', item.url))
+                await progress_msg.edit(embed=embed_info('Downloading...', item.url))
 
                 try:
                     source = await YTDLSource.from_url(item.url, stream=config.stream_media)
@@ -680,7 +693,7 @@ class VoiceCog(commands.Cog):
         """Shows the currently playing track."""
         if self.now_playing:
             await ctx.send(embed=self.now_playing.embed(
-                f'{EmojiStr.PLAY} Playing: ',
+                f'{f'{EmojiStr.SHUFFLE} ' if self.shuffle else ''}{EmojiStr.PLAY} Playing: ',
                 timestamp=self.now_playing_timer.elapsed(),
             ))
         else:
@@ -750,15 +763,18 @@ class VoiceCog(commands.Cog):
     @commands.command(aliases=[])
     async def skip(self, ctx: commands.Context) -> None:
         """Skips the currently playing media."""
-        voice = _assert_voice_client(ctx.voice_client)
+        to_skip: MediaItem | None = self.now_playing or self.stopped_track
 
-        if (not voice.is_paused()) and (not voice.is_playing()):
-            if self.stopped_track:
-                # Skip the stopped track
-                self.stopped_track = None
-            else:
-                await ctx.send(embed=embed_info('Nothing to skip.'))
+        if not to_skip:
+            await ctx.send(embed=embed_info('Nothing to skip.'))
+            return
 
+        self.stopped_track = None
+
+        await ctx.send(
+            embed=embed_info(f'{EmojiStr.SKIP} Skipping...', f'*{to_skip.title}*\n{to_skip.url}'),
+            delete_after=10,
+        )
         await self.advance_queue(ctx)
 
     @alias_from_config
@@ -777,6 +793,22 @@ class VoiceCog(commands.Cog):
 
         logger.info('Stopping player')
         self.stop_player(voice)
+
+    @alias_from_config
+    @commands.command('shuffle', aliases=[])
+    async def toggle_shuffle(self, ctx: commands.Context, state: Literal['on', 'off'] | None = None) -> None:
+        """Turns shuffle mode on or off, or shows whether shuffle is enabled if a state is not given.
+
+        When active, a random item is chosen from the existing media queue when a track finishes or is skipped.
+        """
+        if state is None:
+            await ctx.send(embed=embed_info(
+                f'Shuffle is currently {'enabled' if self.shuffle else 'disabled'}.',
+                'Use `shuffle on` or `shuffle off` to change this.',
+            ))
+            return
+        self.shuffle = state == 'on'
+        await ctx.send(embed=embed_info(f'{EmojiStr.SHUFFLE} Shuffle {'enabled' if self.shuffle else 'disabled'}.'))
 
     @alias_from_config
     @commands.command('queue', aliases=[])
@@ -807,10 +839,13 @@ class VoiceCog(commands.Cog):
             embed_desc = f'Showing items #{page_start + 1} to #{min(page_end, len(self.queue))}' \
                 + f' out of {len(self.queue)}'
 
+        if self.shuffle:
+            embed_desc += f'\n{EmojiStr.SHUFFLE} **Shuffle is enabled**'
+
         queue_embed = discord.Embed(
             title='Queue' + (f' (Page {page}/{pages})' if pages > 1 else ''),
             description=embed_desc,
-            color=COLOR_INFO,
+            color=EMBED_COLOR_INFO,
         )
 
         if self.now_playing:

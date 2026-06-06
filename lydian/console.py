@@ -25,6 +25,7 @@ from lydian import __version__
 from lydian.config import config
 from lydian.const import debug_context, debug_store, screen, setup_logger
 from lydian.perms import perms
+from lydian.update import check_for_updates
 from lydian.util import exc_str, expect, get_annotation, is_annotated, join_trailing, tabulate, wrap_paragraphs
 
 if TYPE_CHECKING:
@@ -586,6 +587,11 @@ class LydianConsole(BotConsole):
             return
         logger.info(f'Starting task: {expect(task.get_task()).get_name()}')
         task.start()
+
+    @command()
+    def updates(self, /) -> None:
+        """Checks if any newer releases of Lydian are available."""
+        check_for_updates()
 
     @command()
     def uptime(self, /) -> None:

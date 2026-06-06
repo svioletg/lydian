@@ -1,16 +1,20 @@
 """Checks for TODO comments in all ``*.py`` files in a directory."""
+import itertools
 import re
 import sys
 from argparse import ArgumentParser
 from dataclasses import dataclass, field
+from functools import cached_property
 from pathlib import Path
+from textwrap import dedent
+from typing import Self
 
 from lydian.const import GH_ISSUES, screen
-from lydian.util import pos_to_linepos
+from lydian.util import expect, pos_to_linepos
 
 PROJECT_DIR: Path = Path('lydian').absolute()
 TODO_REGEX: re.Pattern[str] = re.compile(
-    r'^ *(?P<header># TODO\((?P<author>.+?)\):.*)$(?:\n\s*#.*$)*',
+    r'^ *(?P<header># TODO(?:\((?P<author>.+?)\))?:.*)$(?:\n *#.*$)*',
     flags=re.MULTILINE,
 )
 ISSUE_REGEX: re.Pattern[str] = re.compile(
@@ -21,55 +25,65 @@ DEFAULT_ISSUE_LINK_TMPL: str = GH_ISSUES + '/{}'
 
 @dataclass
 class Todo:  # noqa: D101
-    header: str
-    """The first line of this TODO."""
-    file: Path
+    content: str
     span: tuple[int, int]
-    """The start and end index of file content this TODO covers."""
+    """The start and end index of the original string content this TODO covers."""
+    file: Path | None = None
     author: str | None = None
     issues: list[str] = field(default_factory=list)
     """URLs to any referenced issues in the TODO."""
 
-    def content(self) -> str:
-        """Returns the full content of this TODO.
+    def __post_init__(self) -> None:  # noqa: D105
+        self.content = dedent(self.content)
 
-        This method will re-read the content from ``file`` when called.
-        The returned content will include the leading ``#`` on each line, but surrounding whitespace is stripped.
-        """
-        return '\n'.join(ln.strip() for ln in self.file.read_text('utf-8')[self.span[0]:self.span[1] + 1].splitlines())
+    @cached_property
+    def header(self) -> str:
+        """The first line of ``content``."""
+        return self.content.split('\n', maxsplit=1)[0]
 
-def find_todos(source_dir: str | Path, *, recursive: bool = False) -> list[Todo]:
-    """Searches all ``*.py`` files in a directory for ``# TODO`` lines, returning a list of ``Todo`` objects."""
-    source_dir = Path(source_dir)
-
-    todos: list[Todo] = []
-    for fp in (source_dir.rglob if recursive else source_dir.glob)('*.py'):
-        ftext: str = fp.read_text('utf-8')
-        for m in TODO_REGEX.finditer(ftext):
-            header: str = m.group('header')
+    @classmethod
+    def parse_todos(cls, content: str) -> list[Self]:
+        """Parses ``Todo`` objects from ``content``."""
+        todos: list[Self] = []
+        for m in TODO_REGEX.finditer(content):
             author: str | None = m.group('author')
             span = m.span()
             span = (span[0] + len(m.group(0).split('#')[0]), span[1])
-            todos.append(Todo(
-                header,
-                fp,
+            todos.append(cls(
+                m.group(0),
                 span,
                 author=author,
                 issues=[im.group(0) for im in ISSUE_REGEX.finditer(m.group(0))] \
                     + [DEFAULT_ISSUE_LINK_TMPL.format(s.lstrip('0')) for s in re.findall(r'#(\d+)', m.group(0))],
             ))
+
+        return todos
+
+    def with_file(self, file: Path) -> Self:
+        """Sets this instance's ``file`` attribute and returns the instance."""
+        self.file = file
+
+        return self
+
+def find_todos(*paths: str | Path, recursive: bool = False) -> list[Todo]:
+    """Searches all ``*.py`` files in the given directories for TODO lines, returning a list of ``Todo`` objects."""
+    todos: list[Todo] = []
+    for fp in itertools.chain(*(Path(dp).rglob('*.py') if recursive else Path(dp).glob('*.py') for dp in paths)):
+        content: str = fp.read_text('utf-8')
+        todos.extend(todo.with_file(fp) for todo in Todo.parse_todos(content))
+
     return todos
 
 def main() -> int:  # noqa: D103
     parser = ArgumentParser()
-    parser.add_argument('source_dir', type=Path, metavar='dir')
+    parser.add_argument('source_dirs', type=Path, metavar='dirs', nargs='+')
     parser.add_argument('--recursive', '-r', action='store_true')
     parser.add_argument('--author', type=str, help='Only prints TODOs from this author.')
     parser.add_argument('--no-author', action='store_true',
         help='Only prints TODOs with no author. Overrides --author.')
 
     args = parser.parse_args()
-    source_dir: Path = args.source_dir
+    source_dirs: list[Path] = args.source_dirs
     recursive: bool = args.recursive
     author: str | None = args.author
     no_author: bool = args.no_author
@@ -81,12 +95,12 @@ def main() -> int:  # noqa: D103
             return False
         return True
 
-    todos: list[Todo] = [t for t in find_todos(source_dir, recursive=recursive) if _filter(t)]
+    todos: list[Todo] = [t for t in find_todos(*source_dirs, recursive=recursive) if _filter(t)]
 
     if todos:
         for todo in todos:
-            linepos: tuple[int, int] = pos_to_linepos(todo.file.read_text('utf-8'), todo.span[0])
-            screen.print(f'TODO in [bold]{todo.file}:{linepos[0] + 1}:{linepos[1] + 1}[/]: [cyan]{todo.content()}[/]')
+            linepos: tuple[int, int] = pos_to_linepos(expect(todo.file).read_text('utf-8'), todo.span[0])
+            screen.print(f'TODO in [bold]{todo.file}:{linepos[0] + 1}:{linepos[1] + 1}[/]: [cyan]{todo.content}[/]')
         screen.print(f'Found {len(todos)} TODOs.')
         return 1
 

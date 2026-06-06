@@ -9,7 +9,8 @@ from collections.abc import Callable, Generator, Iterable, Mapping
 from dataclasses import Field, asdict, dataclass, field, fields, is_dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Literal, Self, TypedDict, cast, get_args, get_origin
+from types import NoneType
+from typing import Any, Literal, Self, TypedDict, Union, cast, get_args, get_origin
 from zoneinfo import ZoneInfo
 
 import tomlkit as tm
@@ -17,7 +18,6 @@ from benedict import benedict
 from dotenv import load_dotenv
 from maybetype import Err, Ok, Result, maybe
 from tomlkit.exceptions import ConvertError
-from tomlkit.items import InlineTable
 from tomlkit.items import Item as TOMLItem
 
 from lydian.const import CONFIG_PATH, LogLevel
@@ -27,6 +27,9 @@ TOML_KEY_REGEX: re.Pattern[str] = re.compile(r'^\[?([\w.-]+)\]?', flags=re.MULTI
 TOML_TABLE_KEY_REGEX: re.Pattern[str] = re.compile(r'\[([\w.-]+)\]', flags=re.MULTILINE)
 
 load_dotenv()
+
+TOML_NONE: str = 'n/a'
+"""A special dedicated string value for representing None in TOML."""
 
 class UnknownConfigKeyWarning(Warning):
     """Emitted when a key is found in TOML that is not present in the :py:class:`Config` dataclass."""
@@ -46,19 +49,6 @@ def _toml_encoder(obj: object) -> TOMLItem:
     raise ConvertError(f'Cannot convert object of type {type(obj)}: {obj!r}')
 
 tm.register_encoder(_toml_encoder)
-
-def env_to_bool(s: str) -> bool:
-    """Returns an environment variable value parsed to a ``bool``.
-
-    - False: ``0``, ``'false'`` (any case)
-    - True: ``1``, ``'true'`` (any case)
-    """
-    s = s.strip().lower()
-    if s in ['0', 'false']:
-        return False
-    if s in ['1', 'true']:
-        return True
-    raise ValueError(f"Expected 0, 1, 'false', or 'true' for boolean environment variable: {s!r}")
 
 def _default_command_aliases() -> dict[str, list[str]]:
     return {
@@ -89,8 +79,18 @@ class ConfigFieldMeta[T](TypedDict):
     to be set as well, which in this case should take a ``str`` and return the expected value.
     """
     converter: Callable[[object], object]
-    """A function which takes the value parsed from TOML or environment variable string value and returns the field's
+    """A function which takes the value parsed from TOML or an environment variable string value and returns the field's
     type."""
+    converter_env: Callable[[str], object]
+    """A converter function called when parsing an environment variable string value.
+
+    Defaults to ``converter`` if not given.
+    """
+    converter_toml: Callable[[object], object]
+    """A converter function called when parsing a TOML value.
+
+    Defaults to ``converter`` if not given.
+    """
     validators: Iterable[Callable[[T], Result[T, str]]]
     """An iterable of functions which take the field's type (after being parsed with ``converter``) and return ``Ok``
     with the passed value if valid, or ``Err`` with a message string."""
@@ -147,16 +147,7 @@ class Config:
     """Dataclass which handles project-wide configuration and can save or load values via TOML.
 
     The ``doc`` value of a field, if not empty, will be used as a TOML comment preceding the key.
-
-    A field's ``metadata`` can optionally specify any of these keys:
-
-    - ``converter``: A function which takes the value parsed from TOML and returns the field's type, allowing for things
-        like filesize fields taking strings (e.g. "10 MB") and converting them to an ``int`` of bytes.
-    - ``env``: Environment variable name (without the ``LYDIAN_`` prefix) corresponding to this field. Config fields
-        can only be set by the environment when this key is present. Setting this key will require ``parser`` to be set
-        as well, which in this case should take a ``str`` and return the expected value.
-    - ``validators``: A function or an iterable of functions which take the field's type (after being parsed with
-        ``converter``) and return ``Ok`` with the passed value if valid, or ``Err`` with a message string.
+    See :py:class:`ConfigFieldMeta` for details on how a field's ``metadata`` is used.
     """
 
     prefix: str = '-'
@@ -166,9 +157,18 @@ class Config:
             + ' https://github.com/svioletg/lydian/blob/main/README.md',
         metadata={'env': 'DEBUG'},
     )
+    check_for_updates: bool = field(default=True,
+        doc='Whether to check for new releases of Lydian at startup.',
+        metadata={'env': 'CHECK_UPDATES'})
+    check_for_stable_only: bool = field(default=True,
+        doc='Whether to exclude pre-releases when checking for updates.',
+        metadata={'env': 'CHECK_STABLE_ONLY'})
+    bot_console: bool = field(default=True,
+        doc="Enables Lydian's interactive console while running.",
+        metadata={'env': 'BOT_CONSOLE'})
     command_aliases: dict[str, list[str]] = field(default_factory=_default_command_aliases)
-    max_duration: int = field(default=0,
-        doc='Maximum duration (in seconds) of media that can be played by the bot. Set to 0 for no limit.',
+    max_duration: int | None = field(default=None,
+        doc=f'Maximum duration (in seconds) of media that can be played by the bot. Set to {TOML_NONE!r} for no limit.',
         metadata={'validators': [_validate_positive]},
     )
     max_duration_allow_unknown: bool = field(default=False,
@@ -176,7 +176,7 @@ class Config:
     max_filesize: int = field(default=20_000_000,
         doc='Maximum filesize in bytes for media that can be downloaded by the bot.'
             + ' Will have no effect when streaming media (stream-media = true).',
-        metadata={'converter': FromStr.filesize, 'validators': [_validate_positive]},
+        metadata={'converter': FromStr.to_filesize, 'validators': [_validate_positive]},
     )
     max_playlist_length: int = field(default=20,
         doc='Maximum number of items that can be added from a single playlist link.',
@@ -186,23 +186,23 @@ class Config:
         doc='Maximum number of items that can be added to the media queue.',
         metadata={'validators': [_validate_positive]},
     )
-    media_dir_warn_threshold: int = field(default=100_000_000,
+    media_dir_warn_threshold: int | None = field(default=100_000_000,
         doc='Total size in bytes that downloaded media can take up before a warning is emitted at bot'
-            + ' startup. Set to -1 to disable the warning entirely.',
-        metadata={'converter': FromStr.filesize, 'validators': [_validator_min(-1)]},
+            + f' startup. Set to {TOML_NONE!r} to disable the warning entirely.',
+        metadata={'converter': FromStr.to_filesize, 'validators': [_validator_min(-1)]},
     )
     stream_media: bool = field(default=True,
         doc='Whether to stream media instead of downloading it to disk and playing the file.',
     )
-    inactivity_timeout: int = field(default=120,
+    inactivity_timeout: int | None = field(default=120,
         doc='How long in seconds the bot can be inactive (not playing anything and the queue is empty) before'
-            + ' disconnecting. Set to -1 to never disconnect for inactivity.',
-        metadata={'validators': [_validator_min(-1)]},
+            + f' disconnecting. Set to {TOML_NONE!r} to never disconnect for inactivity.',
+        metadata={'validators': [_validate_positive]},
     )
-    lonely_timeout: int = field(default=120,
+    lonely_timeout: int | None = field(default=120,
         doc='How long in seconds the bot can be the only user in a voice channel before disconnecting.'
-            + ' Set to -1 to never disconnect in this case.',
-        metadata={'validators': [_validator_min(-1)]},
+            + f' Set to {TOML_NONE!r} to never disconnect in this case.',
+        metadata={'validators': [_validate_positive]},
     )
 
     media_filter: MediaFilterConfig = field(default_factory=MediaFilterConfig)
@@ -269,11 +269,14 @@ class Config:
 
         for fld in fields(self):
             if fld.type is MediaFilterConfig:
-                data: InlineTable = tm.item(asdict(getattr(self, fld.name)))
+                data = tm.item(asdict(getattr(self, fld.name)))
                 data['allowed_extractors'] = [tm.string(s, literal=True) for s in data['allowed_extractors'].unwrap()]
                 data['allowed_urls'] = [tm.string(s, literal=True) for s in data['allowed_urls'].unwrap()]
             else:
                 data = getattr(self, fld.name)
+
+            if data is None:
+                data = tm.string(TOML_NONE, literal=True)
 
             doc.add(fld.name, data)
 
@@ -303,11 +306,11 @@ class Config:
                 continue
 
             converter: Callable[[str], Any] | None
-            if converter := fld.metadata.get('converter'):
+            if converter := fld.metadata.get('converter_env', fld.metadata.get('converter')):
                 if not callable(converter):
                     raise TypeError(f'Config field "{name}" parser must be callable: {converter!r}')
             elif fld.type is bool:
-                converter = env_to_bool
+                converter = FromStr.to_bool
             else:
                 converter = cast('type', fld.type)
 
@@ -319,7 +322,7 @@ class Config:
             self.set(name, val)
 
     @staticmethod
-    def _check_type_with_field[T](value: object, fld: ConfigField[T]) -> T:
+    def _check_type_with_field[T](value: object, fld: ConfigField[T]) -> T | None:  # noqa: C901
         """Parses a value according to the given field and ensures it is the correct type.
 
         :raises TypeError:
@@ -339,8 +342,14 @@ class Config:
             t_args = get_args(typ)
 
         # Parse
-        t_origin = get_origin(typ) or typ
-        parsed = fld.metadata.get('converter', lambda x: x)(value)
+        if (t_origin := get_origin(typ) or typ) is Union:
+            if not ((len(t_args) == 2) and (t_args[1] is NoneType)):  # noqa: PLR2004
+                raise TypeError(f'Union types are only supported for config fields if the union is T | None: {typ!r}')
+            if value == TOML_NONE:
+                return None
+            t_origin = t_args[0]
+
+        parsed = fld.metadata.get('converter_toml', fld.metadata.get('converter', lambda x: x))(value)
         if (t_origin is Literal):
             if parsed not in t_args:
                 raise ValueError(f'Invalid value for Literal[{', '.join(repr(i) for i in t_args)}] type: {value!r}')

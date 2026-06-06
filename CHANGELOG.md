@@ -10,6 +10,11 @@ Changelog* to more briefly describe end-user changes, while the rest of the chan
 describes internal changes. Backwards-incompatible changes will be listed at the top of the overview
 section.
 
+Module names omit the leading `lydian.` for the sake of brevity, so if a changelog references
+`cogs.voice.VoiceCog`, the fully qualified path would be `lydian.cogs.voice.VoiceCog`. The two
+exceptions to this are the non-`lydian` modules `tools` and `tests`, which use their fully qualified
+paths. `lydian` does not contain any modules named `tools` or `tests`, to avoid confusion.
+
 Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
 configured prefix accordingly.
 
@@ -18,13 +23,53 @@ configured prefix accordingly.
 ### Added
 
 - Added debug console command `debug store`
-- Added console command `version`
+- Added method `console.LydianConsole._debug_evaluate_in_context()`
+
+## [0.8.0] - 2026-06-05
+
+### Overview
+
+> **Breaking changes**
+>
+> - Some TOML configuration keys are now properly nullable, using the `'n/a'` value to indicate
+>   such.
+>   - Config keys `max_duration`, `media_dir_warn_threshold`, `inactivity_timeout`, and
+>     `lonely_timeout` now use `'n/a'` instead of `-1` or `0` to indicate they should be disabled
+
+- Lydian can now optionally check for new releases at startup, toggled with the `check_for_updates`
+  configuration key (or `LYDIAN_CHECK_UPDATES` environment variable).
+  - You can check for updates manually by running `lydian-update`.
+  - By default, pre-releases are skipped during this check. Set the `check_for_stable_only` config
+    key to `false` to include pre-releases.
+- The media queue now has a shuffle mode, use `-shuffle <on|off>` to enable or disable it.
+- Lydian now includes exception arguments in "unexpected error" messages.
+  - Full tracebacks are still only available in Lydian's logs.
+- A temporary (deletes after 10 seconds) message is now sent when skipping a track
+
+### Added
+
+- Added config key `bot_console` (boolean)
+  - env: `LYDIAN_BOT_CONSOLE`
+- Added config key `check_for_updates` (boolean)
+  - env: `LYDIAN_CHECK_UPDATES`
+- Added config key `check_for_stable_only` (boolean)
+  - env: `LYDIAN_CHECK_STABLE_ONLY`
+- Added console commands `version` and `updates`
+- Added module `update`
 - Added debug bot commands `-argstr` and `-argint`
-- Added bot commands `-repo` and `-issues`
+- Added bot commands:
+  - `-issues`
+  - `-repo`
+  - `-shuffle`
+- Added attribute `cogs.voice.VoiceCog.shuffle`
+- Added attributes `converter_env` and `converter_toml` to `config.ConfigFieldMeta`
 - Added command methods `cogs.debug.DebugCog.argstr()` and `cogs.debug.DebugCog.argint()`
 - Added command methods `cogs.general.GeneralCog.repo()` and `cogs.general.GeneralCog.issues()`
+- Added command method `cogs.voice.VoiceCog.toggle_shuffle()`
 - Added method `console.LydianConsole.version()`
-- Added method `console.LydianConsole._debug_evaluate_in_context()`
+- Added classmethod `tools.todos.Todo.parse_todos()`
+  - Parses `Todo` objects directly from a string without needing file paths
+- Added method `tools.todos.Todo.with_file()`
 - Added function `util.exc_str()`
 
 ### Changed
@@ -33,16 +78,35 @@ configured prefix accordingly.
 - Bot command `-hello` now accepts aliases
 - The discord.py exceptions `BadArgument` and `MissingRequiredArgument` are now properly handled
 - Logging methods in `cogs.voice.YTDLLogHandler` now log with `depth=2` for more accuracy
+- Renamed in `const`:
+  - `COLOR_INFO` → `EMBED_COLOR_INFO`
+  - `COLOR_OK` → `EMBED_COLOR_OK`
+  - `COLOR_WARN` → `EMBED_COLOR_WARN`
+  - `COLOR_ERROR` → `EMBED_COLOR_ERROR`
+- A status message is now sent when retrieving info for a track before downloading begins (#30)
+- Tool `todos` now accepts multiple directories to search
+- In `tools.todos`:
+  - `Todo.content` is now an attribute and not a method
+  - `Todo.header` is now a cached property and no longer accepted as a constructor argument
+  - `Todo.file` is now an optional attribute
+  - `find_todos()` now takes a variable positional argument `paths` instead of the single
+    positional argument `source_dir`, still `str | Path`
+- Moved function `config.env_to_bool()` to `util.FromStr.to_bool()`
+- Renamed classmethod `util.FromStr.filesize()` to `util.FromStr.to_filesize()`
+- Unexpected errors caught in `bot.on_command_error` now have their exception args sent along with
+  the bot's message instead of only saying to check the logs
 
 ### Fixed
 
 - Fixed `util.tabulate()` raising an error for empty data (#32)
+- Fixed `todos` dev tool skipping `# TODO` lines with no author (#33)
 
 ## [0.7.0] - 2026-05-25
 
 ### Overview
 
-> [!IMPORTANT] Breaking changes
+> **Breaking changes**
+>
 > - TOML configuration keys now use underscores (`_`) instead of hyphens (`-`)
 > - Config key `log_level` under `logging` is now `level`
 

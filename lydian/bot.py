@@ -38,6 +38,7 @@ from lydian.const import (
 )
 from lydian.errors import AbortCommand
 from lydian.perms import PERMISSIONS_DEFAULT, perms
+from lydian.update import check_for_updates
 from lydian.util import dirsize, exc_str, get_background_tasks, get_leaves
 
 load_dotenv('.env')
@@ -223,10 +224,15 @@ async def async_main() -> int:
     else:
         logger.info("Log times are set to the system's local time")
 
-    if (config.media_dir_warn_threshold > -1) \
+    if (config.media_dir_warn_threshold is not None) \
         and (media_size_total := dirsize(DL_DIR)) > config.media_dir_warn_threshold:
         logger.warning(f'Media directory is taking up {media_size_total} bytes, exceeding the threshold of'
         + f' {config.media_dir_warn_threshold}')
+
+    if config.check_for_updates:
+        screen.print('-' * 20)
+        check_for_updates()
+        screen.print('-' * 20)
 
     logger.info('Starting...')
 
@@ -236,10 +242,12 @@ async def async_main() -> int:
     create_directories()
     clear_tmp_dir()
 
-    _, pending = await asyncio.wait(
-        (asyncio.create_task(thread_bot()), asyncio.create_task(thread_console())),
-        return_when=asyncio.FIRST_COMPLETED,
-    )
+    asyncio_tasks: list[asyncio.Task] = [asyncio.create_task(thread_bot())]
+
+    if config.bot_console:
+        asyncio_tasks.append(asyncio.create_task(thread_console()))
+
+    _, pending = await asyncio.wait(asyncio_tasks, return_when=asyncio.FIRST_COMPLETED)
 
     tasklist: list[tasks.Loop] = debug_context['tasklist']
 

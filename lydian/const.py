@@ -19,11 +19,18 @@ GH_ISSUES: str = GH_REPO + '/issues'
 
 # Paths
 PACKAGE_DIR      : Path = Path(__file__).resolve().parent
+""":meta hide-value:"""
 TESTS_DIR        : Path = PACKAGE_DIR.parent / 'tests'
+""":meta hide-value:"""
 DEFAULT_DATA_DIR : Path = PACKAGE_DIR / 'lydian-data'
-"""Points to a ``lydian-data`` directory under the package's installation directory."""
+"""Points to a ``lydian-data`` directory under the package's installation directory.
+
+:meta hide-value:
+"""
 DEFAULT_TMP_DIR  : Path = DEFAULT_DATA_DIR.parent / 'tmp'
+""":meta hide-value:"""
 DEFAULT_LOGS_DIR : Path = DEFAULT_DATA_DIR / 'logs'
+""":meta hide-value:"""
 DOTENV_PATH      : Path = Path.cwd() / '.env'
 """Points to a ``.env`` file under the current working directory.
 
@@ -40,11 +47,20 @@ PERMISSIONS_PATH : Path = Path.cwd() / 'permissions.yml'
 :meta hide-value:
 """
 DATA_DIR         : Path = (CONFIG_PATH.parent / 'lydian-data') if CONFIG_PATH.exists() else DEFAULT_DATA_DIR
-"""Data directory as relative to the user's configuration file if it exists, or :py:data:`DEFAULT_DATA_DIR`."""
+"""Data directory as relative to the user's configuration file if it exists, or :py:data:`DEFAULT_DATA_DIR`.
+
+:meta hide-value:
+"""
 TMP_DIR          : Path = DATA_DIR / 'tmp'
+""":meta hide-value:"""
 LOGS_DIR         : Path = DATA_DIR / 'logs'
+""":meta hide-value:"""
 DL_DIR           : Path = DATA_DIR / 'dl'
-"""Directory for storing media downloaded by youtube-dl."""
+""":meta hide-value:"""
+"""Directory for storing media downloaded by youtube-dl.
+
+:meta hide-value:
+"""
 
 LOG_MSG_FORMAT_UTC: str = '<level>[{time:YYYY-MM-DD HH:mm:ssZZ!UTC}] [{name}::{function}/{level}]: {message}</level>'
 LOG_MSG_FORMAT: str = LOG_MSG_FORMAT_UTC.replace('!UTC', '')
@@ -55,10 +71,10 @@ LOG_FILE_PATTERN: re.Pattern[str] = re.compile(
     flags=re.MULTILINE,
 )
 
-COLOR_INFO: int = 0xcccccc
-COLOR_OK: int = 0x00ff00
-COLOR_WARN: int = 0xffcc00
-COLOR_ERROR: int = 0xff0000
+EMBED_COLOR_INFO: int = 0xcccccc
+EMBED_COLOR_OK: int = 0x00ff00
+EMBED_COLOR_WARN: int = 0xffcc00
+EMBED_COLOR_ERROR: int = 0xff0000
 
 # Compiled regex
 COLOR_ESCAPE_REGEX: re.Pattern[str] = re.compile(r'\x1b\[.*?m')
@@ -87,12 +103,13 @@ class EmojiStr(StrEnum):
     CANCEL  = emojize(':heavy_multiplication_x:', language='alias')
 
     # Media
-    PLAY  = emojize(':arrow_forward:', language='alias')
-    PAUSE = emojize(':pause_button:', language='alias')
-    STOP  = emojize(':stop_button:', language='alias')
-    SKIP  = emojize(':fast_forward:', language='alias')
-    IN    = emojize(':inbox_tray:', language='alias')
-    OUT   = emojize(':outbox_tray:', language='alias')
+    PLAY    = emojize(':arrow_forward:', language='alias')
+    PAUSE   = emojize(':pause_button:', language='alias')
+    STOP    = emojize(':stop_button:', language='alias')
+    SKIP    = emojize(':fast_forward:', language='alias')
+    IN      = emojize(':inbox_tray:', language='alias')
+    OUT     = emojize(':outbox_tray:', language='alias')
+    SHUFFLE = emojize(':twisted_rightwards_arrows:', language='alias')
 
 class LogLevel(IntEnum):  # noqa: D101
     TRACE   = 5
@@ -204,6 +221,7 @@ def setup_rich_console() -> Console:
     return Console(
         highlighter=ConsoleHighlighter(),
         theme=theme,
+        emoji=False,
     )
 
 screen: Console = setup_rich_console()

@@ -9,16 +9,19 @@ license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "aiohttp>=3.14.0",
     "davey>=0.1.5",
     "discord-py>=2.7.1",
     "emoji>=2.15.0",
     "humanize>=4.15.0",
     "loguru>=0.7.3",
+    "packaging>=26.1",
     "prompt-toolkit>=3.0.52",
     "py-maybetype==0.12.0",
     "pynacl>=1.6.2,<1.7",
     "python-benedict>=0.36.0",
     "python-dotenv>=1.2.2",
+    "requests>=2.33.1",
     "rich>=15.0.0",
     "strictyaml>=1.7.3",
     "tomlkit>=0.15.0",
@@ -37,7 +40,9 @@ dynamic = ["version"]
 dev = [
     "pytest>=9.0.3",
     "pytest-mock>=3.15.1",
+    "responses>=0.26.1",
     "ruff>=0.15.12",
+    "starlette>=1.0.1",
     "ty>=0.0.39",
 ]
 docs = [
@@ -58,6 +63,7 @@ Issues = "https://github.com/svioletg/lydian/issues"
 lydian = "lydian.bot:main"
 lydian-cli = "lydian.cli:cli"
 lydian-manage = "lydian.cli:cli"
+lydian-update = "lydian.update:main"
 
 [build-system]
 requires = ["hatchling >= 1.26"]
