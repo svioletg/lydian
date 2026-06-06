@@ -474,10 +474,12 @@ class LydianConsole(BotConsole):
 
     @command(enabled=config.debug, group='debug')
     def debug_read(self, expr: str, /, *, log: bool = False) -> None:
-        """Prints the result of an expression to stdout.
+        """Prints the result of an expression.
 
         The expression will have access to Python's built-ins, the global "config" and "perms" objects, and a "dbg"
-        dictionary which stores references to various things specifically for debugging or development usage.
+        dictionary which stores references to various things specifically for debugging or development usage. If the
+        expression is prefixed with ``store.``, the key being accessed is either printed out if it's a copy of a value,
+        or evaluated if it's an expression.
 
         If the first character of the expression matches any of the following, it will be expanded to the corresponding
         text before being evaluated:
@@ -512,7 +514,7 @@ class LydianConsole(BotConsole):
             if typ == 'copy':
                 print_fn(f'{parsed_expr} == {val!r}')
                 return
-            parsed_expr = f'dbg.{val}'
+            parsed_expr = val
 
         match self._debug_evaluate_in_context(parsed_expr):
             case Ok(val):
@@ -521,30 +523,36 @@ class LydianConsole(BotConsole):
                 logger.error(e)
 
     @command(enabled=config.debug, group='debug')
-    def debug_store(self, to_store: str, dest_key: str, /) -> None:
-        """Stores to ``dest_key`` either the value of a debug context key or an expression to evaluate later.
+    def debug_store(self, expr: str, dest_key: str, /) -> None:
+        """Stores either the result of an expression or the expression itself to be used later to ``store.<dest_key>``.
 
-        With this command you can either store a copy of a debug value into the ``store`` dictionary at ``dest_key``, or
-        you can store the expression itself, both of which can then be later retrieved or evaluated respectively through
-        ``debug read``. To do the latter, prefix ``to_store`` with an ampersand (``&``)—this ampersand is only to
-        indicate to this command that you want to store an expression, it will not be needed when retrieving it via
-        ``debug read``.
+        By default, the expression is evaluated once immediately and its deep-copied result is stored to the given key,
+        which can be accessed via ``debug read store.<dest_key>``. If the expression is prefixed with ``&``, the
+        expression itself is stored and not immediately evaluated. Using ``debug read store.<dest_key>`` in this case
+        will evaluate the expression stored at that key every time the command is run.
 
-        If the ``dest_key`` already exists in ``store`` (regardless if copy or expression), it will be replaced with the
-        new given value.
+        If the ``dest_key`` already exists in ``store`` (regardless if value or expression), it will be replaced with
+        the new given value.
         """
-        do_copy: bool = not to_store.startswith('&')
-        try:
-            debug_store[dest_key] = stored = (deepcopy(debug_context[to_store]), 'copy') if do_copy \
-                else (to_store.removeprefix('&'), 'ref')
-        except KeyError:
-            logger.error('Key does not exist in the debug context')
-            return
-        except TypeError as e:
-            logger.debug(exc_str(e))
-            logger.error(f'This value cannot be stored as a copy: {e}')
-            return
-        screen.print(f'Stored {'copy of value' if do_copy else 'key shortcut'} {stored[0]!r} to store key {dest_key!r}')
+        store_expr: bool = expr.startswith('&')
+        if store_expr:
+            stored = debug_store[dest_key] = (expr.removeprefix('&'), 'ref')
+        else:
+            result = self._debug_evaluate_in_context(expr)
+            match result:
+                case Ok(val):
+                    try:
+                        stored = debug_store[dest_key] = (deepcopy(val), 'copy')
+                    except TypeError as e:
+                        logger.debug(exc_str(e))
+                        logger.error(f'Failed to store a copy: {e}')
+                        logger.error(f'Value: {val!r}')
+                        return
+                case Err(msg):
+                    logger.error(f'Evaluation failed: {msg}')
+                    return
+        screen.print(f'Stored {'copy of value' if not store_expr else 'expression'} {stored[0]!r} to store key'
+            + f' {dest_key!r}')
 
     @staticmethod
     def task_status(task: Task) -> str:
