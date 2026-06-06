@@ -446,12 +446,17 @@ class LydianConsole(BotConsole):
         exception's name and its arguments (e.g. ``"TypeError: unsupported operand type(s) for +: 'int' and 'str'"``),
         otherwise ``Ok`` is returned with the resulting value.
 
+        If debug mode is disabled, ``Err`` is returned with the string ``'ValueError: Debug mode is disabled'``.
+
         The expression has access to:
         - :py:data:`config.config`
         - :py:data:`perms.perms`
         - :py:data:`const.debug_context`
         - :py:data:`const.debug_store`
         """
+        if not config.debug:
+            return Err('ValueError: Debug mode is disabled')
+
         eval_globals: dict[str, Any] = {
             'config': config,
             'perms': perms,
