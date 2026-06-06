@@ -22,6 +22,8 @@ from lydian.util import wrap_paragraphs
 GH_API_ROOT: str = 'https://api.github.com'
 GH_REPO_API_ROOT: str = GH_API_ROOT + '/repos/svioletg/lydian'
 
+USER_AGENT: str = f'lydian-update-checker/{__version__}'
+
 @dataclass(frozen=True)
 class ReleaseComment:
     """Dataclass used for specially-parsed comments from GitHub release markdown."""
@@ -95,7 +97,11 @@ def get_releases(*, timeout: float = 10) -> list[dict[str, Any]]:
     :raises requests.exceptions.HTTPError:
         The GitHub API request returned a non-200 status.
     """
-    response: Response = requests.get(GH_REPO_API_ROOT + '/releases', timeout=timeout)
+    response: Response = requests.get(
+        GH_REPO_API_ROOT + '/releases',
+        headers={'User-Agent': USER_AGENT},
+        timeout=timeout,
+    )
     response.raise_for_status()
 
     return response.json()
