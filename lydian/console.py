@@ -440,6 +440,18 @@ class LydianConsole(BotConsole):
 
     @staticmethod
     def _debug_evaluate_in_context(expr: str) -> Result[Any, str]:
+        """Evaluates an expression and returns a ``Result`` depending on if an exception was raised.
+
+        ``Err`` is returned if an exception was raised during evaluation, wrapping an error message consisting of the
+        exception's name and its arguments (e.g. ``"TypeError: unsupported operand type(s) for +: 'int' and 'str'"``),
+        otherwise ``Ok`` is returned with the resulting value.
+
+        The expression has access to:
+        - :py:data:`config.config`
+        - :py:data:`perms.perms`
+        - :py:data:`const.debug_context`
+        - :py:data:`const.debug_store`
+        """
         eval_globals: dict[str, Any] = {
             'config': config,
             'perms': perms,
