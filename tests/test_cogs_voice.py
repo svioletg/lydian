@@ -1,8 +1,16 @@
+from copy import deepcopy
+
 import pytest
 
 from lydian.cogs.voice import MediaItem, MediaQueue
 from lydian.errors import MediaQueueLimitError
 
+
+def test_media_item_copy() -> None:
+    item = MediaItem('Title', 'url', duration=1.5, thumbnail_url='thumburl', user_id=1234)
+    copied = deepcopy(item)
+    assert copied is not item
+    assert copied == item
 
 def test_media_queue_maxlen() -> None:
     queue = MediaQueue()
