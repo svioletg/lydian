@@ -188,6 +188,13 @@ debug_context['cog.voice.queue'] == MediaQueue([])
 
 ### `debug store`
 
+> [!WARNING]
+> This command uses the `eval()` function, which is [unsafe to use with untrusted user
+> input](https://nedbatchelder.com/blog/201206/eval_really_is_dangerous) and enables potentially
+> destructive actions. You should be using a separate bot token for debug mode (set with
+> `LYDIAN_DEBUG_TOKEN`), and as long as you're only running the bot locally on a secure machine this
+> shouldn't be an issue.
+
 Stores either the result of an expression or the expression itself to a key in the `store`
 dictionary, to be accessed later by `debug read`. To do the latter, prefix the expression with `&`.
 Stored expressions will be evaluated on the fly on every run of `debug read store.<key>`, when just
