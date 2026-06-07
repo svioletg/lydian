@@ -122,10 +122,18 @@ class MediaFilterConfig:
 class VoteSkippingConfig:
     """Configuration for track vote-skipping."""
 
-    enabled: bool = True
-    threshold_type: Literal['percentage', 'exact'] = 'percentage'
+    enabled: bool = field(default=False,
+        doc='Whether to require a number of users to vote to skip tracks. If false, any users with permission to use'
+            + ' -skip can skip the track immediately.')
+    threshold_type: Literal['percentage', 'literal'] = field(default='percentage',
+        doc='What kind of threshold to use for vote-skipping. "percentage" uses the value given for the "percentage"'
+            + ' key to calculate how many users are needed to skip based on how many are connected to the channel at'
+            + ' time -skip was used, e.g. percentage = 50 means 50% of users (rounded up) need to vote in order to'
+            + ' skip.'
+            + '\n"literal" will use the concrete value given for the "literal" key, requiring that >= that number of'
+            + ' users vote to skip regardless of how many are connected to the channel.')
     percentage: int = 50
-    exact: int = 3
+    literal: int = 3
 
 @dataclass(kw_only=True)
 class LoggingConfig:

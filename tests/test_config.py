@@ -30,8 +30,8 @@ def test_update_from_toml() -> None:
 
     inst.update_from_toml((TESTS_DIR / 'config-modified.toml').read_text('utf-8'))
     assert inst.prefix == '$'
-    assert inst.vote_skipping.threshold_type == 'exact'
-    assert inst.vote_skipping.exact == 2  # noqa: PLR2004
+    assert inst.vote_skipping.threshold_type == 'literal'
+    assert inst.vote_skipping.literal == 2  # noqa: PLR2004
     assert inst.logging.level.name == 'WARNING'
 
 def test_update_from_environment() -> None:
