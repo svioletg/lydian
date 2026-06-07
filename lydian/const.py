@@ -14,10 +14,16 @@ from rich.highlighter import Highlighter
 from rich.text import Text
 from rich.theme import Theme
 
+from lydian import __version__
+
+# GitHub URLs
 GH_REPO: str = 'https://github.com/svioletg/lydian'
 GH_ISSUES: str = GH_REPO + '/issues'
 GH_CHANGELOG_WEB: str = GH_REPO + '/blob/main/CHANGELOG.md'
 GH_CHANGELOG_RAW: str = 'https://raw.githubusercontent.com/svioletg/lydian/refs/heads/main/CHANGELOG.md'
+
+GH_API_ROOT: str = 'https://api.github.com'
+GH_REPO_API_ROOT: str = GH_API_ROOT + '/repos/svioletg/lydian'
 
 # Paths
 PACKAGE_DIR      : Path = Path(__file__).resolve().parent
@@ -88,6 +94,7 @@ MD_H2_REGEX: re.Pattern[str] = re.compile(r'^##.+$', flags=re.MULTILINE)
 MD_H3_REGEX: re.Pattern[str] = re.compile(r'^###.+$', flags=re.MULTILINE)
 
 # Other values
+USER_AGENT: str = f'lydian-discord-bot/{__version__}'
 DEFAULT_DISCORD_PROMPT_TIMEOUT: float = 60.0
 QUEUE_MAX_PER_PAGE: int = 20
 

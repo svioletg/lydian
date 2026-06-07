@@ -38,6 +38,8 @@ configured prefix accordingly.
 
 - `cogs.voice.MediaItem` objects now store who queued the item as their `int` user ID rather than
   the actual `discord.Member` object, which allows them to be deep-copied
+- Moved `update.GH_API_ROOT`, `update.GH_REPO_API_ROOT`, and `update.USER_AGENT` to `const`
+  - Value of `USER_AGENT` updated to use the package's name instead of `lydian-update-checker`
 
 ### Removed
 

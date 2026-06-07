@@ -16,13 +16,9 @@ from requests import Response
 
 from lydian import __version__
 from lydian.config import config
-from lydian.const import GH_REPO, screen
+from lydian.const import GH_REPO, GH_REPO_API_ROOT, USER_AGENT, screen
 from lydian.util import wrap_paragraphs
 
-GH_API_ROOT: str = 'https://api.github.com'
-GH_REPO_API_ROOT: str = GH_API_ROOT + '/repos/svioletg/lydian'
-
-USER_AGENT: str = f'lydian-update-checker/{__version__}'
 
 @dataclass(frozen=True)
 class ReleaseComment:
