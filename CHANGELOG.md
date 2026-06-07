@@ -23,8 +23,14 @@ configured prefix accordingly.
 ### Added
 
 - Added debug console command `debug store`
+- Added to `const`:
+  - `MD_HEADER_REGEX`
+  - `MD_H1_REGEX`
+  - `MD_H2_REGEX`
+  - `MD_H3_REGEX`
 - Added attribute `cogs.voice.MediaItem.user_id` to replace `.user`
 - Added method `console.LydianConsole._debug_evaluate_in_context()`
+- Added function `util.get_text_sections()`
 - Added function `util.mention()`
 
 ### Changed

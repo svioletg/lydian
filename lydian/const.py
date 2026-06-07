@@ -80,6 +80,11 @@ EMBED_COLOR_ERROR: int = 0xff0000
 COLOR_ESCAPE_REGEX: re.Pattern[str] = re.compile(r'\x1b\[.*?m')
 YTDL_DOWNLOAD_PROGRESS_REGEX: re.Pattern[str] = re.compile(r'\[download\].+ETA')
 
+MD_HEADER_REGEX: re.Pattern[str] = re.compile(r'^#+.+$', flags=re.MULTILINE)
+MD_H1_REGEX: re.Pattern[str] = re.compile(r'^#.+$', flags=re.MULTILINE)
+MD_H2_REGEX: re.Pattern[str] = re.compile(r'^##.+$', flags=re.MULTILINE)
+MD_H3_REGEX: re.Pattern[str] = re.compile(r'^###.+$', flags=re.MULTILINE)
+
 # Other values
 DEFAULT_DISCORD_PROMPT_TIMEOUT: float = 60.0
 QUEUE_MAX_PER_PAGE: int = 20

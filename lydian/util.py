@@ -9,6 +9,7 @@ import traceback
 from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from dataclasses import Field, fields, is_dataclass
 from datetime import UTC, datetime, timedelta, tzinfo
+from itertools import zip_longest
 from math import ceil, floor
 from pathlib import Path
 from time import perf_counter_ns
@@ -384,6 +385,30 @@ def get_leaves[T](tree: Mapping[Any, Any], typ: type[T] | None = None) -> Genera
                 yield from search(v)
 
     yield from search(tree)
+
+def get_text_sections(
+        pattern: str | re.Pattern[str],
+        content: str,
+        key_group: str | int = 0,
+    ) -> Generator[tuple[str, tuple[str, slice[int, int, None]]]]:
+    """Returns a generator of header-like section dividers to section content captured from the given text.
+
+    A section's content is defined as all text between the end of a ``pattern`` match and the beginning of the next
+    match—or the end of the string if there are no more header lines—stripped of any surrounding whitespace. The
+    dictionary's keys will be the group in the matched pattern defined by ``key_group``. The values will be tuples
+    containing the content itself, and span of that content in the form of a `slice` object.
+
+    :param pattern: The pattern used to determine what marks a section header.
+    :param content: The text content to search.
+    :param key_group: Which named or numbered group matched in ``pattern`` to use as the dictionary key for that
+        section.
+    """
+    headers: list[re.Match[str]] = list(re.finditer(pattern, content))
+
+    for a, b in zip_longest(headers, headers[1:]):
+        key: str = a.group(key_group)
+        span: slice[int, int, None] = slice(a.end(), b.start() if b else len(content))
+        yield key, (content[span].strip(), span)
 
 def is_annotated(typ: object) -> bool:
     """Returns whether ``typ``'s type origin is ``typing.Annotated``.

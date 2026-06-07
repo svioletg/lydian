@@ -8,11 +8,33 @@ import pytest
 from maybetype import Nothing, Some, maybe
 
 from lydian import util
+from lydian.const import MD_H2_REGEX
 from lydian.errors import AssuranceError
-from lydian.util import BasicLock, Cache
+from lydian.util import BasicLock, Cache, get_text_sections
 from tests import ReadOnlyDict
 
 NESTED_DICT_RO: ReadOnlyDict[str, Any] = ReadOnlyDict({'a': 1, 'b': {'a': 2, 'b': {'a': 3}}, 'c': 4})
+SAMPLE_MARKDOWN: str = """# Documentation
+
+## Section 1
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur velit nulla, fermentum sed vehicula vel, maximus et
+ex. Phasellus suscipit dolor ullamcorper, sagittis orci ut, efficitur purus. Nunc dolor ipsum, finibus a lacinia a,
+mollis vitae mauris:
+
+- Ut eget nisi lobortis diam commodo posuere.
+- Pellentesque maximus velit vel felis gravida semper.
+- Pellentesque tristique massa id erat mollis cursus.
+
+Curabitur volutpat velit id accumsan posuere. Nulla vehicula posuere dui, ut venenatis ipsum commodo sit amet.
+Suspendisse potenti. Donec a ligula in eros ultrices feugiat at dignissim ipsum. Ut at tortor id turpis ultricies
+aliquet vitae at mi. Quisque pulvinar pulvinar sodales. Morbi ac quam velit.
+
+## Section 2
+
+Praesent cursus scelerisque eros mattis rhoncus. Nam ac finibus eros. Etiam quis elit quam. Donec quis aliquet urna.
+Mauris blandit, nunc sit amet euismod ultrices, magna mauris porta dui, et consequat elit nulla quis nisl.
+"""
 
 @dataclass
 class SubDataclass:  # noqa: D101
@@ -159,6 +181,34 @@ def test_get_leaves() -> None:
     assert list(util.get_leaves(tree)) == [1, '2', 3, 4, '5', '6']
     assert list(util.get_leaves(tree, int)) == [1, 3, 4]
     assert list(util.get_leaves(tree, str)) == ['2', '5', '6']
+
+def test_get_text_sections() -> None:
+    sections: dict[str, str] = {k:v[0] for k, v in get_text_sections(MD_H2_REGEX, SAMPLE_MARKDOWN)}
+    assert list(sections.keys()) == ['## Section 1', '## Section 2']
+    assert sections['## Section 1'] == """
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur velit nulla, fermentum sed vehicula vel, maximus et
+ex. Phasellus suscipit dolor ullamcorper, sagittis orci ut, efficitur purus. Nunc dolor ipsum, finibus a lacinia a,
+mollis vitae mauris:
+
+- Ut eget nisi lobortis diam commodo posuere.
+- Pellentesque maximus velit vel felis gravida semper.
+- Pellentesque tristique massa id erat mollis cursus.
+
+Curabitur volutpat velit id accumsan posuere. Nulla vehicula posuere dui, ut venenatis ipsum commodo sit amet.
+Suspendisse potenti. Donec a ligula in eros ultrices feugiat at dignissim ipsum. Ut at tortor id turpis ultricies
+aliquet vitae at mi. Quisque pulvinar pulvinar sodales. Morbi ac quam velit.
+""".strip()
+    assert sections['## Section 2'] == """
+Praesent cursus scelerisque eros mattis rhoncus. Nam ac finibus eros. Etiam quis elit quam. Donec quis aliquet urna.
+Mauris blandit, nunc sit amet euismod ultrices, magna mauris porta dui, et consequat elit nulla quis nisl.
+""".strip()
+
+    assert [k for k, _ in get_text_sections('\n## (.+)', SAMPLE_MARKDOWN, key_group=1)] == ['Section 1', 'Section 2']
+    assert [k for k, _ in get_text_sections(
+        '\n## (?P<header>.+)',
+        SAMPLE_MARKDOWN,
+        key_group='header',
+    )] == ['Section 1', 'Section 2']
 
 def test_is_annotated() -> None:
     assert not util.is_annotated(str)
