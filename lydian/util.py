@@ -453,6 +453,10 @@ def maybepath(fp: str | Path, must_be: Literal['file', 'dir'] | None = None) -> 
 
     return maybe(Path(fp), check)
 
+def mention(user_id: int) -> str:
+    """Returns a string which can be used to mention a Discord user in a message."""
+    return f'<@{user_id}>'
+
 def partition[T](predicate: Callable[[T], bool], it: Iterable[T]) -> tuple[list[T], list[T]]:
     """Separates the items of ``it`` into two lists based on whether ``predicate`` returns ``True``.
 
