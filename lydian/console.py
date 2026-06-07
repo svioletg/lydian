@@ -4,6 +4,7 @@ import inspect
 import shlex
 from asyncio.tasks import Task
 from collections.abc import Callable
+from copy import deepcopy
 from datetime import UTC, datetime
 from itertools import zip_longest
 from types import EllipsisType, NoneType
@@ -22,10 +23,10 @@ from rich.markup import escape
 
 from lydian import __version__
 from lydian.config import config
-from lydian.const import debug_context, screen, setup_logger
+from lydian.const import debug_context, debug_store, screen, setup_logger
 from lydian.perms import perms
 from lydian.update import check_for_updates
-from lydian.util import expect, get_annotation, is_annotated, join_trailing, tabulate, wrap_paragraphs
+from lydian.util import exc_str, expect, get_annotation, is_annotated, join_trailing, tabulate, wrap_paragraphs
 
 if TYPE_CHECKING:
     from ty_extensions import Intersection
@@ -416,6 +417,11 @@ class LydianConsole(BotConsole):
         self.bot = bot or AsyncMock(Bot)
         self.prompt_prefix = prompt
 
+        self.debug_read_shortcuts: dict[str, str] = {
+            '?': 'dbg.',
+            '$': 'store.',
+        }
+
     #region COMMANDS
 
     @command()
@@ -432,33 +438,121 @@ class LydianConsole(BotConsole):
         else:
             screen.print(escape('\n\n'.join(c.help for c in self.commandlist)))
 
+    @staticmethod
+    def _debug_evaluate_in_context(expr: str) -> Result[Any, str]:
+        """Evaluates an expression and returns a ``Result`` depending on if an exception was raised.
+
+        ``Err`` is returned if an exception was raised during evaluation, wrapping an error message consisting of the
+        exception's name and its arguments (e.g. ``"TypeError: unsupported operand type(s) for +: 'int' and 'str'"``),
+        otherwise ``Ok`` is returned with the resulting value.
+
+        If debug mode is disabled, ``Err`` is returned with the string ``'ValueError: Debug mode is disabled'``.
+
+        The expression has access to:
+        - :py:data:`config.config`
+        - :py:data:`perms.perms`
+        - :py:data:`const.debug_context`
+        - :py:data:`const.debug_store`
+        """
+        if not config.debug:
+            return Err('ValueError: Debug mode is disabled')
+
+        eval_globals: dict[str, Any] = {
+            'config': config,
+            'perms': perms,
+            'dbg': debug_context,
+            'store': debug_store,
+        }
+
+        try:
+            # Can't be ast.literal_eval, we explicitly need access to some outside variables
+            # This is only accessible in debug mode and will be warned about in multiple places
+            return Ok(eval(expr, eval_globals))  # noqa: S307
+        except Exception as e:  # noqa: BLE001
+            # The full traceback for this case is usually unnecessary
+            return Err(f'{e.__class__.__name__}: {e}')
+
     @command(enabled=config.debug, group='debug')
     def debug_read(self, expr: str, /, *, log: bool = False) -> None:
-        """Prints the result of an expression to stdout.
+        """Prints the result of an expression.
 
         The expression will have access to Python's built-ins, the global "config" and "perms" objects, and a "dbg"
-        dictionary which stores references to various things specifically for debugging or development usage.
+        dictionary which stores references to various things specifically for debugging or development usage. If the
+        expression is prefixed with ``store.``, the key being accessed is either printed out if it's a copy of a value,
+        or evaluated if it's an expression.
 
-        For convenience, "?" can be used in place of "dbg." at the beginning of the expression, e.g. "?bot.user" is
-        parsed as "dbg.bot.user".
+        If the first character of the expression matches any of the following, it will be expanded to the corresponding
+        text before being evaluated:
+
+        - ``?`` -> ``dbg.``
+        - ``$`` -> ``store.``
 
         :param expr: The expression to evaluate.
         :param log: Whether to log this evaluation (as DEBUG-level) or just print it to the screen.
         """
         print_fn = logger.debug if log else screen.print
 
-        eval_globals: dict[str, Any] = {'config': config, 'perms': perms, 'dbg': debug_context}
-        parsed_expr: str = expr
-        if parsed_expr[0] == '?':
-            parsed_expr = parsed_expr.replace('?', 'dbg.', count=1)
+        if expr == 'store':
+            if not debug_store:
+                print_fn('(empty)')
+            else:
+                print_fn(tabulate(
+                    [(k, f'[dim](expr)[/] {v[0]}' if v[1] == 'ref' else repr(v[0])) for k, v in debug_store.items()],
+                ))
+            return
 
-        try:
-            # Can't be ast.literal_eval, we explicitly need access to some outside variables
-            # This is only accessible in debug mode and will be warned about in multiple places
-            print_fn(f'{parsed_expr} == {eval(parsed_expr, eval_globals)!r}')  # noqa: S307
-        except Exception as e:  # noqa: BLE001
-            # The full traceback for this case is usually unnecessary
-            logger.error(f'{e.__class__.__name__}: {e}')
+        parsed_expr: str = expr
+        if expansion := self.debug_read_shortcuts.get(parsed_expr[0]):
+            parsed_expr = parsed_expr.replace(parsed_expr[0], expansion, count=1)
+
+        if parsed_expr.startswith('store.'):
+            store_key: str = parsed_expr.removeprefix('store.')
+            if store_key not in debug_store:
+                logger.error(f'store does not have key {store_key!r}')
+                return
+            val, typ = debug_store[store_key]
+            if typ == 'copy':
+                print_fn(f'{parsed_expr} == {val!r}')
+                return
+            parsed_expr = val
+
+        match self._debug_evaluate_in_context(parsed_expr):
+            case Ok(val):
+                print_fn(f'{parsed_expr} == {val!r}')
+            case Err(e):
+                logger.error(e)
+
+    @command(enabled=config.debug, group='debug')
+    def debug_store(self, expr: str, dest_key: str, /) -> None:
+        """Stores either the result of an expression or the expression itself to be used later to ``store.<dest_key>``.
+
+        By default, the expression is evaluated once immediately and its deep-copied result is stored to the given key,
+        which can be accessed via ``debug read store.<dest_key>``. If the expression is prefixed with ``&``, the
+        expression itself is stored and not immediately evaluated. Using ``debug read store.<dest_key>`` in this case
+        will evaluate the expression stored at that key every time the command is run.
+
+        If the ``dest_key`` already exists in ``store`` (regardless if value or expression), it will be replaced with
+        the new given value.
+        """
+        store_expr: bool = expr.startswith('&')
+        if store_expr:
+            stored = debug_store[dest_key] = (expr.removeprefix('&'), 'ref')
+        else:
+            result = self._debug_evaluate_in_context(expr)
+            match result:
+                case Ok(val):
+                    try:
+                        stored = debug_store[dest_key] = (deepcopy(val), 'copy')
+                    except TypeError as e:
+                        logger.debug(exc_str(e))
+                        logger.error(f'Failed to store a copy: {e}')
+                        logger.error(f'Value: {val!r}')
+                        return
+                case Err(msg):
+                    logger.error(f'Evaluation failed: {msg}')
+                    return
+        screen.print(f'Stored {'copy of value' if not store_expr else 'expression'} {stored[0]!r} to store key'
+            + f' {dest_key!r}')
 
     @staticmethod
     def task_status(task: Task) -> str:

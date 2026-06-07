@@ -22,7 +22,9 @@ configured prefix accordingly.
 
 ### Added
 
+- Added debug console command `debug store`
 - Added attribute `cogs.voice.MediaItem.user_id` to replace `.user`
+- Added method `console.LydianConsole._debug_evaluate_in_context()`
 - Added function `util.mention()`
 
 ### Changed

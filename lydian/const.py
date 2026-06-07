@@ -3,6 +3,7 @@ import re
 import sys
 from enum import IntEnum, StrEnum
 from pathlib import Path
+from typing import Any, Literal
 
 import loguru
 from benedict import benedict
@@ -226,3 +227,4 @@ def setup_rich_console() -> Console:
 screen: Console = setup_rich_console()
 
 debug_context = benedict()
+debug_store: dict[str, tuple[Any, Literal['copy', 'ref']]] = {}

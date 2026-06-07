@@ -46,6 +46,7 @@ Docs: <https://lydian.readthedocs.io/en/latest/>
 - [Usage: Running the bot](#usage-running-the-bot)
 - [Usage: Bot console commands](#usage-bot-console-commands)
   - [`debug read`](#debug-read)
+  - [`debug store`](#debug-store)
   - [`help`](#help)
   - [`stop`](#stop)
   - [`uptime`](#uptime)
@@ -164,10 +165,11 @@ reason, you should be able to hit Ctrl+C to send a keyboard interrupt and forcib
 > shouldn't be an issue.
 
 Prints the result of an expression to stdout, or logs it as a DEBUG-level log if the `--log` flag is
-given. This command has access to the `config` object, `perms` object, and a `dbg` dictionary which
-stores references to various things specifically for debugging or development usage, as well as
-Python's built-ins. For convenience, `?` can be used in place of `dbg.` at the beginning of the
-expression, e.g. `?bot.user` is parsed as `dbg.bot.user`.
+given. This command has access to the `config` object, `perms` object, a `dbg` dictionary which
+stores references to various things specifically for debugging or development usage, the `store`
+dictionary (see `debug store`) as well as Python's built-ins. For convenience, `?` can be used in
+place of `dbg.` at the beginning of the expression, e.g. `?bot.user` is parsed as `dbg.bot.user`.
+`$` can be used in the same way for `store.`.
 
 Arguments:
   - expression (string)
@@ -182,6 +184,42 @@ Example:
 debug_context['cog.voice.queue'] == MediaQueue([])
 > debug read --log dbg.cog.voice.queue
 [2026-04-30 00:51:30] [bot::thread_console/DEBUG]: debug_context['cog.voice.queue'] == MediaQueue([])
+```
+
+### `debug store`
+
+> [!WARNING]
+> This command uses the `eval()` function, which is [unsafe to use with untrusted user
+> input](https://nedbatchelder.com/blog/201206/eval_really_is_dangerous) and enables potentially
+> destructive actions. You should be using a separate bot token for debug mode (set with
+> `LYDIAN_DEBUG_TOKEN`), and as long as you're only running the bot locally on a secure machine this
+> shouldn't be an issue.
+
+Stores either the result of an expression or the expression itself to a key in the `store`
+dictionary, to be accessed later by `debug read`. To do the latter, prefix the expression with `&`.
+Stored expressions will be evaluated on the fly on every run of `debug read store.<key>`, when just
+storing the result (no `&`) the expression is evaluated once right then and a deep-copy of the value
+is stored to read later.
+
+The expression given to this command does not support the expansions/shortcuts that `debug read`
+supports, e.g. `?cog.voice.now_playing` does not work and would have to be written fully as
+`dbg.cog.voice.now_playing`.
+
+Arguments:
+  - expression (string)
+  - destination key (string)
+
+Example:
+
+```bash
+> debug store dbg.cog.voice.now_playing np
+> debug read $np
+dbg.cog.voice.now_playing == MediaItem(title='Victoria (2019 Remaster)',
+url='https://www.youtube.com/watch?v=vaIzujp0IpI', duration=219)
+> debug store &dbg.cog.voice.now_playing np
+> debug read $np
+dbg.cog.voice.now_playing == MediaItem(title='Victoria (2019 Remaster)',
+url='https://www.youtube.com/watch?v=vaIzujp0IpI', duration=219)
 ```
 
 ### `help`
