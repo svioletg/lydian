@@ -18,6 +18,22 @@ paths. `lydian` does not contain any modules named `tools` or `tests`, to avoid 
 Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
 configured prefix accordingly.
 
+## [Unreleased]
+
+### Added
+
+- Added attribute `cogs.voice.MediaItem.user_id` to replace `.user`
+- Added function `util.mention()`
+
+### Changed
+
+- `cogs.voice.MediaItem` objects now store who queued the item as their `int` user ID rather than
+  the actual `discord.Member` object, which allows them to be deep-copied
+
+### Removed
+
+- Removed attribute `cogs.voice.MediaItem.user`, (replaced by `.user_id`)
+
 ## [0.8.0] - 2026-06-05
 
 ### Overview

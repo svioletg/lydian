@@ -28,7 +28,7 @@ from lydian.const import (
     EmojiStr,
 )
 from lydian.errors import AbortCommand, FileSizeLimitError, MediaQueueLimitError
-from lydian.util import BasicLock, Cache, Stopwatch, expect, format_duration
+from lydian.util import BasicLock, Cache, Stopwatch, expect, format_duration, mention
 
 
 class YTDLLogHandler:
@@ -119,8 +119,8 @@ class MediaItem:
     thumbnail_url: str | None = None
 
     # Non-media-related
-    user: discord.Member | None = None
-    """The discord user who requested this item, if any."""
+    user_id: int | None = None
+    """The ID of the Discord user who requested this item, if any."""
 
     def __str__(self) -> str:  # noqa: D105
         return f'MediaItem({self.title!r}, {self.url!r}, duration={self.duration!r})'
@@ -145,17 +145,21 @@ class MediaItem:
         )
 
     @classmethod
-    def from_url(cls, url: str, *, user: discord.Member | None = None, cache: bool = True) -> tuple[Self, ...]:
+    def from_url(cls, url: str, *, user: int | discord.Member | None = None, cache: bool = True) -> tuple[Self, ...]:
         """Returns a tuple of ``MediaItem`` objects created from the info extracted from ``url`` by yt-dlp.
 
         If multiple entries are extracted from ``url``, the resulting ``MediaItem`` objects will only have the
         ``title`` and ``url`` fields filled.
 
-        :param user: A ``discord.Member`` object to set as the ``user`` attribute for every returned item.
+        :param user: A ``discord.Member`` object or a Discord user's ID to set as the ``user_id`` attribute for every
+            returned item.
         :param cache: If ``True``, cached info will be used instead of requesting the information for ``url`` again if
             the URL exists in the cache and is not expired, otherwise the result of this extraction will be cached.
             If ``False``, the cache is not used.
         """
+        if isinstance(user, discord.Member):
+            user = user.id
+
         info: dict[str, Any] = cls._url_info_cache.get_or_set(url, lambda: ytdl.extract_info(url, download=False)) \
             if cache \
             else ytdl.extract_info(url, download=False)
@@ -171,7 +175,7 @@ class MediaItem:
         return embed.add_field(
             name=f'{title_prefix}{self.title}',
             value=
-                (f'Queued by {self.user.mention}\n' if self.user else '')
+                (f'Queued by {mention(self.user_id)}\n' if self.user_id else '')
                 + (f'({self.duration_str}) ' if self.duration else '') + self.url,
             inline=inline,
         )
@@ -187,7 +191,7 @@ class MediaItem:
         return discord.Embed(
             title=title_prefix + self.title,
             description=
-                (f'Queued by {self.user.mention}\n' if self.user else '')
+                (f'Queued by {mention(self.user_id)}\n' if self.user_id else '')
                 + f'{time_display}\n'
                 + self.url,
             color=EMBED_COLOR_INFO,
@@ -207,7 +211,7 @@ class MediaItem:
         if store_cache:
             self._url_info_cache.set(self.url, new_info)
 
-        return self.from_ytdl_extracted(new_info).set_user(self.user)
+        return self.from_ytdl_extracted(new_info).set_user(self.user_id)
 
     def refresh(self, *, store_cache: bool = True) -> Self:
         """Re-extracts information from this object's ``url`` and updates fields with the info accordingly.
@@ -223,11 +227,15 @@ class MediaItem:
 
         return self
 
-    def set_user(self, user: discord.Member | None = None) -> Self:
-        """Sets the ``user`` attribute and returns a reference to this instance."""
-        if (user is not None) and not isinstance(user, discord.Member):
-            raise TypeError(f'Expected discord.Member object or None for set_user: {user!r}')
-        self.user = user
+    def set_user(self, user: int | discord.User | None = None) -> Self:
+        """Sets the ``user_id`` attribute and returns a reference to this instance.
+
+        :param user: Either the user's ID, or a ``discord.User`` object to get the ID from.
+        """
+        if isinstance(user, discord.User):
+            self.user_id = user.id
+        else:
+            self.user_id = user
         return self
 
 class MediaQueue(UserList[MediaItem]):
