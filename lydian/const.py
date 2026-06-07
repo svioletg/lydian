@@ -16,6 +16,8 @@ from rich.theme import Theme
 
 GH_REPO: str = 'https://github.com/svioletg/lydian'
 GH_ISSUES: str = GH_REPO + '/issues'
+GH_CHANGELOG_WEB: str = GH_REPO + '/blob/main/CHANGELOG.md'
+GH_CHANGELOG_RAW: str = 'https://raw.githubusercontent.com/svioletg/lydian/refs/heads/main/CHANGELOG.md'
 
 # Paths
 PACKAGE_DIR      : Path = Path(__file__).resolve().parent

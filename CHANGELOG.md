@@ -23,6 +23,7 @@ configured prefix accordingly.
 ### Added
 
 - Added debug console command `debug store`
+- Added constants `const.GH_CHANGELOG_WEB` and `const.GH_CHANGELOG_RAW`
 - Added to `const`:
   - `MD_HEADER_REGEX`
   - `MD_H1_REGEX`
