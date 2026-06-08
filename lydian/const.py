@@ -120,6 +120,7 @@ class EmojiStr(StrEnum):
     PLAY    = emojize(':arrow_forward:', language='alias')
     PAUSE   = emojize(':pause_button:', language='alias')
     STOP    = emojize(':stop_button:', language='alias')
+    BACK    = emojize(':arrow_backward:', language='alias')
     SKIP    = emojize(':fast_forward:', language='alias')
     IN      = emojize(':inbox_tray:', language='alias')
     OUT     = emojize(':outbox_tray:', language='alias')
