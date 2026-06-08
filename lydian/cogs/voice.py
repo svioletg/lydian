@@ -816,9 +816,10 @@ class VoiceCog(commands.Cog):
                 ))
                 return
             self.voteskip.voted.add(ctx.author.id)
-            remaining: int = self.voteskip.remaining(voice.channel)
+            remaining: int = self.voteskip.remaining(voice.channel) \
+                - int(any(expect(self.bot.user).id == m.id for m in voice.channel.members))
             await ctx.send(embed=embed_info(
-                f'{mention(ctx.author.id)} voted to skip this track.',
+                f'{_assert_discord_member(ctx.author).display_name} voted to skip this track.',
                 f'{remaining} more vote(s) needed\nVoted: {', '.join(map(mention, self.voteskip.voted))}',
             ))
             if remaining > 0:
