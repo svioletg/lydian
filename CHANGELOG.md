@@ -31,6 +31,7 @@ configured prefix accordingly.
   - `MD_H3_REGEX`
 - Added attribute `cogs.voice.MediaItem.user_id` to replace `.user`
 - Added method `console.LydianConsole._debug_evaluate_in_context()`
+- Added function `util.cog_commands()`
 - Added function `util.get_text_sections()`
 - Added function `util.mention()`
 

@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Annotated, Any, Literal
 
 import pytest
+from discord.ext import commands
 from maybetype import Nothing, Some, maybe
 
 from lydian import util
@@ -47,6 +48,19 @@ class Dataclass:  # noqa: D101
     b: str = 'two'
     c: bool = True
     d: SubDataclass = field(default_factory=SubDataclass)
+
+class SampleCog(commands.Cog):  # noqa: D101
+    def __init__(self, bot: commands.Bot) -> None:
+        self.bot = bot
+
+    def bot_name(self) -> str:
+        if not self.bot.user:
+            raise ValueError('Bot is not online, user is None')
+        return self.bot.user.name
+
+    @commands.command()
+    async def greet(self, ctx: commands.Context) -> None:
+        await ctx.send('Hello!')
 
 def test_assure() -> None:
     util.assure(True)  # noqa: FBT003
@@ -103,6 +117,11 @@ def test_cache() -> None:
     assert cache.get_or_set(1, lambda: 'one', timedelta(days=1)) == 'one'
     with pytest.raises(ValueError, match='must be a future date'):
         cache.get_or_set(1, lambda: 'one', datetime(2025, 1, 1, tzinfo=UTC))
+
+def test_cog_commands() -> None:
+    result = util.cog_commands(SampleCog)
+    assert list(result.keys()) == ['greet']
+    assert all(isinstance(attr, commands.Command) for attr in result.values())
 
 def test_compose() -> None:
     assert util.compose([int, float, str, float, int, bool])('1') is True

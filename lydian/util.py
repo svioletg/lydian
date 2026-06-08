@@ -9,6 +9,7 @@ import traceback
 from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from dataclasses import Field, fields, is_dataclass
 from datetime import UTC, datetime, timedelta, tzinfo
+from inspect import getmembers
 from itertools import zip_longest
 from math import ceil, floor
 from pathlib import Path
@@ -280,6 +281,10 @@ def assure(condition: bool, exc_args: str = '') -> None:  # noqa: FBT001
     """Raises :py:class:`lydian.errors.AssuranceError` if ``condition`` is ``False``, otherwise does nothing."""
     if not condition:
         raise AssuranceError(exc_args)
+
+def cog_commands(cog: type[commands.Cog]) -> dict[str, commands.Command]:
+    """Returns a dictionary of a cog's command methods."""
+    return {name:attr for name, attr in getmembers(cog) if isinstance(attr, commands.Command)}
 
 def compose(funcs: Iterable[Callable]) -> Callable[[object], object]:
     """Composes ``funcs`` into one function which takes a single argument.
