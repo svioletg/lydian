@@ -132,7 +132,8 @@ class VoteSkippingConfig:
             + ' skip.'
             + '\n"literal" will use the concrete value given for the "literal" key, requiring that >= that number of'
             + ' users vote to skip regardless of how many are connected to the channel.')
-    percentage: int = 50
+    percentage: int = field(default=50,
+        metadata={'validators': [_validator_min(0), _validator_max(100)]})
     literal: int = 3
 
 @dataclass(kw_only=True)
