@@ -22,11 +22,6 @@ configured prefix accordingly.
 
 ### Overview
 
-> **Breaking changes**
->
-> - Config key `vote_skipping.exact` has been renamed to `vote_skipping.literal`.
-> - Config key `vote_skipping.threshold_type` now accepts `"literal"` instead of `"exact"`.
-
 - Vote-skipping is now supported, optionally requiring a minimum number of users (a percentage of
   the channel or an exact count) to use `-skip` before the current track is skipped.
   - To use it, add the `[vote_skipping]` table to your `lydian-config.toml` like below and adjust
@@ -52,9 +47,6 @@ literal = 3
 
 - `cogs.voice.MediaItem` objects now store who queued the item as their `int` user ID rather than
   the actual `discord.Member` object, which allows them to be deep-copied
-- Config key `vote_skipping.threshold_type` now accepts `"percentage"` or `"literal"` instead of
-  `"percentage"` or `"exact"`
-- Renamed config key `vote_skipping.exact` to `vote_skipping.literal`
 
 ### Removed
 

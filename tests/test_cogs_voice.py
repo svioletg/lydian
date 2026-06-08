@@ -80,7 +80,7 @@ def test_vote_skip() -> None:
     voteskip.voted.add(3)
     assert voteskip.remaining(mock_channel) == 0
 
-    voteskip = VoteSkip(3, 'literal')
+    voteskip = VoteSkip(3, 'exact')
     mock_channel.members.__len__.return_value = 0
     assert voteskip.remaining(mock_channel) == 3  # noqa: PLR2004
     mock_channel.members.__len__.return_value = 1

@@ -328,7 +328,7 @@ class VoteSkip:
 
     threshold: int
     """How many users are needed to skip a track based on ``threshold_type``."""
-    threshold_type: Literal['percentage', 'literal']
+    threshold_type: Literal['percentage', 'exact']
     """How to treat ``threshold``."""
     voted: set[int] = field(default_factory=set)
     """A set of user IDs who have voted to skip the current track."""
@@ -383,7 +383,7 @@ class VoiceCog(commands.Cog):
         self.voteskip: VoteSkip | None = VoteSkip(
             config.vote_skipping.percentage
                 if config.vote_skipping.threshold_type == 'percentage'
-                else config.vote_skipping.literal,
+                else config.vote_skipping.exact,
             config.vote_skipping.threshold_type,
         ) if config.vote_skipping.enabled else None
 

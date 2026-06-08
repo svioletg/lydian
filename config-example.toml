@@ -71,11 +71,11 @@ threshold_type = "percentage"
 #    are needed to skip based on how many are connected to the channel at time
 #    -skip was used, e.g. percentage = 50 means 50% of users (rounded up) need
 #    to vote in order to skip.
-#    "literal" will use the concrete value given for the "literal" key,
-#    requiring that >= that number of users vote to skip regardless of how many
-#    are connected to the channel.
+#    "exact" will use the concrete value given for the "exact" key, requiring
+#    that >= that number of users vote to skip regardless of how many are
+#    connected to the channel.
 percentage = 50
-literal = 3
+exact = 3
 
 [logging]
 level = 20 # env: LYDIAN_LOG_LEVEL

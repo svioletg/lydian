@@ -2,9 +2,9 @@ prefix = "$"
 
 [vote_skipping]
 enabled = true
-threshold_type = "literal"
+threshold_type = "exact"
 percentage = 50
-literal = 2
+exact = 2
 
 [logging]
 level = "WARNING"
