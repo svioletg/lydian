@@ -1,6 +1,7 @@
 """Utilities specifically for use in cog modules."""
 import warnings
-from typing import cast
+from collections.abc import Callable, Sequence
+from typing import Literal, cast
 
 import discord.ui
 from discord import ButtonStyle, Embed
@@ -8,6 +9,7 @@ from discord.ext import commands
 
 from lydian.config import config
 from lydian.const import (
+    DEFAULT_DISCORD_PAGINATED_VIEW_TIMEOUT,
     DEFAULT_DISCORD_PROMPT_TIMEOUT,
     EMBED_COLOR_ERROR,
     EMBED_COLOR_INFO,
@@ -64,6 +66,46 @@ class ConfirmView(discord.ui.View):
             raise AbortCommand
         return self.response
 
+class ArrowButtonsView(discord.ui.View):
+    """A view with back and forward arrow buttons."""
+
+    def __init__(self,
+            back_callback: Callable[[discord.Interaction, discord.ui.Button], None] | None = None,
+            next_callback: Callable[[discord.Interaction, discord.ui.Button], None] | None = None,
+            *,
+            timeout: float | None = None,
+        ) -> None:
+        super().__init__(timeout=timeout)
+
+        self.back = back_callback or (lambda *_: None)
+        self.next = next_callback or (lambda *_: None)
+
+        self.response: Literal[-1, 1] | None = None
+        """Indicates which button was clicked; -1 for back, 1 for next, ``None`` if neither has been clicked yet."""
+
+    @discord.ui.button(emoji=EmojiStr.BACK, style=ButtonStyle.blurple)
+    async def back_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:  # noqa: D102
+        self.back(interaction, button)
+        self.response = -1
+        await interaction.response.defer()
+        self.stop()
+
+    @discord.ui.button(emoji=EmojiStr.PLAY, style=ButtonStyle.blurple)
+    async def next_button(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:  # noqa: D102
+        self.next(interaction, button)
+        self.response = 1
+        await interaction.response.defer()
+        self.stop()
+
+    async def wait_for_response(self) -> Literal[-1, 1] | None:
+        """Waits for a button to be clicked, then returns the response.
+
+        If ``None`` is returned, the view timed out.
+        """
+        await self.wait()
+
+        return self.response
+
 def alias_from_config[T: commands.Command](cmd: T) -> T:
     """Extends a command's ``aliases`` with the aliases defined in user configuration for that command.
 
@@ -89,6 +131,36 @@ async def confirm(ctx: commands.Context, embed: Embed, *, prompt_timeout: float 
     await prompt.wait()
     await msg.edit(view=None)
     return prompt.response
+
+def _paginated_message_set_button_visibility(view: ArrowButtonsView, index: int, minimum: int, maximum: int) -> None:
+    view.back_button.disabled = False
+    view.next_button.disabled = False
+    if index == minimum:
+        view.back_button.disabled = True
+    if index == maximum:
+        view.next_button.disabled = True
+
+async def paginated_message(ctx: commands.Context, pages: Sequence[discord.Embed], *, start: int = 0) -> None:
+    """Sends a message with back and forward arrow buttons which can flip through the given "pages" of embeds.
+
+    :param start: Which page to start on.
+    """
+    current: int = start
+
+    msg: discord.Message | None = None
+
+    while True:
+        view = ArrowButtonsView(timeout=DEFAULT_DISCORD_PAGINATED_VIEW_TIMEOUT)
+        _paginated_message_set_button_visibility(view, current, 0, len(pages) - 1)
+        if msg:
+            await msg.edit(embed=pages[current], view=view)
+        else:
+            msg = await ctx.send(embed=pages[current], view=view)
+        response = await view.wait_for_response()
+        if response is None:
+            # Timed out
+            return
+        current += response
 
 def embed_info(title: str, description: str | None = None) -> Embed:
     """Returns an ``Embed`` with the embed color defined by ``const.COLOR_INFO``."""

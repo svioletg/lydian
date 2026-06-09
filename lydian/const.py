@@ -96,6 +96,7 @@ MD_H3_REGEX: re.Pattern[str] = re.compile(r'^###.+$', flags=re.MULTILINE)
 # Other values
 USER_AGENT: str = f'lydian-discord-bot/{__version__}'
 DEFAULT_DISCORD_PROMPT_TIMEOUT: float = 60.0
+DEFAULT_DISCORD_PAGINATED_VIEW_TIMEOUT: float = 60.0 * 5
 QUEUE_MAX_PER_PAGE: int = 20
 
 class ConsoleHighlighter(Highlighter):

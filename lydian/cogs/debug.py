@@ -4,7 +4,7 @@ from discord import Embed
 from discord.ext import commands
 from loguru import logger
 
-from lydian.cogs.util import confirm, embed_error, embed_info, embed_ok, embed_warn
+from lydian.cogs.util import confirm, embed_error, embed_info, embed_ok, embed_warn, paginated_message
 from lydian.config import config
 from lydian.const import debug_context
 
@@ -92,3 +92,15 @@ class DebugCog(commands.Cog):
     async def argint(self, ctx: commands.Context, num: int) -> None:
         """Takes one integer argument and echoes its ``repr``."""
         await ctx.send(repr(num))
+
+    @commands.command(checks=[debug_enabled])
+    async def pages(self, ctx: commands.Context) -> None:
+        """Sends a paginated view."""
+        pages = [
+            embed_info('Page 1'),
+            embed_info('Page 2'),
+            embed_info('Page 3'),
+            embed_info('Page 4'),
+            embed_info('Page 5'),
+        ]
+        await paginated_message(ctx, pages)
