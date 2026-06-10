@@ -5,7 +5,7 @@ from itertools import batched
 import discord
 from discord.ext.commands import Cog, Command, Context
 
-from lydian.cogs.util import embed_info
+from lydian.cogs.util import embed_info, paginated_message
 from lydian.const import EmojiStr
 from lydian.util import cog_commands
 
@@ -56,6 +56,10 @@ async def send_help_menu(ctx: Context, cogs: Sequence[type[Cog] | Cog]) -> disco
         embed.add_field(name=title, value=desc, inline=True)
 
     return await ctx.send(embed=embed, view=HelpView(cogs))
+
+async def send_paginated_cog_help(ctx: Context, cog: type[Cog]) -> discord.Message:
+    """Sends a paginated help message for a given cog."""
+    await paginated_message(ctx, cog_help_embed(cog))
 
 def cog_help_embed(cog: type[Cog]) -> list[discord.Embed]:
     """Returns a list of ``discord.Embed`` object showing paginated help for commands in the given cog."""
