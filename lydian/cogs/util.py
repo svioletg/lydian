@@ -176,6 +176,10 @@ def _paginated_message_set_button_visibility(view: ArrowButtonsView, index: int,
 async def paginated_message(ctx: commands.Context, pages: Sequence[discord.Embed], *, start: int = 0) -> None:
     """Sends a message with back and forward arrow buttons which can flip through the given "pages" of embeds.
 
+    .. warning::
+        This function enters an infinite loop which does not exit until the arrow button view times out, and will block
+        until then. The view's timeout is set to :py:data:`const.DEFAULT_DISCORD_PAGINATED_VIEW_TIMEOUT`.
+
     :param start: Which page to start on.
     """
     current: int = start
