@@ -31,6 +31,7 @@ configured prefix accordingly.
   - `MD_H2_REGEX`
   - `MD_H3_REGEX`
 - Added enum member `const.EmojiStr.BACK`
+- Added enum member `const.EmojiStr.GEAR`
 - Added class `cogs.util.DropdownView`
 - Added attribute `cogs.voice.MediaItem.user_id` to replace `.user`
 - Added method `console.LydianConsole._debug_evaluate_in_context()`

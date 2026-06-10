@@ -116,6 +116,7 @@ class EmojiStr(StrEnum):
     ERROR   = emojize(':x:', language='alias')
     CONFIRM = emojize(':heavy_check_mark:', language='alias')
     CANCEL  = emojize(':heavy_multiplication_x:', language='alias')
+    GEAR    = emojize(':gear:', language='alias')
 
     # Media
     PLAY    = emojize(':arrow_forward:', language='alias')
