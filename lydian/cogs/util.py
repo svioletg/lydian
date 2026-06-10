@@ -19,6 +19,7 @@ from lydian.const import (
 )
 from lydian.errors import AbortCommand
 
+type ViewItemCallback[T: discord.ui.Item] = Callable[[discord.Interaction, T], None]
 
 class ConfirmViewResponseWarning(Warning):
     """Emitted when trying to access the ``response`` attribute of a :py:class:`ConfirmView` before it has finished."""
@@ -70,8 +71,8 @@ class ArrowButtonsView(discord.ui.View):
     """A view with back and forward arrow buttons."""
 
     def __init__(self,
-            back_callback: Callable[[discord.Interaction, discord.ui.Button], None] | None = None,
-            next_callback: Callable[[discord.Interaction, discord.ui.Button], None] | None = None,
+            back_callback: ViewItemCallback[discord.ui.Button] | None = None,
+            next_callback: ViewItemCallback[discord.ui.Button] | None = None,
             *,
             timeout: float | None = None,
         ) -> None:
