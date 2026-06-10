@@ -3,6 +3,7 @@ from discord.ext import commands
 
 from lydian.cogs.util import alias_from_config, embed_info
 from lydian.const import GH_ISSUES, GH_REPO
+from lydian.help import send_help_menu
 
 
 class GeneralCog(commands.Cog):
@@ -16,6 +17,12 @@ class GeneralCog(commands.Cog):
     async def hello(self, ctx: commands.Context) -> None:
         """Sends a simple 'Hello, world!' message to test that the bot is active."""
         await ctx.send(embed=embed_info('Hello, world!'))
+
+    @alias_from_config
+    @commands.command(aliases=[])
+    async def help(self, ctx: commands.Context) -> None:
+        """Shows the help menu for Lydian."""
+        await send_help_menu(ctx, list(self.bot.cogs.values()))
 
     @alias_from_config
     @commands.command(aliases=[])
