@@ -106,6 +106,39 @@ class ArrowButtonsView(discord.ui.View):
 
         return self.response
 
+class DropdownView(discord.ui.View):
+    """A view with a dropdown menu for selecting one option."""
+
+    def __init__(self, options: list[discord.SelectOption], *, timeout: float | None = None) -> None:
+        super().__init__(timeout=timeout)
+
+        for opt in options:
+            self.select.append_option(opt)
+
+    @discord.ui.select(cls=discord.ui.Select)
+    async def select(self, interaction: discord.Interaction, _select: discord.ui.Select) -> None:  # noqa: D102
+        await interaction.response.defer()
+        self.stop()
+
+    async def wait_for_response(self, *, disable_after: bool = True) -> str | None:
+        """Waits for a choice to be selected, then returns that choice's value.
+
+        If ``None`` is returned, the view timed out.
+
+        :param disable_after: Whether to disable the dropdown after receiving a response. This will not be reflected in
+            the message unless it is edited and resent with this view again.
+        """
+        await self.wait()
+
+        choice = self.select.values[0] if self.select.values else None
+
+        if disable_after:
+            if choice:
+                self.select.placeholder = choice
+            self.select.disabled = True
+
+        return choice
+
 def alias_from_config[T: commands.Command](cmd: T) -> T:
     """Extends a command's ``aliases`` with the aliases defined in user configuration for that command.
 

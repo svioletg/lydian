@@ -23,6 +23,7 @@ configured prefix accordingly.
 ### Added
 
 - Added debug console command `debug store`
+- Added debug bot command `-dropdown` (method `cogs.debug.DebugCog.dropdown()`)
 - Added constants `const.GH_CHANGELOG_WEB` and `const.GH_CHANGELOG_RAW`
 - Added to `const`:
   - `MD_HEADER_REGEX`
@@ -30,6 +31,7 @@ configured prefix accordingly.
   - `MD_H2_REGEX`
   - `MD_H3_REGEX`
 - Added enum member `const.EmojiStr.BACK`
+- Added class `cogs.util.DropdownView`
 - Added attribute `cogs.voice.MediaItem.user_id` to replace `.user`
 - Added method `console.LydianConsole._debug_evaluate_in_context()`
 - Added function `util.cog_commands()`
