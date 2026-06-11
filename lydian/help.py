@@ -1,13 +1,16 @@
 """Tools for constructing Lydian's -help command output."""
 from collections.abc import Callable, Sequence
+from inspect import iscoroutinefunction
 from itertools import batched
+from types import CoroutineType
 
 import discord
 from discord.ext.commands import Cog, Command, Context
 
-from lydian.cogs.util import embed_info, paginated_message
+from lydian.cogs.util import embed_error, embed_info, paginated_message
+from lydian.config import config
 from lydian.const import EmojiStr
-from lydian.util import cog_commands
+from lydian.util import cog_commands, first_where
 
 
 class HelpView(discord.ui.View):
@@ -15,14 +18,14 @@ class HelpView(discord.ui.View):
 
     def __init__(self,
             cogs: Sequence[type[Cog] | Cog],
-            select_callback: Callable[[discord.Interaction, discord.ui.Select], None] | None = None,
+            choice_callback: Callable[[str | None], None] | Callable[[str | None], CoroutineType] | None = None,
             *,
             timeout: float | None = None,
         ) -> None:
         super().__init__(timeout=timeout)
 
         self.cogs = cogs
-        self.select_callback = select_callback or (lambda *_: None)
+        self.choice_callback = choice_callback or (lambda *_: None)
 
         for cog in cogs:
             self.select.append_option(discord.SelectOption(
@@ -33,13 +36,20 @@ class HelpView(discord.ui.View):
             ))
 
     @discord.ui.select(cls=discord.ui.Select)
-    async def select(self, interaction: discord.Interaction, select: discord.ui.Select) -> None:  # noqa: D102
+    async def select(self, interaction: discord.Interaction, _select: discord.ui.Select) -> None:  # noqa: D102
         await interaction.response.defer()
         self.stop()
 
-        self.select_callback(interaction, select)
+        choice = self.select.values[0] if self.select.values else None
+        if iscoroutinefunction(self.choice_callback):
+            await self.choice_callback(choice)  # ty:ignore[invalid-await] ; don't see where this would fail
+        else:
+            self.choice_callback(choice)
 
-async def send_help_menu(ctx: Context, cogs: Sequence[type[Cog] | Cog]) -> discord.Message:
+        self.select.placeholder = choice
+        self.select.disabled = True
+
+async def send_help_menu(ctx: Context, cogs: Sequence[type[Cog]]) -> discord.Message:
     """Sends the main help menu and returns the sent message."""
     embed = embed_info(title=f'{EmojiStr.INFO} Help', description='Choose a category below to view its commands.')
 
@@ -55,7 +65,23 @@ async def send_help_menu(ctx: Context, cogs: Sequence[type[Cog] | Cog]) -> disco
         ):
         embed.add_field(name=title, value=desc, inline=True)
 
-    return await ctx.send(embed=embed, view=HelpView(cogs))
+    msg: discord.Message
+    view: HelpView
+
+    async def callback(choice: str | None) -> None:
+        await msg.edit(view=view)
+        if choice is None:
+            return
+        cog = first_where(cogs, lambda cog: (cog if isinstance(cog, type) else cog.__class__).__name__ == choice)
+        if cog is None:
+            await ctx.send(embed=embed_error(f'Failed to find cog for choice value: {choice}'))
+            return
+        await send_paginated_cog_help(ctx, cog if isinstance(cog, type) else cog.__class__)
+
+    view = HelpView(cogs, callback)
+    msg = await ctx.send(embed=embed, view=view)
+
+    return msg
 
 async def send_paginated_cog_help(ctx: Context, cog: type[Cog]) -> discord.Message:
     """Sends a paginated help message for a given cog."""
@@ -65,13 +91,13 @@ def cog_help_embed(cog: type[Cog]) -> list[discord.Embed]:
     """Returns a list of ``discord.Embed`` object showing paginated help for commands in the given cog."""
     commands: dict[str, Command] = cog_commands(cog)
 
-    command_pages: tuple[tuple[tuple[str, Command], ...], ...] = tuple(batched(commands.items(), 20, strict=False))
+    command_pages: tuple[tuple[Command, ...], ...] = tuple(batched(commands.values(), 5, strict=False))
     embed_pages: list[discord.Embed] = []
 
     for batch in command_pages:
         embed = embed_info(title=f'{EmojiStr.INFO} Help: {cog.__cog_name__}')
         embed_pages.append(embed)
-        for name, command in batch:
-            embed.add_field(name=name, value=command.help)
+        for command in batch:
+            embed.add_field(name=f'`{config.prefix}{command.name}`', value=command.help, inline=False)
 
     return embed_pages

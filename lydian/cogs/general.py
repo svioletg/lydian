@@ -4,6 +4,7 @@ from discord.ext import commands
 from lydian.cogs.util import alias_from_config, embed_info
 from lydian.const import GH_ISSUES, GH_REPO
 from lydian.help import send_help_menu
+from lydian.util import getclass
 
 
 class GeneralCog(commands.Cog):
@@ -22,7 +23,7 @@ class GeneralCog(commands.Cog):
     @commands.command(aliases=[])
     async def help(self, ctx: commands.Context) -> None:
         """Shows the help menu for Lydian."""
-        await send_help_menu(ctx, list(self.bot.cogs.values()))
+        await send_help_menu(ctx, [getclass(cog) for cog in self.bot.cogs.values()])
 
     @alias_from_config
     @commands.command(aliases=[])
