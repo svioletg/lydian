@@ -124,6 +124,8 @@ class EmojiStr(StrEnum):
     IN      = emojize(':inbox_tray:', language='alias')
     OUT     = emojize(':outbox_tray:', language='alias')
     SHUFFLE = emojize(':twisted_rightwards_arrows:', language='alias')
+    LOOP     = emojize(':repeat:', language='alias')
+    LOOP_ONE = emojize(':repeat_one:', language='alias')
 
 class LogLevel(IntEnum):  # noqa: D101
     TRACE   = 5
