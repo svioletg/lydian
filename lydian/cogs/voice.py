@@ -370,6 +370,8 @@ class VoiceCog(commands.Cog):
         """
         self.shuffle: bool = False
         """If ``True``, a random item is pulled from the queue instead of the next one when advancing."""
+        self.loop: Literal['track', 'queue', False] = False
+        """What looping mode the player is in, ``False`` if not looping."""
 
         # Timers/counters
         self.time_inactive: int = 0
@@ -801,6 +803,24 @@ class VoiceCog(commands.Cog):
 
         logger.info('Stopping player')
         self.stop_player(voice)
+
+    @alias_from_config
+    @commands.command('loop', aliases=[])
+    async def toggle_loop(self, ctx: commands.Context, state: Literal['track', 'queue', 'off']) -> None:
+        """Sets the looping state of the player.
+
+        ``"track"`` loops the current track, ``"queue"`` loops the full queue, ``"off"`` disables looping.
+        """
+        match state:
+            case 'track':
+                await ctx.send(embed=embed_info(f'{EmojiStr.LOOP} Looping the current track.'))
+            case 'queue':
+                await ctx.send(embed=embed_info(f'{EmojiStr.LOOP_ONE} Looping the queue.'))
+            case 'off':
+                await ctx.send(embed=embed_info('Stopped looping.'))
+
+        self.loop = False if state == 'off' else state
+        logger.info(f'Updated player loop state: {self.loop!r}')
 
     @alias_from_config
     @commands.command('shuffle', aliases=[])

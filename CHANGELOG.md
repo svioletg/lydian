@@ -23,6 +23,7 @@ configured prefix accordingly.
 ### Added
 
 - Added debug console command `debug store`
+- Added bot command `-loop` (method `cogs.voice.VoiceCog.toggle_loop()`)
 - Added constants `const.GH_CHANGELOG_WEB` and `const.GH_CHANGELOG_RAW`
 - Added to `const`:
   - `MD_HEADER_REGEX`
@@ -32,6 +33,7 @@ configured prefix accordingly.
 - Added enum member `const.EmojiStr.LOOP`
 - Added enum member `const.EmojiStr.LOOP_ONE`
 - Added attribute `cogs.voice.MediaItem.user_id` to replace `.user`
+- Added attribute `cogs.voice.VoiceCog.loop`
 - Added method `console.LydianConsole._debug_evaluate_in_context()`
 - Added function `util.get_text_sections()`
 - Added function `util.mention()`
