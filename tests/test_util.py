@@ -174,6 +174,14 @@ def test_first_where[T](it: Iterable[T], predicate: Callable[[T], bool], expecte
 def test_format_duration(total_seconds: float, expected: str) -> None:
     assert util.format_duration(total_seconds) == expected
 
+def test_getclass() -> None:
+    class A:
+        def __init__(self, x: int) -> None:
+            self.x = x
+
+    inst = A(1)
+    assert util.getclass(inst) is util.getclass(A) is inst.__class__ is A
+
 def test_get_dataclass_fields() -> None:
     dc = Dataclass()
     dc_fields: dict[str, Field] = util.get_dataclass_fields(dc)
