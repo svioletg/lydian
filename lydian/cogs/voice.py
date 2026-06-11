@@ -605,7 +605,7 @@ class VoiceCog(commands.Cog):
                 else:
                     progress_msg = await ctx.send(embed=embed_info('Getting media info...', item.url))
 
-                if (not item.duration) or (item.thumbnail_url):
+                if (not item.duration) or (not item.thumbnail_url):
                     logger.debug(f'Refreshing MediaItem info: {item}')
                     item.refresh()
 

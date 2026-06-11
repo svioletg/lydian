@@ -45,6 +45,13 @@ configured prefix accordingly.
 
 - Removed attribute `cogs.voice.MediaItem.user`, (replaced by `.user_id`)
 
+### Fixed
+
+- Fixed `cogs.voice.MediaItem` objects always refreshing when advancing queue if their
+  `thumbnail_url` attribute is truthy (incorrectly wrote
+  `(not item.duration) or (item.thumbnail_url)` instead of
+  `(not item.duration) or (not item.thumbnail_url)`)
+
 ## [0.8.0] - 2026-06-05
 
 ### Overview
