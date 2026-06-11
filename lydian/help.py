@@ -9,7 +9,7 @@ from discord.ext.commands import Cog, Command, Context
 
 from lydian.cogs.util import command_signature, embed_error, embed_info, paginated_message
 from lydian.const import EmojiStr
-from lydian.util import cog_commands, first_where
+from lydian.util import cog_commands, first_where, getclass
 
 
 class HelpView(discord.ui.View):
@@ -29,7 +29,7 @@ class HelpView(discord.ui.View):
         for cog in cogs:
             self.select.append_option(discord.SelectOption(
                 label=cog.__cog_name__,
-                value=(cog if isinstance(cog, type) else cog.__class__).__name__,
+                value=getclass(cog).__name__,
                 description=cog.__cog_description__,
                 emoji=getattr(cog, 'emoji', EmojiStr.GEAR),
             ))
@@ -71,11 +71,11 @@ async def send_help_menu(ctx: Context, cogs: Sequence[type[Cog]]) -> discord.Mes
 
         if choice is None:
             return
-        cog = first_where(cogs, lambda cog: (cog if isinstance(cog, type) else cog.__class__).__name__ == choice)
+        cog = first_where(cogs, lambda cog: cog.__name__ == choice)
         if cog is None:
             await ctx.send(embed=embed_error(f'Failed to find cog for choice value: {choice}'))
             return
-        await send_paginated_cog_help(ctx, cog if isinstance(cog, type) else cog.__class__)
+        await send_paginated_cog_help(ctx, cog)
 
     view = HelpView(cogs, callback)
     msg = await ctx.send(embed=embed, view=view)
