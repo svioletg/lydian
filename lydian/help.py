@@ -90,7 +90,7 @@ def cog_help_embed(cog: type[Cog]) -> list[discord.Embed]:
     """Returns a list of ``discord.Embed`` object showing paginated help for commands in the given cog."""
     commands: dict[str, Command] = cog_commands(cog)
 
-    command_pages: tuple[tuple[Command, ...], ...] = tuple(batched(commands.values(), 5, strict=False))
+    command_pages: tuple[tuple[Command, ...], ...] = tuple(batched(commands.values(), 10, strict=False))
     embed_pages: list[discord.Embed] = []
 
     for batch in command_pages:
