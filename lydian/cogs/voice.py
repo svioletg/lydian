@@ -652,6 +652,7 @@ class VoiceCog(commands.Cog):
         """
         logger.debug('Player has stopped')
 
+        play_now: MediaItem | None = self.now_playing if self.loop == 'track' else None
         self.now_playing = None
 
         if exc:
@@ -660,7 +661,7 @@ class VoiceCog(commands.Cog):
 
         if not self._manual_stop:
             self._manual_stop = False
-            asyncio.run_coroutine_threadsafe(self.advance_queue(ctx), self.bot.loop).result()
+            asyncio.run_coroutine_threadsafe(self.advance_queue(ctx, play_now=play_now), self.bot.loop).result()
         else:
             self._manual_stop = False
 
