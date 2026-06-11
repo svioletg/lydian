@@ -46,9 +46,6 @@ class HelpView(discord.ui.View):
         else:
             self.choice_callback(choice)
 
-        self.select.placeholder = choice
-        self.select.disabled = True
-
 async def send_help_menu(ctx: Context, cogs: Sequence[type[Cog]]) -> discord.Message:
     """Sends the main help menu and returns the sent message."""
     embed = embed_info(title=f'{EmojiStr.INFO} Help', description='Choose a category below to view its commands.')
@@ -69,7 +66,10 @@ async def send_help_menu(ctx: Context, cogs: Sequence[type[Cog]]) -> discord.Mes
     view: HelpView
 
     async def callback(choice: str | None) -> None:
+        view.select.placeholder = choice
+        view.select.disabled = True
         await msg.edit(view=view)
+
         if choice is None:
             return
         cog = first_where(cogs, lambda cog: (cog if isinstance(cog, type) else cog.__class__).__name__ == choice)
