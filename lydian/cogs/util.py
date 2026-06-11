@@ -200,6 +200,20 @@ async def paginated_message(ctx: commands.Context, pages: Sequence[discord.Embed
             return
         current += response
 
+def command_signature(command: commands.Command) -> str:
+    """Returns a "signature" for a given command to display in help text."""
+    sig_parts: list[str] = [f'{config.prefix}{command.name}']
+
+    for name, param in command.clean_params.items():
+        part: str = name
+        if param.kind is commands.Parameter.VAR_POSITIONAL:
+            part += '...'
+        part = f'<{part}>' if param.required else f'[{part}]'
+
+        sig_parts.append(part)
+
+    return ' '.join(sig_parts)
+
 def embed_info(title: str, description: str | None = None) -> Embed:
     """Returns an ``Embed`` with the embed color defined by ``const.COLOR_INFO``."""
     return Embed(title=title, description=description, color=EMBED_COLOR_INFO)

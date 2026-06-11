@@ -35,6 +35,7 @@ configured prefix accordingly.
 - Added class `cogs.util.DropdownView`
 - Added attribute `cogs.voice.MediaItem.user_id` to replace `.user`
 - Added method `console.LydianConsole._debug_evaluate_in_context()`
+- Added function `cogs.util.command_signature()`
 - Added function `util.cog_commands()`
 - Added function `util.getclass()`
 - Added function `util.get_text_sections()`
