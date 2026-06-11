@@ -174,7 +174,13 @@ def _paginated_message_set_button_visibility(view: ArrowButtonsView, index: int,
     if index == maximum:
         view.next_button.disabled = True
 
-async def paginated_message(ctx: commands.Context, pages: Sequence[discord.Embed], *, start: int = 0) -> None:
+async def paginated_message(
+        ctx: commands.Context,
+        pages: Sequence[discord.Embed],
+        *,
+        start: int = 0,
+        footer: bool = True,
+    ) -> None:
     """Sends a message with back and forward arrow buttons which can flip through the given "pages" of embeds.
 
     .. warning::
@@ -182,8 +188,14 @@ async def paginated_message(ctx: commands.Context, pages: Sequence[discord.Embed
         until then. The view's timeout is set to :py:data:`const.DEFAULT_DISCORD_PAGINATED_VIEW_TIMEOUT`.
 
     :param start: Which page to start on.
+    :param footer: Whether to add a "Page X of Y" footer to each page embed. This will overwrite the existing footer on
+        the embeds if one exists.
     """
     current: int = start
+
+    if footer:
+        for n, embed in enumerate(pages, 1):
+            embed.set_footer(text=f'Page {n} of {len(pages)}')
 
     msg: discord.Message | None = None
 
