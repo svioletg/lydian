@@ -35,6 +35,8 @@ configured prefix accordingly.
 - Added method `console.LydianConsole._debug_evaluate_in_context()`
 - Added function `util.get_text_sections()`
 - Added function `util.mention()`
+- Added proper handling for `discord.ext.commands.errors.BadLiteralArgument` in
+  `bot.on_command_error()`
 
 ### Changed
 
