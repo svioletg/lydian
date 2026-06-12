@@ -817,21 +817,19 @@ class VoiceCog(commands.Cog):
 
     @alias_from_config
     @commands.command('loop', aliases=[])
-    async def toggle_loop(self, ctx: commands.Context, state: Literal['track', 'queue', 'off']) -> None:
+    async def toggle_loop(self, ctx: commands.Context, state: Literal['track', 'queue', 'off'] | None = None) -> None:
         """Sets the looping state of the player.
 
         ``"track"`` loops the current track, ``"queue"`` loops the full queue, ``"off"`` disables looping.
+        Giving no argument shows the current loop state.
         """
-        match state:
-            case 'track':
-                await ctx.send(embed=embed_info(f'{EmojiStr.LOOP} Looping the current track.'))
-            case 'queue':
-                await ctx.send(embed=embed_info(f'{EmojiStr.LOOP_ONE} Looping the queue.'))
-            case 'off':
-                await ctx.send(embed=embed_info('Stopped looping.'))
+        if state is not None:
+            self.loop = False if state == 'off' else state
+            logger.info(f'Updated player loop state: {self.loop!r}')
 
-        self.loop = False if state == 'off' else state
-        logger.info(f'Updated player loop state: {self.loop!r}')
+        await ctx.send(embed=self.loop_state_embed(
+            'Showing the current loop state; pass an argument to start or stop looping.' if state is None else None,
+        ))
 
     @alias_from_config
     @commands.command('shuffle', aliases=[])
