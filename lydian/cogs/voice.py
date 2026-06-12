@@ -645,6 +645,16 @@ class VoiceCog(commands.Cog):
 
         return skipped
 
+    def loop_state_embed(self, description: str | None = None) -> discord.Embed:
+        """Returns an embed describing the current ``self.loop`` state."""
+        match self.loop:
+            case 'track':
+                return embed_info(f'{EmojiStr.LOOP} Looping the current track.', description)
+            case 'queue':
+                return embed_info(f'{EmojiStr.LOOP_ONE} Looping the queue.', description)
+            case False:
+                return embed_info('Not looping.', description)
+
     def on_player_stop(self, ctx: commands.Context, exc: Exception | None) -> None:
         """Callback for the voice client's ``.play()`` method ``after`` callback.
 

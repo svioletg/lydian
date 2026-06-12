@@ -34,6 +34,7 @@ configured prefix accordingly.
 - Added enum member `const.EmojiStr.LOOP_ONE`
 - Added attribute `cogs.voice.MediaItem.user_id` to replace `.user`
 - Added attribute `cogs.voice.VoiceCog.loop`
+- Added method `cogs.voice.VoiceCog.loop_state_embed()`
 - Added method `console.LydianConsole._debug_evaluate_in_context()`
 - Added function `util.get_text_sections()`
 - Added function `util.mention()`
