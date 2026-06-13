@@ -304,7 +304,7 @@ def dirsize_counted(source_dir: str | Path) -> tuple[int, dict[Literal['dir', 'f
     count: dict[Literal['dir', 'file'], int] = {'dir': 0, 'file': 0}
     for fp in Path(source_dir).rglob('*'):
         count['dir' if fp.is_dir() else 'file'] += 1
-        total_bytes += fp.stat().st_size
+        total_bytes += fp.stat().st_size if fp.is_file() else 0
 
     return total_bytes, count
 

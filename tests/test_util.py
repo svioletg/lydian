@@ -126,11 +126,11 @@ def test_dirsize(tmpdir: Path) -> None:
         'dir': 2,
         'file': 3 * files_per,
     }
-    expected_size: int = (expected_count['dir'] * 4096) + (expected_count['file'] * file_size)
+    expected_size: int = expected_count['file'] * file_size
 
     for d in '.ab':
         for f in 'xyz':
-            write_dummy(1000, source_dir / d / f)
+            write_dummy(file_size, source_dir / d / f)
 
     assert util.dirsize(source_dir) == expected_size
     assert util.dirsize_counted(source_dir) == (expected_size, expected_count)
