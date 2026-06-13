@@ -4,10 +4,9 @@ from typing import Any, cast
 from discord.ext import commands
 from rapidfuzz import process as fuzz
 
-from lydian.cogs.util import alias_from_config, command_signature, embed_error, embed_info
-from lydian.config import config
-from lydian.const import GH_ISSUES, GH_REPO, EmojiStr
-from lydian.help import send_help_menu
+from lydian.cogs.util import alias_from_config, embed_error, embed_info
+from lydian.const import GH_ISSUES, GH_REPO
+from lydian.help import command_help_embed, send_help_menu
 from lydian.util import getclass
 
 
@@ -43,11 +42,7 @@ class GeneralCog(commands.Cog):
         # never seems to be the case, so just cast it
         command = cast('commands.Command[commands.Cog, Any, Any]', command)
 
-        await ctx.send(embed=embed_info(
-            f'{EmojiStr.INFO} Help: {getattr(command.cog, 'emoji', EmojiStr.GEAR)} {command.cog_name}:'
-                + f' `{config.prefix}{command.name}`',
-            f'{command_signature(command)}',
-        ))
+        await ctx.send(embed=command_help_embed(command))
 
     @alias_from_config
     @commands.command(aliases=[])

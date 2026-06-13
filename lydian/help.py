@@ -5,10 +5,11 @@ from itertools import batched
 from types import CoroutineType
 
 import discord
-from discord.ext.commands import Cog, Command, Context
+from discord.ext.commands import Cog, Command, Context, Parameter
 
 from lydian.cogs.util import command_signature, embed_error, embed_info, paginated_message
-from lydian.const import EmojiStr
+from lydian.config import config
+from lydian.const import EmbedField, EmojiStr
 from lydian.util import cog_commands, first_where, getclass
 
 
@@ -110,3 +111,25 @@ def cog_help_embed(cog: type[Cog]) -> list[discord.Embed]:
             embed.add_field(name=f'{command_signature(command)}', value=command.help, inline=False)
 
     return embed_pages
+
+def command_param_embed_field(param: Parameter) -> EmbedField:
+    """Returns Discord embed field arguments for a command parameter."""
+    return {
+        'name': f'<{param.name}>' if param.required else f'[{param.name}]',
+        'value': f'Type: {param.annotation}'
+            + (f' (Default: {param.default})' if param.default is not Parameter.empty else ''),
+        'inline': False,
+    }
+
+def command_help_embed(command: Command) -> discord.Embed:
+    """Returns a ``discord.Embed`` object describing how to use a command."""
+    embed = embed_info(
+        f'{EmojiStr.INFO} Help: {getattr(command.cog, 'emoji', EmojiStr.GEAR)} {command.cog_name}:'
+            + f' {config.prefix}{command.name}',
+        f'`{command_signature(command)}`\n\n{command.help}' + ('\n\n**Arguments:**' if command.params else ''),
+    )
+
+    for param in command.params.values():
+        embed.add_field(**command_param_embed_field(param))
+
+    return embed
