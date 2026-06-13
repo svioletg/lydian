@@ -52,6 +52,8 @@ configured prefix accordingly.
   `thumbnail_url` attribute is truthy (incorrectly wrote
   `(not item.duration) or (item.thumbnail_url)` instead of
   `(not item.duration) or (not item.thumbnail_url)`)
+- Fixed `ZoneInfo` not working correctly on systems without an IANA database by including `tzdata`
+  as a dependency
 
 ## [0.8.0] - 2026-06-05
 
