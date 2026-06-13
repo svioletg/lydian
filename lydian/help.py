@@ -86,16 +86,12 @@ async def send_help_menu(ctx: Context, cogs: Sequence[type[Cog]]) -> discord.Mes
         if cog is None:
             await ctx.send(embed=embed_error(f'Failed to find cog for choice value: {choice}'))
             return
-        await send_paginated_cog_help(ctx, cog)
+        await paginated_message(ctx, cog_help_embed(cog))
 
     view = HelpView(cogs, callback)
     msg = await ctx.send(embed=embed, view=view)
 
     return msg
-
-async def send_paginated_cog_help(ctx: Context, cog: type[Cog]) -> discord.Message:
-    """Sends a paginated help message for a given cog."""
-    await paginated_message(ctx, cog_help_embed(cog))
 
 def cog_help_embed(cog: type[Cog]) -> list[discord.Embed]:
     """Returns a list of ``discord.Embed`` object showing paginated help for commands in the given cog."""
