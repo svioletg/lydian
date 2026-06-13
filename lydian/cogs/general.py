@@ -1,4 +1,6 @@
 """General-purpose commands."""
+from typing import Any, cast
+
 from discord.ext import commands
 from rapidfuzz import process as fuzz
 
@@ -36,8 +38,14 @@ class GeneralCog(commands.Cog):
                 None if not close else f'Did you mean: {', '.join(f'"{i[0]}"' for i in close)}',
             ))
             return
+
+        # all_commands values are typed None for the first type parameter of Command (the Cog), but in practice this
+        # never seems to be the case, so just cast it
+        command = cast('commands.Command[commands.Cog, Any, Any]', command)
+
         await ctx.send(embed=embed_info(
-            f'{EmojiStr.INFO} Help: `{config.prefix}{command.name}`',
+            f'{EmojiStr.INFO} Help: {getattr(command.cog, 'emoji', EmojiStr.GEAR)} {command.cog_name}:'
+                + f' `{config.prefix}{command.name}`',
             f'{command_signature(command)}',
         ))
 
