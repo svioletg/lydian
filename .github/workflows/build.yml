@@ -11,10 +11,11 @@ permissions:
 
 jobs:
   build:
-    name: Build project and try running it
-    runs-on: ubuntu-latest
+    name: Build project with ${{ matrix.os }}, Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ 'ubuntu-latest', 'windows-latest', 'macos-latest' ]
         python-version: [ '3.14' ]
 
     steps:
