@@ -36,5 +36,4 @@ jobs:
       run: pip install .[dev]
     - name: Test
       run: |
-        pytest -v
-        python -m doctest lydian/*.py
+        pytest -v --doctest-modules
