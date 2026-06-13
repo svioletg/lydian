@@ -107,6 +107,6 @@ def cog_help_embed(cog: type[Cog]) -> list[discord.Embed]:
         embed = embed_info(title=f'{EmojiStr.INFO} Help: {cog.__cog_name__}')
         embed_pages.append(embed)
         for command in batch:
-            embed.add_field(name=f'`{command_signature(command)}`', value=command.help, inline=False)
+            embed.add_field(name=f'{command_signature(command)}', value=command.help, inline=False)
 
     return embed_pages
