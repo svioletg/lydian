@@ -295,8 +295,8 @@ def compose(funcs: Iterable[Callable]) -> Callable[[object], object]:
     return composed_func
 
 def dirsize(source_dir: str | Path) -> int:
-    """Returns the total size of a directory's contents in bytes."""
-    return sum(fp.stat().st_size for fp in Path(source_dir).rglob('*'))
+    """Returns the total size of a directory and its subdirectories' files in bytes."""
+    return sum(fp.stat().st_size for fp in Path(source_dir).rglob('*') if fp.is_file())
 
 def dirsize_counted(source_dir: str | Path) -> tuple[int, dict[Literal['dir', 'file'], int]]:
     """Returns the total size of a directory's contents in bytes, and a dictionary of directory and file counts."""
