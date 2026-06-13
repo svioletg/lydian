@@ -288,12 +288,12 @@ def test_plural(word: str, singular: str, plural: str) -> None:
     [
         (0, None, None, '1970-01-01T000000+0000'),
         (0, None, 'US/Central', '1969-12-31T180000-0600'),
-        (0, '%A, %B %e, %Y at %I:%M%P', None, 'Thursday, January  1, 1970 at 12:00am'),
-        (0, '%A, %B %e, %Y at %I:%M%P', 'US/Central', 'Wednesday, December 31, 1969 at 06:00pm'),
+        (0, '%A, %B %e, %Y at %I:%M%p', None, 'Thursday, January  1, 1970 at 12:00AM'),
+        (0, '%A, %B %e, %Y at %I:%M%p', 'US/Central', 'Wednesday, December 31, 1969 at 06:00PM'),
         (1776105384, None, None, '2026-04-13T183624+0000'),
         (1776105384, None, 'US/Central', '2026-04-13T133624-0500'),
-        (1776105384, '%A, %B %e, %Y at %I:%M%P', None, 'Monday, April 13, 2026 at 06:36pm'),
-        (1776105384, '%A, %B %e, %Y at %I:%M%P', 'US/Central', 'Monday, April 13, 2026 at 01:36pm'),
+        (1776105384, '%A, %B %e, %Y at %I:%M%p', None, 'Monday, April 13, 2026 at 06:36PM'),
+        (1776105384, '%A, %B %e, %Y at %I:%M%p', 'US/Central', 'Monday, April 13, 2026 at 01:36PM'),
     ],
 )
 def test_strftimestamp(
