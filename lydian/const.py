@@ -3,7 +3,7 @@ import re
 import sys
 from enum import IntEnum, StrEnum
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, TypedDict
 
 import loguru
 from benedict import benedict
@@ -105,6 +105,13 @@ class ConsoleHighlighter(Highlighter):
     def highlight(self, text: Text) -> None:  # noqa: D102
         if m := re.search(fr'{str(Path.cwd()).replace('\\', '\\\\')}', str(text)):
             text.stylize('cwd', m.start(0), m.end(0))
+
+class EmbedField(TypedDict):
+    """``TypedDict`` of the arguments for ``discord.Embed.add_field()``."""
+
+    name: Any
+    value: Any
+    inline: bool
 
 class EmojiStr(StrEnum):
     """Strings for emoji commonly used by the bot."""
