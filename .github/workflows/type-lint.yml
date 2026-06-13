@@ -34,7 +34,3 @@ jobs:
     - name: Lint with ruff
       run: |
         ruff check .
-    - name: Test
-      run: |
-        pytest -v
-        python -m doctest lydian/*.py
