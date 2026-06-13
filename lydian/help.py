@@ -49,6 +49,16 @@ async def send_help_menu(ctx: Context, cogs: Sequence[type[Cog]]) -> discord.Mes
     """Sends the main help menu and returns the sent message."""
     embed = embed_info(title=f'{EmojiStr.INFO} Help', description='Choose a category below to view its commands.')
 
+    embed.add_field(
+        name='Command help syntax',
+        value='Command arguments will be enclosed in either angle brackets (`<>`) or square brackets (`[]`).'
+            + ' An argument in angle brackets is required, while an argument in square brackets is optional.'
+            + " If the argument's name is followed by an ellipsis, it accepts multiple space-separated values."
+            + ' Arguments are separated by spaces, if you need to pass an argument a value which contains a space,'
+            + ' you must surround the text in quotes to ensure it is treated as one single value.',
+        inline=False,
+    )
+
     embed.add_field(name='Common commands:', value='', inline=False)
 
     for title, desc in (
