@@ -26,8 +26,15 @@ def sample_cog() -> type[commands.Cog]:
             return self.bot.user.name
 
         @commands.command()
-        async def greet(self, ctx: commands.Context) -> None:
-            await ctx.send('Hello!')
+        async def greet(self, ctx: commands.Context, name: str | None = None) -> None:
+            """Sends a greeting message, optionally using the provided name.
+
+            :param name: The name to greet.
+            """
+            if name:
+                await ctx.send(f'Hello, {name}!')
+            else:
+                await ctx.send('Hello!')
 
     return SampleCog
 
