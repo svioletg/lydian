@@ -1,7 +1,7 @@
 import os
 import shutil
 from pathlib import Path
-from unittest.mock import MagicMock, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock
 
 import discord
 import pytest
@@ -10,33 +10,33 @@ from discord.ext import commands
 from lydian.const import TESTS_DIR, create_directories
 
 
+class SampleCog(commands.Cog):  # noqa: D101
+    def __init__(self, bot: commands.Bot) -> None:
+        self.bot = bot
+
+    def bot_name(self) -> str:  # noqa: D102
+        if not self.bot.user:
+            raise ValueError('Bot is not online, user is None')
+        return self.bot.user.name
+
+    @commands.command()
+    async def greet(self, ctx: commands.Context, name: str | None = None) -> None:
+        """Sends a greeting message, optionally using the provided name.
+
+        :param name: The name to greet.
+        """
+        if name:
+            await ctx.send(f'Hello, {name}!')
+        else:
+            await ctx.send('Hello!')
+
 @pytest.fixture
 def tmpdir() -> Path:
     return TESTS_DIR / 'tmp'
 
 @pytest.fixture
-def sample_cog() -> type[commands.Cog]:
-    class SampleCog(commands.Cog):
-        def __init__(self, bot: commands.Bot) -> None:
-            self.bot = bot
-
-        def bot_name(self) -> str:
-            if not self.bot.user:
-                raise ValueError('Bot is not online, user is None')
-            return self.bot.user.name
-
-        @commands.command()
-        async def greet(self, ctx: commands.Context, name: str | None = None) -> None:
-            """Sends a greeting message, optionally using the provided name.
-
-            :param name: The name to greet.
-            """
-            if name:
-                await ctx.send(f'Hello, {name}!')
-            else:
-                await ctx.send('Hello!')
-
-    return SampleCog
+def sample_cog() -> commands.Cog:
+    return SampleCog(AsyncMock(commands.Bot))
 
 #region MOCKS
 
