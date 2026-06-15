@@ -7,7 +7,7 @@ from discord.types.embed import EmbedField
 from lydian import help as cmdhelp
 
 
-@pytest.mark.parametrize(('param', 'expected'),
+@pytest.mark.parametrize(('param_kwargs', 'expected'),
     params := [
         (
             {'name': 'x', 'kind': Parameter.POSITIONAL_OR_KEYWORD, 'annotation': str},
@@ -54,5 +54,6 @@ from lydian import help as cmdhelp
         f'{p['name']}-{p['kind']}-{p['annotation']}' for p, _ in params
     ],
 )
-def test_command_param_embed_field(param: dict[str, Any], expected: EmbedField) -> None:
-    assert cmdhelp.command_param_embed_field(Parameter(**param)) == expected
+def test_command_param_embed_field(param_kwargs: dict[str, Any], expected: EmbedField) -> None:
+    param = Parameter(**param_kwargs)
+    assert cmdhelp.command_param_embed_field(param) == expected

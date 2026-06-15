@@ -114,7 +114,7 @@ def cog_help_embed(cog: type[Cog]) -> list[discord.Embed]:
 
     return embed_pages
 
-def command_param_embed_field(param: Parameter) -> EmbedField:
+def command_param_embed_field(param: Parameter, description: str | None = None) -> EmbedField:
     """Returns Discord embed field arguments for a command parameter."""
     is_var_pos: bool = param.kind is Parameter.VAR_POSITIONAL
 
@@ -123,17 +123,20 @@ def command_param_embed_field(param: Parameter) -> EmbedField:
     t_args = get_args(typ)
 
     type_str: str = str(param.annotation)
+
     if t_origin is Union:
         if not ((len(t_args) == 2) and (t_args[1] is NoneType)):  # noqa: PLR2004
             raise TypeError(f'Command parameters can only be unions if they are T | None: {param.annotation}')
         typ = t_args[0]
         t_origin = get_origin(typ)
         t_args = get_args(typ)
+
     if t_origin is Literal:
         type_str = f'any one of: {', '.join(str(i) for i in t_args)}'
-
-    if not t_args:
-        type_str = typ.__name__
+    else:
+        if t_args:
+            raise ValueError(f'Non-Literal or Union type "{typ}" has type argument: {t_args}')
+        type_str = TYPE_NAME_MAP.get(typ, typ.__name__)
 
     # For VAR_POSITIONAL parameters, while param.required is True (likely since you can't specify a default for them),
     # passing no values for that arguments is considered valid, so it's more accurate to treat it as optional
@@ -146,10 +149,15 @@ def command_param_embed_field(param: Parameter) -> EmbedField:
             else f' (optional; default: {param.default})'
 
     name: str = f'{param.name}...' if is_var_pos else param.name
+    name = f'<{name}>' if param.required and not is_var_pos else f'[{name}]'
+
+    value = f'Type: {type_str}'
+    if description:
+        value += f'\n{description}'
 
     return {
-        'name': f'<{name}>' if param.required and not is_var_pos else f'[{name}]',
-        'value': f'Type: {type_str}',
+        'name': name,
+        'value': value,
         'inline': False,
     }
 
