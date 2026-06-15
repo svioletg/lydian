@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, Mock
 
 import discord
 import pytest
+from discord.ext import commands
 
 from lydian.const import TESTS_DIR, create_directories
 
@@ -12,6 +13,23 @@ from lydian.const import TESTS_DIR, create_directories
 @pytest.fixture
 def tmpdir() -> Path:
     return TESTS_DIR / 'tmp'
+
+@pytest.fixture
+def sample_cog() -> type[commands.Cog]:
+    class SampleCog(commands.Cog):
+        def __init__(self, bot: commands.Bot) -> None:
+            self.bot = bot
+
+        def bot_name(self) -> str:
+            if not self.bot.user:
+                raise ValueError('Bot is not online, user is None')
+            return self.bot.user.name
+
+        @commands.command()
+        async def greet(self, ctx: commands.Context) -> None:
+            await ctx.send('Hello!')
+
+    return SampleCog
 
 #region MOCKS
 

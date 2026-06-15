@@ -49,19 +49,6 @@ class Dataclass:  # noqa: D101
     c: bool = True
     d: SubDataclass = field(default_factory=SubDataclass)
 
-class SampleCog(commands.Cog):  # noqa: D101
-    def __init__(self, bot: commands.Bot) -> None:
-        self.bot = bot
-
-    def bot_name(self) -> str:
-        if not self.bot.user:
-            raise ValueError('Bot is not online, user is None')
-        return self.bot.user.name
-
-    @commands.command()
-    async def greet(self, ctx: commands.Context) -> None:
-        await ctx.send('Hello!')
-
 def test_assure() -> None:
     util.assure(True)  # noqa: FBT003
     with pytest.raises(AssuranceError):
@@ -118,8 +105,8 @@ def test_cache() -> None:
     with pytest.raises(ValueError, match='must be a future date'):
         cache.get_or_set(1, lambda: 'one', datetime(2025, 1, 1, tzinfo=UTC))
 
-def test_cog_commands() -> None:
-    result = util.cog_commands(SampleCog)
+def test_cog_commands(sample_cog: type[commands.Cog]) -> None:
+    result = util.cog_commands(sample_cog)
     assert list(result.keys()) == ['greet']
     assert all(isinstance(attr, commands.Command) for attr in result.values())
 
