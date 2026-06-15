@@ -56,4 +56,6 @@ from lydian import help as cmdhelp
 )
 def test_command_param_embed_field(param_kwargs: dict[str, Any], expected: EmbedField) -> None:
     param = Parameter(**param_kwargs)
+    desc = 'An example parameter.'
     assert cmdhelp.command_param_embed_field(param) == expected
+    assert cmdhelp.command_param_embed_field(param, desc) == expected | {'value': expected['value'] + f'\n{desc}'}
