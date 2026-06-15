@@ -41,6 +41,8 @@ configured prefix accordingly.
 - Added function `util.getclass()`
 - Added function `util.get_text_sections()`
 - Added function `util.mention()`
+- Added pytest fixture `mock_discord_user`
+- Added pytest fixture `mock_bot`
 
 ### Changed
 

@@ -63,6 +63,17 @@ def mock_get_role(member: discord.Member, role_id: int) -> discord.Role | None:
             return role
     return None
 
+def mock_discord_user(
+        *,
+        name: str = 'username',
+        user_id: int = 0,
+    ) -> MagicMock[discord.User]:
+    user = MagicMock(discord.User)
+    user.name = name
+    user.user_id = user_id
+
+    return user
+
 def mock_discord_member(
         *,
         name: str = 'username',
@@ -79,6 +90,17 @@ def mock_discord_member(
     member.get_role = lambda role_id: mock_get_role(member, role_id)
 
     return member
+
+def mock_bot(
+        user: discord.User,
+        *,
+        cogs: dict[str, commands.Cog] | None = None,
+    ) -> MagicMock[commands.Bot]:
+    bot = MagicMock(commands.Bot)
+    bot.user = user
+    bot.cogs = cogs or {}
+
+    return bot
 
 #endregion MOCKS
 
