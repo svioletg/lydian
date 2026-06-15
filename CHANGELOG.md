@@ -25,6 +25,7 @@ configured prefix accordingly.
 - Added debug console command `debug store`
 - Added debug bot command `-dropdown` (method `cogs.debug.DebugCog.dropdown()`)
 - Added module `help`
+- Added constant `const.DOCSTRING_PARAM_REGEX`
 - Added constants `const.GH_CHANGELOG_WEB` and `const.GH_CHANGELOG_RAW`
 - Added to `const`:
   - `MD_HEADER_REGEX`

@@ -86,6 +86,10 @@ EMBED_COLOR_ERROR: int = 0xff0000
 
 # Compiled regex
 COLOR_ESCAPE_REGEX: re.Pattern[str] = re.compile(r'\x1b\[.*?m')
+DOCSTRING_PARAM_REGEX: re.Pattern[str] = re.compile(
+    r'^:param (?P<name>\w+): (?P<desc>.+(?:\n    .+|\n)*)',
+    flags=re.MULTILINE,
+)
 YTDL_DOWNLOAD_PROGRESS_REGEX: re.Pattern[str] = re.compile(r'\[download\].+ETA')
 
 MD_HEADER_REGEX: re.Pattern[str] = re.compile(r'^#+.+$', flags=re.MULTILINE)
