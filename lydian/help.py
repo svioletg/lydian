@@ -2,16 +2,22 @@
 from collections.abc import Callable, Sequence
 from inspect import iscoroutinefunction
 from itertools import batched
-from types import CoroutineType
+from types import CoroutineType, NoneType
+from typing import Literal, Union, get_args, get_origin
 
 import discord
 from discord.ext.commands import Cog, Command, Context, Parameter
+from discord.types.embed import EmbedField
 
 from lydian.cogs.util import command_signature, embed_error, embed_info, paginated_message
 from lydian.config import config
-from lydian.const import EmbedField, EmojiStr
+from lydian.const import EmojiStr
 from lydian.util import cog_commands, first_where, getclass
 
+TYPE_NAME_MAP: dict[type, str] = {
+    str: 'text',
+    int: 'integer',
+}
 
 class HelpView(discord.ui.View):
     """The main "help" view for Lydian."""
@@ -110,10 +116,40 @@ def cog_help_embed(cog: type[Cog]) -> list[discord.Embed]:
 
 def command_param_embed_field(param: Parameter) -> EmbedField:
     """Returns Discord embed field arguments for a command parameter."""
+    is_var_pos: bool = param.kind is Parameter.VAR_POSITIONAL
+
+    typ = param.annotation
+    t_origin = get_origin(typ)
+    t_args = get_args(typ)
+
+    type_str: str = str(param.annotation)
+    if t_origin is Union:
+        if not ((len(t_args) == 2) and (t_args[1] is NoneType)):  # noqa: PLR2004
+            raise TypeError(f'Command parameters can only be unions if they are T | None: {param.annotation}')
+        typ = t_args[0]
+        t_origin = get_origin(typ)
+        t_args = get_args(typ)
+    if t_origin is Literal:
+        type_str = f'any one of: {', '.join(str(i) for i in t_args)}'
+
+    if not t_args:
+        type_str = typ.__name__
+
+    # For VAR_POSITIONAL parameters, while param.required is True (likely since you can't specify a default for them),
+    # passing no values for that arguments is considered valid, so it's more accurate to treat it as optional
+    #
+    # Commands that take at least 1 of a variable number of values should have one positional arg followed by the
+    # variable positional arg, like (query: str, *additional_queries: str)
+
+    if (param.default is not Parameter.empty) or is_var_pos:
+        type_str += ' (optional)' if param.default in [None, Parameter.empty] \
+            else f' (optional; default: {param.default})'
+
+    name: str = f'{param.name}...' if is_var_pos else param.name
+
     return {
-        'name': f'<{param.name}>' if param.required else f'[{param.name}]',
-        'value': f'Type: {param.annotation}'
-            + (f' (Default: {param.default})' if param.default is not Parameter.empty else ''),
+        'name': f'<{name}>' if param.required and not is_var_pos else f'[{name}]',
+        'value': f'Type: {type_str}',
         'inline': False,
     }
 
