@@ -117,6 +117,7 @@ class Cache[K, V]:
         if obj.is_expired():
             del self._data[key]
             return None
+
         return obj.value
 
     def get_or_set(self, key: K, func: Callable[[], V], expires: datetime | timedelta | None = None) -> V:
@@ -140,6 +141,7 @@ class Cache[K, V]:
             obj = CachedObject(func(), expires=expires)
             self._data[key] = obj
             return obj.value
+
         return obj.value
 
     def remove(self, key: K) -> None:
@@ -209,6 +211,7 @@ class FromStr:
             return value
         if not (m := cls.filesize_regex.match(value)):
             raise ValueError(f'Filesize string does not match expected pattern: {value!r}')
+
         return floor(float(m.group('n').replace(',', '')) * cls.filesize_units[m.group('unit').lower()])
 
 class Stopwatch:
@@ -247,6 +250,7 @@ class Stopwatch:
             return 0
         if self.is_paused:
             return self._paused_at - self.start
+
         return (perf_counter_ns() - self.start) - self._pause_offset
 
     def pause(self) -> None:
@@ -292,6 +296,7 @@ def compose(funcs: Iterable[Callable]) -> Callable[[object], object]:
         for fn in funcs:
             result = fn(result)
         return result
+
     return composed_func
 
 def dirsize(source_dir: str | Path) -> int:
@@ -316,6 +321,7 @@ def expect[T](value: T | None) -> T:
     """Returns ``value``, raising ``ValueError`` if ``None``."""
     if value is None:
         raise ValueError('None')
+
     return value
 
 def first_where[T](it: Iterable[T], predicate: Callable[[T], bool]) -> T | None:
@@ -331,6 +337,7 @@ def format_duration(total_seconds: float) -> str:
     m, s = divmod(m, 60)
     if h:
         return f'{ceil(h)}:{ceil(m):02d}:{ceil(s):02d}'
+
     return f'{ceil(m)}:{ceil(s):02d}'
 
 def get_annotation(typ: object) -> Any | None:  # noqa: ANN401
@@ -459,6 +466,7 @@ def join_trailing(s: Iterable[str], sep: str, *, trail_single: bool = False) -> 
 def linepos_to_pos(s: str, lineno: int, linepos: int) -> int:
     """Converts a 0-indexed line number and position to a global position in a string."""
     lines: list[str] = s.splitlines(keepends=True)
+
     return len(''.join(lines[:lineno])) + linepos
 
 def maybepath(fp: str | Path, must_be: Literal['file', 'dir'] | None = None) -> Maybe[Path]:
@@ -491,6 +499,7 @@ def partition[T](predicate: Callable[[T], bool], it: Iterable[T]) -> tuple[list[
     no: list[T] = []
     for i in it:
         (yes if predicate(i) else no).append(i)
+
     return yes, no
 
 def pos_to_linepos(s: str, pos: int) -> tuple[int, int]:
@@ -509,6 +518,7 @@ def pos_to_linepos(s: str, pos: int) -> tuple[int, int]:
     _ = s[pos] # Raises IndexError if the position is out of range
     line: int = s[:pos].count('\n')
     line_pos = pos - len('\n'.join(s.splitlines()[:line]))
+
     return line, line_pos - (1 if line else 0)
 
 def plural(s: str, n: int) -> str:
@@ -533,6 +543,7 @@ def plural(s: str, n: int) -> str:
         singular, plural = b, c[0]
     else:
         singular, plural = '', b
+
     return f'{root}{singular if n == 1 else plural}'
 
 def strftimestamp(
@@ -543,6 +554,7 @@ def strftimestamp(
     ) -> str:
     """Format a Unix timestamp to the given format string, converting its timezone to ``tz`` if given a value."""
     tz: tzinfo = ZoneInfo(tz) if isinstance(tz, str) else tz
+
     return datetime.fromtimestamp(timestamp, tz=UTC).astimezone(tz).strftime(format_str)
 
 def tabulate(  # noqa: C901
@@ -650,4 +662,5 @@ def wrap_paragraphs(
             initial_indent=(subsequent_indent if n > 0 and indent_mode == 'single' else initial_indent),
             subsequent_indent=subsequent_indent,
         ))
+
     return [ln for lines in wrapped_paras for ln in lines]
