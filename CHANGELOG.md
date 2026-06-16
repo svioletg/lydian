@@ -34,10 +34,12 @@ configured prefix accordingly.
   - `MD_H3_REGEX`
 - Added enum member `const.EmojiStr.BACK`
 - Added enum member `const.EmojiStr.GEAR`
+- Added class `cogs.util.ArrowButtonsView`
 - Added class `cogs.util.DropdownView`
 - Added attribute `cogs.voice.MediaItem.user_id` to replace `.user`
 - Added method `console.LydianConsole._debug_evaluate_in_context()`
 - Added function `cogs.util.command_signature()`
+- Added function `cogs.util.paginated_message()`
 - Added function `util.cog_commands()`
 - Added function `util.getclass()`
 - Added function `util.get_text_sections()`
