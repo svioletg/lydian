@@ -107,10 +107,16 @@ def cog_help_embed(cog: type[Cog]) -> list[discord.Embed]:
     embed_pages: list[discord.Embed] = []
 
     for batch in command_pages:
-        embed = embed_info(title=f'{EmojiStr.INFO} Help: {cog.__cog_name__}')
-        embed_pages.append(embed)
+        embed = embed_info(title=f'{EmojiStr.INFO} Help: {getattr(cog, 'emoji', EmojiStr.GEAR)}{cog.__cog_name__}')
+        embed.set_footer(text='Use `-help <command>` for more detailed info.')
         for command in batch:
-            embed.add_field(name=f'{command_signature(command)}', value=command.help, inline=False)
+            embed.add_field(
+                name=f'{command_signature(command)}',
+                value=DOCSTRING_PARAM_REGEX.sub('', command.help or ''),
+                inline=False,
+            )
+
+        embed_pages.append(embed)
 
     return embed_pages
 
