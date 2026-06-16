@@ -154,7 +154,8 @@ def command_param_embed_field(param: Parameter, description: str | None = None) 
         type_str += ' (optional)' if param.default in [None, Parameter.empty] \
             else f' (optional; default: {param.default})'
 
-    name: str = f'{param.name}...' if is_var_pos else param.name
+    name: str = param.displayed_name or param.name
+    name = f'{param.name}...' if is_var_pos else param.name
     name = f'<{name}>' if param.required and not is_var_pos else f'[{name}]'
 
     value = f'> Type: {type_str}'
@@ -181,7 +182,7 @@ def command_help_embed(command: Command) -> discord.Embed:
         f'`{command_signature(command)}`\n\n{command.help}' + ('\n\n**Arguments:**' if command.params else ''),
     )
 
-    for param in command.params.values():
+    for param in command.clean_params.values():
         embed.add_field(**command_param_embed_field(param, param_help.get(param.name)))
 
     return embed

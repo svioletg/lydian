@@ -308,7 +308,10 @@ class MediaQueue(UserList[MediaItem]):
             raise MediaQueueLimitError('Cannot insert into full MediaQueue')
         super().insert(i, item)
 
-    def move(self, source: int, dest: int) -> None:
+    def move(self,
+            source: int = commands.parameter(displayed_name='from'),
+            dest: int = commands.parameter(displayed_name='to'),
+        ) -> None:
         """Moves an item at index ``source`` to index ``dest``."""
         if dest >= len(self):
             raise IndexError(f'dest is out of MediaQueue range: {dest}')
