@@ -213,6 +213,10 @@ async def paginated_message(
             return
         current += response
 
+def cog_emoji(cog: type[commands.Cog] | commands.Cog) -> str:
+    """Returns a cog's ``emoji`` attribute if it has one, otherwise returns the default cog emoji string."""
+    return getattr(cog, 'emoji', EmojiStr.GEAR)
+
 def command_signature(command: commands.Command) -> str:
     """Returns a "signature" for a given command to display in help text."""
     sig_parts: list[str] = [f'{config.prefix}{command.name}']
