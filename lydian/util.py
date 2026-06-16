@@ -324,7 +324,7 @@ def expect[T](value: T | None) -> T:
 
     return value
 
-def first_where[T](it: Iterable[T], predicate: Callable[[T], bool]) -> T | None:
+def first_where[T](predicate: Callable[[T], bool], it: Iterable[T]) -> T | None:
     """Return the first item of an iterable that returns ``True`` for ``predicate(i)``, or ``None`` if no items pass."""
     try:
         return next(filter(predicate, it))

@@ -135,14 +135,14 @@ def test_dirsize(tmpdir: Path) -> None:
     assert util.dirsize(source_dir) == expected_size
     assert util.dirsize_counted(source_dir) == (expected_size, expected_count)
 
-@pytest.mark.parametrize(('it', 'predicate', 'expected'),
+@pytest.mark.parametrize(('predicate', 'it', 'expected'),
     [
-        (range(10), lambda n: n > 5, 6),  # noqa: PLR2004
-        (range(10), lambda n: n > 10, None),  # noqa: PLR2004
+        (lambda n: n > 5, range(10), 6),  # noqa: PLR2004
+        (lambda n: n > 10, range(10), None),  # noqa: PLR2004
     ],
 )
-def test_first_where[T](it: Iterable[T], predicate: Callable[[T], bool], expected: T | None) -> None:
-    assert util.first_where(it, predicate) == expected
+def test_first_where[T](predicate: Callable[[T], bool], it: Iterable[T], expected: T | None) -> None:
+    assert util.first_where(predicate, it) == expected
 
 @pytest.mark.parametrize(('total_seconds', 'expected'),
     [
