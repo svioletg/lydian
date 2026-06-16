@@ -11,7 +11,7 @@ from discord.types.embed import EmbedField
 
 from lydian.cogs.util import command_signature, embed_error, embed_info, paginated_message
 from lydian.config import config
-from lydian.const import EmojiStr
+from lydian.const import DOCSTRING_PARAM_REGEX, EmojiStr
 from lydian.util import cog_commands, first_where, getclass
 
 TYPE_NAME_MAP: dict[type, str] = {
@@ -163,6 +163,12 @@ def command_param_embed_field(param: Parameter, description: str | None = None) 
 
 def command_help_embed(command: Command) -> discord.Embed:
     """Returns a ``discord.Embed`` object describing how to use a command."""
+    param_help: dict[str, str] = {
+        m.group('name'):m.group('desc').strip() for m in DOCSTRING_PARAM_REGEX.finditer(command.help or '')
+    }
+
+    command.help = DOCSTRING_PARAM_REGEX.sub('', command.help or '').strip()
+
     embed = embed_info(
         f'{EmojiStr.INFO} Help: {getattr(command.cog, 'emoji', EmojiStr.GEAR)} {command.cog_name}:'
             + f' {config.prefix}{command.name}',
@@ -170,6 +176,6 @@ def command_help_embed(command: Command) -> discord.Embed:
     )
 
     for param in command.params.values():
-        embed.add_field(**command_param_embed_field(param))
+        embed.add_field(**command_param_embed_field(param, param_help.get(param.name)))
 
     return embed

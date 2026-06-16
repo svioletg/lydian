@@ -76,5 +76,5 @@ def test_command_help_embed(sample_cog: SampleCog) -> None:
 
     arg_field = embed.fields[0]
     assert arg_field.name == '[name]'
-    assert arg_field.value == 'Type: text (optional)'
+    assert arg_field.value == 'Type: text (optional)\nThe name to greet.'
     assert arg_field.inline is False
