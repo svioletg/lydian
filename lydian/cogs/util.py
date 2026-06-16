@@ -188,14 +188,15 @@ async def paginated_message(
         until then. The view's timeout is set to :py:data:`const.DEFAULT_DISCORD_PAGINATED_VIEW_TIMEOUT`.
 
     :param start: Which page to start on.
-    :param footer: Whether to add a "Page X of Y" footer to each page embed. This will overwrite the existing footer on
-        the embeds if one exists.
+    :param footer: Whether to add a "Page X of Y" footer to each page embed. This will be added as a new line following
+        the existing footer, if any.
     """
     current: int = start
 
     if footer:
         for n, embed in enumerate(pages, 1):
-            embed.set_footer(text=f'Page {n} of {len(pages)}')
+            embed.set_footer(text=f'{f'{embed.footer.text or ''}\n' if embed.footer.text else ''}'
+                + f'Page {n} of {len(pages)}')
 
     msg: discord.Message | None = None
 
