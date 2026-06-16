@@ -16,43 +16,43 @@ if TYPE_CHECKING:
     params := [
         (
             {'name': 'x', 'kind': Parameter.POSITIONAL_OR_KEYWORD, 'annotation': str},
-            {'name': '<x>', 'value': 'Type: text', 'inline': False},
+            {'name': '<x>', 'value': '> Type: text', 'inline': False},
         ),
         (
             {'name': 'x', 'kind': Parameter.POSITIONAL_OR_KEYWORD, 'annotation': int},
-            {'name': '<x>', 'value': 'Type: integer', 'inline': False},
+            {'name': '<x>', 'value': '> Type: integer', 'inline': False},
         ),
         (
             {'name': 'x', 'kind': Parameter.POSITIONAL_OR_KEYWORD, 'annotation': float},
-            {'name': '<x>', 'value': 'Type: float', 'inline': False},
+            {'name': '<x>', 'value': '> Type: float', 'inline': False},
         ),
         (
             {'name': 'x', 'kind': Parameter.POSITIONAL_OR_KEYWORD, 'annotation': str | None,
             'default': None},
-            {'name': '[x]', 'value': 'Type: text (optional)', 'inline': False},
+            {'name': '[x]', 'value': '> Type: text (optional)', 'inline': False},
         ),
         (
             {'name': 'x', 'kind': Parameter.POSITIONAL_OR_KEYWORD, 'annotation': str,
             'default': 'a'},
-            {'name': '[x]', 'value': 'Type: text (optional; default: a)', 'inline': False},
+            {'name': '[x]', 'value': '> Type: text (optional; default: a)', 'inline': False},
         ),
         (
             {'name': 'x', 'kind': Parameter.POSITIONAL_OR_KEYWORD, 'annotation': int,
             'default': 1},
-            {'name': '[x]', 'value': 'Type: integer (optional; default: 1)', 'inline': False},
+            {'name': '[x]', 'value': '> Type: integer (optional; default: 1)', 'inline': False},
         ),
         (
             {'name': 'x', 'kind': Parameter.POSITIONAL_OR_KEYWORD, 'annotation': Literal['a', 'b', 'c']},
-            {'name': '<x>', 'value': 'Type: any one of: a, b, c', 'inline': False},
+            {'name': '<x>', 'value': '> Type: any one of: a, b, c', 'inline': False},
         ),
         (
             {'name': 'x', 'kind': Parameter.POSITIONAL_OR_KEYWORD, 'annotation': Literal['a', 'b', 'c'],
             'default': 'a'},
-            {'name': '[x]', 'value': 'Type: any one of: a, b, c (optional; default: a)', 'inline': False},
+            {'name': '[x]', 'value': '> Type: any one of: a, b, c (optional; default: a)', 'inline': False},
         ),
         (
             {'name': 'x', 'kind': Parameter.VAR_POSITIONAL, 'annotation': str},
-            {'name': '[x...]', 'value': 'Type: text (optional)', 'inline': False},
+            {'name': '[x...]', 'value': '> Type: text (optional)', 'inline': False},
         ),
     ],
     ids=[
@@ -76,5 +76,5 @@ def test_command_help_embed(sample_cog: SampleCog) -> None:
 
     arg_field = embed.fields[0]
     assert arg_field.name == '[name]'
-    assert arg_field.value == 'Type: text (optional)\nThe name to greet.'
+    assert arg_field.value == '> Type: text (optional)\nThe name to greet.'
     assert arg_field.inline is False

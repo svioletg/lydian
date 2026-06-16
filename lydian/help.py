@@ -151,7 +151,7 @@ def command_param_embed_field(param: Parameter, description: str | None = None) 
     name: str = f'{param.name}...' if is_var_pos else param.name
     name = f'<{name}>' if param.required and not is_var_pos else f'[{name}]'
 
-    value = f'Type: {type_str}'
+    value = f'> Type: {type_str}'
     if description:
         value += f'\n{description}'
 
