@@ -9,7 +9,7 @@ import discord
 from discord.ext.commands import Cog, Command, Context, Parameter
 from discord.types.embed import EmbedField
 
-from lydian.cogs.util import command_signature, embed_error, embed_info, paginated_message
+from lydian.cogs.util import cog_emoji, command_signature, embed_error, embed_info, paginated_message
 from lydian.config import config
 from lydian.const import DOCSTRING_PARAM_REGEX, EmojiStr
 from lydian.util import cog_commands, first_where, getclass
@@ -38,7 +38,7 @@ class HelpView(discord.ui.View):
                 label=cog.__cog_name__,
                 value=getclass(cog).__name__,
                 description=cog.__cog_description__,
-                emoji=getattr(cog, 'emoji', EmojiStr.GEAR),
+                emoji=cog_emoji(cog),
             ))
 
     @discord.ui.select(cls=discord.ui.Select)
@@ -107,7 +107,7 @@ def cog_help_embed(cog: type[Cog]) -> list[discord.Embed]:
     embed_pages: list[discord.Embed] = []
 
     for batch in command_pages:
-        embed = embed_info(title=f'{EmojiStr.INFO} Help: {getattr(cog, 'emoji', EmojiStr.GEAR)}{cog.__cog_name__}')
+        embed = embed_info(title=f'{EmojiStr.INFO} Help: {cog_emoji(cog)}{cog.__cog_name__}')
         embed.set_footer(text='Use `-help <command>` for more detailed info.')
         for command in batch:
             embed.add_field(
@@ -176,7 +176,7 @@ def command_help_embed(command: Command) -> discord.Embed:
     command.help = DOCSTRING_PARAM_REGEX.sub('', command.help or '').strip()
 
     embed = embed_info(
-        f'{EmojiStr.INFO} Help: {getattr(command.cog, 'emoji', EmojiStr.GEAR)} {command.cog_name}:'
+        f'{EmojiStr.INFO} Help: {cog_emoji(command.cog)} {command.cog_name}:'
             + f' {config.prefix}{command.name}',
         f'`{command_signature(command)}`\n\n{command.help}' + ('\n\n**Arguments:**' if command.params else ''),
     )
