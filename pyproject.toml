@@ -27,7 +27,7 @@ dependencies = [
     "tomlkit>=0.15.0",
     "typer>=0.24.1",
     "urllib3>=2.7.0,<3.0",
-    "yt-dlp>=2026.3.17",
+    "yt-dlp>=2026.6.9",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
