@@ -20,6 +20,21 @@ configured prefix accordingly.
 
 ## [Unreleased]
 
+### Overview
+
+- Vote-skipping is now supported, optionally requiring a minimum number of users (a percentage of
+  the channel or an exact count) to use `-skip` before the current track is skipped. (#16)
+  - To use it, add the `[vote_skipping]` table to your `lydian-config.toml` like below and adjust
+    the values as desired.
+
+```toml
+[vote_skipping]
+enabled = true
+threshold_type = "percentage"
+percentage = 50
+literal = 3
+```
+
 ### Added
 
 - Added debug console command `debug store`
@@ -36,6 +51,7 @@ configured prefix accordingly.
 - Added enum member `const.EmojiStr.GEAR`
 - Added class `cogs.util.ArrowButtonsView`
 - Added class `cogs.util.DropdownView`
+- Added class `cogs.voice.VoteSkip`
 - Added attribute `cogs.voice.MediaItem.user_id` to replace `.user`
 - Added method `console.LydianConsole._debug_evaluate_in_context()`
 - Added function `cogs.util.cog_emoji()`
