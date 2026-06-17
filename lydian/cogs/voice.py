@@ -308,10 +308,7 @@ class MediaQueue(UserList[MediaItem]):
             raise MediaQueueLimitError('Cannot insert into full MediaQueue')
         super().insert(i, item)
 
-    def move(self,
-            source: int = commands.parameter(displayed_name='from'),
-            dest: int = commands.parameter(displayed_name='to'),
-        ) -> None:
+    def move(self, source: int, dest: int) -> None:
         """Moves an item at index ``source`` to index ``dest``."""
         if dest >= len(self):
             raise IndexError(f'dest is out of MediaQueue range: {dest}')
@@ -751,7 +748,10 @@ class VoiceCog(commands.Cog):
 
     @alias_from_config
     @commands.command(aliases=[])
-    async def move(self, ctx: commands.Context, source: int, dest: int) -> None:
+    async def move(self, ctx: commands.Context,
+            source: int = commands.parameter(displayed_name='from'),
+            dest: int = commands.parameter(displayed_name='to'),
+        ) -> None:
         """Moves an item to a new position in the queue.
 
         :param source: The queue index of the item you want to move.
