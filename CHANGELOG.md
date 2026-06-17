@@ -18,6 +18,74 @@ paths. `lydian` does not contain any modules named `tools` or `tests`, to avoid 
 Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
 configured prefix accordingly.
 
+## [Unreleased]
+
+### Overview
+
+- Vote-skipping is now supported, optionally requiring a minimum number of users (a percentage of
+  the channel or an exact count) to use `-skip` before the current track is skipped. (#16)
+  - To use it, add the `[vote_skipping]` table to your `lydian-config.toml` like below and adjust
+    the values as desired.
+
+```toml
+[vote_skipping]
+enabled = true
+threshold_type = "percentage"
+percentage = 50
+literal = 3
+```
+
+### Added
+
+- Added debug console command `debug store`
+- Added debug bot command `-dropdown` (method `cogs.debug.DebugCog.dropdown()`)
+- Added module `help`
+- Added constant `const.DOCSTRING_PARAM_REGEX`
+- Added constants `const.GH_CHANGELOG_WEB` and `const.GH_CHANGELOG_RAW`
+- Added constants to `const`:
+  - `MD_HEADER_REGEX`
+  - `MD_H1_REGEX`
+  - `MD_H2_REGEX`
+  - `MD_H3_REGEX`
+- Added enum members `const.EmojiStr.BACK` and `const.EmojiStr.GEAR`
+- Added classes `cogs.util.ArrowButtonsView` and `cogs.util.DropdownView`
+- Added class `cogs.voice.VoteSkip`
+- Added attribute `cogs.voice.MediaItem.user_id` to replace `.user`
+- Added method `console.LydianConsole._debug_evaluate_in_context()`
+- Added functions to `cogs.util`:
+  - `cog_emoji()`
+  - `command_signature()`
+  - `paginated_message()`
+- Added functions to `util`:
+  - `cog_commands()`
+  - `getclass()`
+  - `get_text_sections()`
+  - `mention()`
+- Added pytest fixtures `mock_bot` and `mock_discord_user`
+
+### Changed
+
+- `util.dirsize()` now only counts file sizes and ignores directories
+- `cogs.voice.MediaItem` objects now store who queued the item as their `int` user ID rather than
+  the actual `discord.Member` object, which allows them to be deep-copied
+- Moved `update.GH_API_ROOT`, `update.GH_REPO_API_ROOT`, and `update.USER_AGENT` to `const`
+  - Value of `USER_AGENT` updated to use the package's name instead of `lydian-update-checker`
+- Swapped arguments of `util.first_where()` to make the predicate first, matching built-ins like
+  `map` and `filter`
+
+### Removed
+
+- Removed attribute `cogs.voice.MediaItem.user`, (replaced by `.user_id`)
+
+### Fixed
+
+- Fixed `cogs.voice.MediaItem` objects always refreshing when advancing queue if their
+  `thumbnail_url` attribute is truthy (incorrectly wrote
+  `(not item.duration) or (item.thumbnail_url)` instead of
+  `(not item.duration) or (not item.thumbnail_url)`)
+- Fixed `ZoneInfo` not working correctly on systems without an IANA database by including `tzdata`
+  as a dependency
+
 ## [0.8.0] - 2026-06-05
 
 ### Overview
