@@ -23,16 +23,30 @@ configured prefix accordingly.
 ### Added
 
 - Added debug console command `debug store`
+- Added debug bot command `-dropdown` (method `cogs.debug.DebugCog.dropdown()`)
+- Added module `help`
+- Added constant `const.DOCSTRING_PARAM_REGEX`
 - Added constants `const.GH_CHANGELOG_WEB` and `const.GH_CHANGELOG_RAW`
 - Added to `const`:
   - `MD_HEADER_REGEX`
   - `MD_H1_REGEX`
   - `MD_H2_REGEX`
   - `MD_H3_REGEX`
+- Added enum member `const.EmojiStr.BACK`
+- Added enum member `const.EmojiStr.GEAR`
+- Added class `cogs.util.ArrowButtonsView`
+- Added class `cogs.util.DropdownView`
 - Added attribute `cogs.voice.MediaItem.user_id` to replace `.user`
 - Added method `console.LydianConsole._debug_evaluate_in_context()`
+- Added function `cogs.util.cog_emoji()`
+- Added function `cogs.util.command_signature()`
+- Added function `cogs.util.paginated_message()`
+- Added function `util.cog_commands()`
+- Added function `util.getclass()`
 - Added function `util.get_text_sections()`
 - Added function `util.mention()`
+- Added pytest fixture `mock_discord_user`
+- Added pytest fixture `mock_bot`
 
 ### Changed
 

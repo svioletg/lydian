@@ -4,9 +4,9 @@ from discord import Embed
 from discord.ext import commands
 from loguru import logger
 
-from lydian.cogs.util import confirm, embed_error, embed_info, embed_ok, embed_warn
+from lydian.cogs.util import DropdownView, confirm, embed_error, embed_info, embed_ok, embed_warn, paginated_message
 from lydian.config import config
-from lydian.const import debug_context
+from lydian.const import EmojiStr, debug_context
 
 
 def debug_enabled(_ctx: commands.Context) -> bool:
@@ -92,3 +92,30 @@ class DebugCog(commands.Cog):
     async def argint(self, ctx: commands.Context, num: int) -> None:
         """Takes one integer argument and echoes its ``repr``."""
         await ctx.send(repr(num))
+
+    @commands.command(checks=[debug_enabled])
+    async def pages(self, ctx: commands.Context) -> None:
+        """Sends a paginated view."""
+        pages = [
+            embed_info('Page 1'),
+            embed_info('Page 2'),
+            embed_info('Page 3'),
+            embed_info('Page 4'),
+            embed_info('Page 5'),
+        ]
+        await paginated_message(ctx, pages)
+
+    @commands.command(checks=[debug_enabled])
+    async def dropdown(self, ctx: commands.Context) -> None:
+        """Sends a message with a dropdown selector."""
+        dropdown = DropdownView([
+            discord.SelectOption(label='a', emoji=EmojiStr.OK, description='The first choice.'),
+            discord.SelectOption(label='b', emoji=EmojiStr.WARN, description='The second choice.'),
+        ], timeout=10)
+        msg = await ctx.send(embed=embed_info('Choose an option below', 'Timeout: 5 seconds'), view=dropdown)
+        choice = await dropdown.wait_for_response()
+        msg = await msg.edit(view=dropdown)
+        if choice is None:
+            await ctx.send(embed=embed_info('Timed out.'))
+        else:
+            await ctx.send(embed=embed_info(f'You chose: {choice}'))

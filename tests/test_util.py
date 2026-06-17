@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Annotated, Any, Literal
 
 import pytest
+from discord.ext import commands
 from maybetype import Nothing, Some, maybe
 
 from lydian import util
@@ -104,6 +105,11 @@ def test_cache() -> None:
     with pytest.raises(ValueError, match='must be a future date'):
         cache.get_or_set(1, lambda: 'one', datetime(2025, 1, 1, tzinfo=UTC))
 
+def test_cog_commands(sample_cog: type[commands.Cog]) -> None:
+    result = util.cog_commands(sample_cog)
+    assert list(result.keys()) == ['greet']
+    assert all(isinstance(attr, commands.Command) for attr in result.values())
+
 def test_compose() -> None:
     assert util.compose([int, float, str, float, int, bool])('1') is True
     assert util.compose([str.strip, str.lower])('    Text    ') == 'text'
@@ -154,6 +160,14 @@ def test_first_where[T](predicate: Callable[[T], bool], it: Iterable[T], expecte
 )
 def test_format_duration(total_seconds: float, expected: str) -> None:
     assert util.format_duration(total_seconds) == expected
+
+def test_getclass() -> None:
+    class A:
+        def __init__(self, x: int) -> None:
+            self.x = x
+
+    inst = A(1)
+    assert util.getclass(inst) is util.getclass(A) is inst.__class__ is A
 
 def test_get_dataclass_fields() -> None:
     dc = Dataclass()

@@ -748,8 +748,15 @@ class VoiceCog(commands.Cog):
 
     @alias_from_config
     @commands.command(aliases=[])
-    async def move(self, ctx: commands.Context, source: int, dest: int) -> None:
-        """Moves an item to a new position in the queue."""
+    async def move(self, ctx: commands.Context,
+            source: int = commands.parameter(displayed_name='from'),
+            dest: int = commands.parameter(displayed_name='to'),
+        ) -> None:
+        """Moves an item to a new position in the queue.
+
+        :param source: The queue index of the item you want to move.
+        :param dest: The new index you want to move the item to.
+        """
         if not (await self._check_queue_index_arg(ctx, source) and await self._check_queue_index_arg(ctx, dest)):
             return
 
