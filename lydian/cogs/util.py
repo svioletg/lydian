@@ -221,8 +221,8 @@ def command_signature(command: commands.Command) -> str:
     """Returns a "signature" for a given command to display in help text."""
     sig_parts: list[str] = [f'{config.prefix}{command.name}']
 
-    for name, param in command.clean_params.items():
-        part: str = name
+    for param in command.clean_params.values():
+        part: str = param.displayed_name or param.name
         if param.kind is commands.Parameter.VAR_POSITIONAL:
             part += '...'
         part = f'<{part}>' if param.required else f'[{part}]'
