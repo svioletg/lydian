@@ -677,9 +677,9 @@ class VoiceCog(commands.Cog):
         """Returns an embed describing the current ``self.loop`` state."""
         match self.loop:
             case 'track':
-                return embed_info(f'{EmojiStr.LOOP} Looping the current track.', description)
+                return embed_info(f'{EmojiStr.LOOP_ONE} Looping the current track.', description)
             case 'queue':
-                return embed_info(f'{EmojiStr.LOOP_ONE} Looping the queue.', description)
+                return embed_info(f'{EmojiStr.LOOP} Looping the queue.', description)
             case False:
                 return embed_info('Not looping.', description)
 
