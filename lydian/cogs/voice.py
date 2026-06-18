@@ -690,6 +690,7 @@ class VoiceCog(commands.Cog):
         """
         logger.debug('Player has stopped')
 
+        was_playing: MediaItem | None = self.now_playing
         play_now: MediaItem | None = self.now_playing if self.loop == 'track' else None
         self.now_playing = None
 
@@ -699,6 +700,9 @@ class VoiceCog(commands.Cog):
 
         if not self._manual_stop:
             self._manual_stop = False
+            if (self.loop == 'queue') and was_playing:
+                # Loop the queue by adding what just played to the end of the queue
+                self.queue.append(was_playing)
             asyncio.run_coroutine_threadsafe(self.advance_queue(ctx, play_now=play_now), self.bot.loop).result()
         else:
             self._manual_stop = False
@@ -933,6 +937,12 @@ class VoiceCog(commands.Cog):
 
         if self.shuffle:
             embed_desc += f'\n{EmojiStr.SHUFFLE} **Shuffle is enabled**'
+
+        match self.loop:
+            case 'track':
+                embed_desc += f'\n{EmojiStr.LOOP_ONE} **Looping the current track**'
+            case 'queue':
+                embed_desc += f'\n{EmojiStr.LOOP} **Looping the queue**'
 
         queue_embed = discord.Embed(
             title='Queue' + (f' (Page {page}/{pages})' if pages > 1 else ''),
