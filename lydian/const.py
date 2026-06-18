@@ -90,12 +90,38 @@ DOCSTRING_PARAM_REGEX: re.Pattern[str] = re.compile(
     r'^:param (?P<name>\w+): (?P<desc>.+(?:\n    .+|\n)*)',
     flags=re.MULTILINE,
 )
+"""Matches ``:param ...:``-style parameter annotations in docstrings.
+
+Named groups:
+    - "name"
+    - "desc"
+"""
 YTDL_DOWNLOAD_PROGRESS_REGEX: re.Pattern[str] = re.compile(r'\[download\].+ETA')
 
 MD_HEADER_REGEX: re.Pattern[str] = re.compile(r'^#(?P<title>.*)$', flags=re.MULTILINE)
+"""Matches a markdown header with any number of ``#`` characters.
+
+Named groups:
+    - "title": The text following the header characters, including surrounding whitespace
+"""
 MD_H1_REGEX: re.Pattern[str] = re.compile(r'^#(?P<title>[^#].*)$', flags=re.MULTILINE)
+"""Matches level 1 markdown header.
+
+Named groups:
+    - "title": The text following the header characters, including surrounding whitespace
+"""
 MD_H2_REGEX: re.Pattern[str] = re.compile(r'^##(?P<title>[^#].*)$', flags=re.MULTILINE)
+"""Matches a level 2 markdown header.
+
+Named groups:
+    - "title": The text following the header characters, including surrounding whitespace
+"""
 MD_H3_REGEX: re.Pattern[str] = re.compile(r'^###(?P<title>[^#].*)$', flags=re.MULTILINE)
+"""Matches a level 3 markdown header.
+
+Named groups:
+    - "title": The text following the header characters, including surrounding whitespace
+"""
 
 # Other values
 USER_AGENT: str = f'lydian-discord-bot/{__version__}'
