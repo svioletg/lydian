@@ -398,6 +398,8 @@ class VoiceCog(commands.Cog):
         """
         self.shuffle: bool = False
         """If ``True``, a random item is pulled from the queue instead of the next one when advancing."""
+        self.loop: Literal['track', 'queue', False] = False
+        """What looping mode the player is in, ``False`` if not looping."""
 
         # Timers/counters
         self.time_inactive: int = 0
@@ -671,6 +673,16 @@ class VoiceCog(commands.Cog):
 
         return skipped
 
+    def loop_state_embed(self, description: str | None = None) -> discord.Embed:
+        """Returns an embed describing the current ``self.loop`` state."""
+        match self.loop:
+            case 'track':
+                return embed_info(f'{EmojiStr.LOOP_ONE} Looping the current track.', description)
+            case 'queue':
+                return embed_info(f'{EmojiStr.LOOP} Looping the queue.', description)
+            case False:
+                return embed_info('Not looping.', description)
+
     def on_player_stop(self, ctx: commands.Context, exc: Exception | None) -> None:
         """Callback for the voice client's ``.play()`` method ``after`` callback.
 
@@ -678,6 +690,8 @@ class VoiceCog(commands.Cog):
         """
         logger.debug('Player has stopped')
 
+        was_playing: MediaItem | None = self.now_playing
+        play_now: MediaItem | None = self.now_playing if self.loop == 'track' else None
         self.now_playing = None
 
         if exc:
@@ -686,7 +700,10 @@ class VoiceCog(commands.Cog):
 
         if not self._manual_stop:
             self._manual_stop = False
-            asyncio.run_coroutine_threadsafe(self.advance_queue(ctx), self.bot.loop).result()
+            if (self.loop == 'queue') and was_playing:
+                # Loop the queue by adding what just played to the end of the queue
+                self.queue.append(was_playing)
+            asyncio.run_coroutine_threadsafe(self.advance_queue(ctx, play_now=play_now), self.bot.loop).result()
         else:
             self._manual_stop = False
 
@@ -858,6 +875,22 @@ class VoiceCog(commands.Cog):
         self.stop_player(voice)
 
     @alias_from_config
+    @commands.command('loop', aliases=[])
+    async def toggle_loop(self, ctx: commands.Context, state: Literal['track', 'queue', 'off'] | None = None) -> None:
+        """Sets the looping state of the player.
+
+        ``"track"`` loops the current track, ``"queue"`` loops the full queue, ``"off"`` disables looping.
+        Giving no argument shows the current loop state.
+        """
+        if state is not None:
+            self.loop = False if state == 'off' else state
+            logger.info(f'Updated player loop state: {self.loop!r}')
+
+        await ctx.send(embed=self.loop_state_embed(
+            'Showing the current loop state; pass an argument to start or stop looping.' if state is None else None,
+        ))
+
+    @alias_from_config
     @commands.command('shuffle', aliases=[])
     async def toggle_shuffle(self, ctx: commands.Context, state: Literal['on', 'off'] | None = None) -> None:
         """Turns shuffle mode on or off, or shows whether shuffle is enabled if a state is not given.
@@ -904,6 +937,12 @@ class VoiceCog(commands.Cog):
 
         if self.shuffle:
             embed_desc += f'\n{EmojiStr.SHUFFLE} **Shuffle is enabled**'
+
+        match self.loop:
+            case 'track':
+                embed_desc += f'\n{EmojiStr.LOOP_ONE} **Looping the current track**'
+            case 'queue':
+                embed_desc += f'\n{EmojiStr.LOOP} **Looping the queue**'
 
         queue_embed = discord.Embed(
             title='Queue' + (f' (Page {page}/{pages})' if pages > 1 else ''),

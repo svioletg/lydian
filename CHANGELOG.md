@@ -27,6 +27,13 @@ configured prefix accordingly.
   - `const.MD_H1_REGEX`
   - `const.MD_H2_REGEX`
   - `const.MD_H3_REGEX`
+- Added bot command `-loop` (method `cogs.voice.VoiceCog.toggle_loop()`)
+- Added enum member `const.EmojiStr.LOOP`
+- Added enum member `const.EmojiStr.LOOP_ONE`
+- Added attribute `cogs.voice.VoiceCog.loop`
+- Added method `cogs.voice.VoiceCog.loop_state_embed()`
+- Added proper handling for `discord.ext.commands.errors.BadLiteralArgument` in
+  `bot.on_command_error()`
 
 ### Fixed
 
