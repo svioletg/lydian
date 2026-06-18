@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Annotated, Any, Literal
 
 import pytest
+from discord.ext import commands
 from maybetype import Nothing, Some, maybe
 
 from lydian import util
@@ -104,6 +105,11 @@ def test_cache() -> None:
     with pytest.raises(ValueError, match='must be a future date'):
         cache.get_or_set(1, lambda: 'one', datetime(2025, 1, 1, tzinfo=UTC))
 
+def test_cog_commands(sample_cog: type[commands.Cog]) -> None:
+    result = util.cog_commands(sample_cog)
+    assert list(result.keys()) == ['greet']
+    assert all(isinstance(attr, commands.Command) for attr in result.values())
+
 def test_compose() -> None:
     assert util.compose([int, float, str, float, int, bool])('1') is True
     assert util.compose([str.strip, str.lower])('    Text    ') == 'text'
@@ -126,23 +132,23 @@ def test_dirsize(tmpdir: Path) -> None:
         'dir': 2,
         'file': 3 * files_per,
     }
-    expected_size: int = (expected_count['dir'] * 4096) + (expected_count['file'] * file_size)
+    expected_size: int = expected_count['file'] * file_size
 
     for d in '.ab':
         for f in 'xyz':
-            write_dummy(1000, source_dir / d / f)
+            write_dummy(file_size, source_dir / d / f)
 
     assert util.dirsize(source_dir) == expected_size
     assert util.dirsize_counted(source_dir) == (expected_size, expected_count)
 
-@pytest.mark.parametrize(('it', 'predicate', 'expected'),
+@pytest.mark.parametrize(('predicate', 'it', 'expected'),
     [
-        (range(10), lambda n: n > 5, 6),  # noqa: PLR2004
-        (range(10), lambda n: n > 10, None),  # noqa: PLR2004
+        (lambda n: n > 5, range(10), 6),  # noqa: PLR2004
+        (lambda n: n > 10, range(10), None),  # noqa: PLR2004
     ],
 )
-def test_first_where[T](it: Iterable[T], predicate: Callable[[T], bool], expected: T | None) -> None:
-    assert util.first_where(it, predicate) == expected
+def test_first_where[T](predicate: Callable[[T], bool], it: Iterable[T], expected: T | None) -> None:
+    assert util.first_where(predicate, it) == expected
 
 @pytest.mark.parametrize(('total_seconds', 'expected'),
     [
@@ -154,6 +160,14 @@ def test_first_where[T](it: Iterable[T], predicate: Callable[[T], bool], expecte
 )
 def test_format_duration(total_seconds: float, expected: str) -> None:
     assert util.format_duration(total_seconds) == expected
+
+def test_getclass() -> None:
+    class A:
+        def __init__(self, x: int) -> None:
+            self.x = x
+
+    inst = A(1)
+    assert util.getclass(inst) is util.getclass(A) is inst.__class__ is A
 
 def test_get_dataclass_fields() -> None:
     dc = Dataclass()
@@ -288,12 +302,12 @@ def test_plural(word: str, singular: str, plural: str) -> None:
     [
         (0, None, None, '1970-01-01T000000+0000'),
         (0, None, 'US/Central', '1969-12-31T180000-0600'),
-        (0, '%A, %B %e, %Y at %I:%M%P', None, 'Thursday, January  1, 1970 at 12:00am'),
-        (0, '%A, %B %e, %Y at %I:%M%P', 'US/Central', 'Wednesday, December 31, 1969 at 06:00pm'),
+        (0, '%A, %B %e, %Y at %I:%M%p', None, 'Thursday, January  1, 1970 at 12:00AM'),
+        (0, '%A, %B %e, %Y at %I:%M%p', 'US/Central', 'Wednesday, December 31, 1969 at 06:00PM'),
         (1776105384, None, None, '2026-04-13T183624+0000'),
         (1776105384, None, 'US/Central', '2026-04-13T133624-0500'),
-        (1776105384, '%A, %B %e, %Y at %I:%M%P', None, 'Monday, April 13, 2026 at 06:36pm'),
-        (1776105384, '%A, %B %e, %Y at %I:%M%P', 'US/Central', 'Monday, April 13, 2026 at 01:36pm'),
+        (1776105384, '%A, %B %e, %Y at %I:%M%p', None, 'Monday, April 13, 2026 at 06:36PM'),
+        (1776105384, '%A, %B %e, %Y at %I:%M%p', 'US/Central', 'Monday, April 13, 2026 at 01:36PM'),
     ],
 )
 def test_strftimestamp(

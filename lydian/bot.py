@@ -81,6 +81,7 @@ intents.voice_states = True
 bot = commands.Bot(
     intents=intents,
     command_prefix=config.prefix,
+    help_command=None,
 )
 debug_context['bot'] = bot
 

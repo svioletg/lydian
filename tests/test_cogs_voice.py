@@ -1,8 +1,10 @@
 from copy import deepcopy
+from unittest.mock import MagicMock
 
+import discord
 import pytest
 
-from lydian.cogs.voice import MediaItem, MediaQueue
+from lydian.cogs.voice import MediaItem, MediaQueue, VoteSkip
 from lydian.errors import MediaQueueLimitError
 
 
@@ -57,3 +59,40 @@ def test_media_queue_move() -> None:
         queue.move(200, 0)
     with pytest.raises(IndexError):
         queue.move(50, 200)
+
+def test_vote_skip() -> None:
+    mock_channel = MagicMock(discord.VoiceChannel)
+
+    voteskip = VoteSkip(50, 'percentage')
+    mock_channel.members.__len__.return_value = 0
+    assert voteskip.remaining(mock_channel) == 0
+    mock_channel.members.__len__.return_value = 1
+    assert voteskip.remaining(mock_channel) == 1
+    mock_channel.members.__len__.return_value = 2
+    assert voteskip.remaining(mock_channel) == 1
+    voteskip.voted.add(1)
+    assert voteskip.remaining(mock_channel) == 0
+
+    mock_channel.members.__len__.return_value = 3
+    assert voteskip.remaining(mock_channel) == 1
+    voteskip.voted.add(2)
+    assert voteskip.remaining(mock_channel) == 0
+    voteskip.voted.add(3)
+    assert voteskip.remaining(mock_channel) == 0
+
+    voteskip = VoteSkip(3, 'exact')
+    mock_channel.members.__len__.return_value = 0
+    assert voteskip.remaining(mock_channel) == 3  # noqa: PLR2004
+    mock_channel.members.__len__.return_value = 1
+    assert voteskip.remaining(mock_channel) == 3  # noqa: PLR2004
+    mock_channel.members.__len__.return_value = 2
+    assert voteskip.remaining(mock_channel) == 3  # noqa: PLR2004
+    mock_channel.members.__len__.return_value = 3
+    assert voteskip.remaining(mock_channel) == 3  # noqa: PLR2004
+
+    voteskip.voted.add(1)
+    assert voteskip.remaining(mock_channel) == 2  # noqa: PLR2004
+    voteskip.voted.add(2)
+    assert voteskip.remaining(mock_channel) == 1
+    voteskip.voted.add(3)
+    assert voteskip.remaining(mock_channel) == 0

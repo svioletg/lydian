@@ -61,8 +61,19 @@ allowed_urls = ['https://.*']
 #    allow. Prefix an expression with a hyphen (-) to blacklist it instead.
 
 [vote_skipping]
-enabled = true
+enabled = false
+# enabled: Whether to require a number of users to vote to skip tracks. If
+#    false, any users with permission to use -skip can skip the track
+#    immediately.
 threshold_type = "percentage"
+# threshold_type: What kind of threshold to use for vote-skipping. "percentage"
+#    uses the value given for the "percentage" key to calculate how many users
+#    are needed to skip based on how many are connected to the channel at time
+#    -skip was used, e.g. percentage = 50 means 50% of users (rounded up) need
+#    to vote in order to skip.
+#    "exact" will use the concrete value given for the "exact" key, requiring
+#    that >= that number of users vote to skip regardless of how many are
+#    connected to the channel.
 percentage = 50
 exact = 3
 

@@ -1,17 +1,42 @@
 import os
 import shutil
 from pathlib import Path
-from unittest.mock import MagicMock, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock
 
 import discord
 import pytest
+from discord.ext import commands
 
 from lydian.const import TESTS_DIR, create_directories
 
 
+class SampleCog(commands.Cog):  # noqa: D101
+    def __init__(self, bot: commands.Bot) -> None:
+        self.bot = bot
+
+    def bot_name(self) -> str:  # noqa: D102
+        if not self.bot.user:
+            raise ValueError('Bot is not online, user is None')
+        return self.bot.user.name
+
+    @commands.command()
+    async def greet(self, ctx: commands.Context, name: str | None = None) -> None:
+        """Sends a greeting message, optionally using the provided name.
+
+        :param name: The name to greet.
+        """
+        if name:
+            await ctx.send(f'Hello, {name}!')
+        else:
+            await ctx.send('Hello!')
+
 @pytest.fixture
 def tmpdir() -> Path:
     return TESTS_DIR / 'tmp'
+
+@pytest.fixture
+def sample_cog() -> commands.Cog:
+    return SampleCog(AsyncMock(commands.Bot))
 
 #region MOCKS
 
@@ -38,6 +63,17 @@ def mock_get_role(member: discord.Member, role_id: int) -> discord.Role | None:
             return role
     return None
 
+def mock_discord_user(
+        *,
+        name: str = 'username',
+        user_id: int = 0,
+    ) -> MagicMock[discord.User]:
+    user = MagicMock(discord.User)
+    user.name = name
+    user.user_id = user_id
+
+    return user
+
 def mock_discord_member(
         *,
         name: str = 'username',
@@ -54,6 +90,17 @@ def mock_discord_member(
     member.get_role = lambda role_id: mock_get_role(member, role_id)
 
     return member
+
+def mock_bot(
+        user: discord.User,
+        *,
+        cogs: dict[str, commands.Cog] | None = None,
+    ) -> MagicMock[commands.Bot]:
+    bot = MagicMock(commands.Bot)
+    bot.user = user
+    bot.cogs = cogs or {}
+
+    return bot
 
 #endregion MOCKS
 

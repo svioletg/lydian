@@ -9,6 +9,7 @@ import traceback
 from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from dataclasses import Field, fields, is_dataclass
 from datetime import UTC, datetime, timedelta, tzinfo
+from inspect import getmembers
 from itertools import zip_longest
 from math import ceil, floor
 from pathlib import Path
@@ -117,6 +118,7 @@ class Cache[K, V]:
         if obj.is_expired():
             del self._data[key]
             return None
+
         return obj.value
 
     def get_or_set(self, key: K, func: Callable[[], V], expires: datetime | timedelta | None = None) -> V:
@@ -140,6 +142,7 @@ class Cache[K, V]:
             obj = CachedObject(func(), expires=expires)
             self._data[key] = obj
             return obj.value
+
         return obj.value
 
     def remove(self, key: K) -> None:
@@ -209,6 +212,7 @@ class FromStr:
             return value
         if not (m := cls.filesize_regex.match(value)):
             raise ValueError(f'Filesize string does not match expected pattern: {value!r}')
+
         return floor(float(m.group('n').replace(',', '')) * cls.filesize_units[m.group('unit').lower()])
 
 class Stopwatch:
@@ -247,6 +251,7 @@ class Stopwatch:
             return 0
         if self.is_paused:
             return self._paused_at - self.start
+
         return (perf_counter_ns() - self.start) - self._pause_offset
 
     def pause(self) -> None:
@@ -281,6 +286,10 @@ def assure(condition: bool, exc_args: str = '') -> None:  # noqa: FBT001
     if not condition:
         raise AssuranceError(exc_args)
 
+def cog_commands(cog: type[commands.Cog]) -> dict[str, commands.Command]:
+    """Returns a dictionary of a cog's command methods."""
+    return {name:attr for name, attr in getmembers(cog) if isinstance(attr, commands.Command)}
+
 def compose(funcs: Iterable[Callable]) -> Callable[[object], object]:
     """Composes ``funcs`` into one function which takes a single argument.
 
@@ -292,11 +301,12 @@ def compose(funcs: Iterable[Callable]) -> Callable[[object], object]:
         for fn in funcs:
             result = fn(result)
         return result
+
     return composed_func
 
 def dirsize(source_dir: str | Path) -> int:
-    """Returns the total size of a directory's contents in bytes."""
-    return sum(fp.stat().st_size for fp in Path(source_dir).rglob('*'))
+    """Returns the total size of a directory and its subdirectories' files in bytes."""
+    return sum(fp.stat().st_size for fp in Path(source_dir).rglob('*') if fp.is_file())
 
 def dirsize_counted(source_dir: str | Path) -> tuple[int, dict[Literal['dir', 'file'], int]]:
     """Returns the total size of a directory's contents in bytes, and a dictionary of directory and file counts."""
@@ -304,7 +314,7 @@ def dirsize_counted(source_dir: str | Path) -> tuple[int, dict[Literal['dir', 'f
     count: dict[Literal['dir', 'file'], int] = {'dir': 0, 'file': 0}
     for fp in Path(source_dir).rglob('*'):
         count['dir' if fp.is_dir() else 'file'] += 1
-        total_bytes += fp.stat().st_size
+        total_bytes += fp.stat().st_size if fp.is_file() else 0
 
     return total_bytes, count
 
@@ -316,9 +326,10 @@ def expect[T](value: T | None) -> T:
     """Returns ``value``, raising ``ValueError`` if ``None``."""
     if value is None:
         raise ValueError('None')
+
     return value
 
-def first_where[T](it: Iterable[T], predicate: Callable[[T], bool]) -> T | None:
+def first_where[T](predicate: Callable[[T], bool], it: Iterable[T]) -> T | None:
     """Return the first item of an iterable that returns ``True`` for ``predicate(i)``, or ``None`` if no items pass."""
     try:
         return next(filter(predicate, it))
@@ -331,6 +342,7 @@ def format_duration(total_seconds: float) -> str:
     m, s = divmod(m, 60)
     if h:
         return f'{ceil(h)}:{ceil(m):02d}:{ceil(s):02d}'
+
     return f'{ceil(m)}:{ceil(s):02d}'
 
 def get_annotation(typ: object) -> Any | None:  # noqa: ANN401
@@ -346,6 +358,10 @@ def get_background_tasks(bot: commands.Bot) -> dict[str, dict[str, tasks.Loop]]:
         cog_name:{name:attr for name, attr in cog.__dict__.items() if isinstance(attr, tasks.Loop)}
         for cog_name, cog in bot.cogs.items()
     }
+
+def getclass[T](obj: type[T] | T) -> type[T]:
+    """Returns ``obj.__class__`` if ``obj`` is not a type, otherwise returns ``obj``."""
+    return obj if isinstance(obj, type) else obj.__class__
 
 def get_dataclass_fields(dc: object, parents: list[str] | None = None) -> dict[str, Field]:
     """Returns a dictionary of field names (dotted if the field is a dataclass) to field objects for a dataclass.
@@ -459,6 +475,7 @@ def join_trailing(s: Iterable[str], sep: str, *, trail_single: bool = False) -> 
 def linepos_to_pos(s: str, lineno: int, linepos: int) -> int:
     """Converts a 0-indexed line number and position to a global position in a string."""
     lines: list[str] = s.splitlines(keepends=True)
+
     return len(''.join(lines[:lineno])) + linepos
 
 def maybepath(fp: str | Path, must_be: Literal['file', 'dir'] | None = None) -> Maybe[Path]:
@@ -491,6 +508,7 @@ def partition[T](predicate: Callable[[T], bool], it: Iterable[T]) -> tuple[list[
     no: list[T] = []
     for i in it:
         (yes if predicate(i) else no).append(i)
+
     return yes, no
 
 def pos_to_linepos(s: str, pos: int) -> tuple[int, int]:
@@ -509,6 +527,7 @@ def pos_to_linepos(s: str, pos: int) -> tuple[int, int]:
     _ = s[pos] # Raises IndexError if the position is out of range
     line: int = s[:pos].count('\n')
     line_pos = pos - len('\n'.join(s.splitlines()[:line]))
+
     return line, line_pos - (1 if line else 0)
 
 def plural(s: str, n: int) -> str:
@@ -533,6 +552,7 @@ def plural(s: str, n: int) -> str:
         singular, plural = b, c[0]
     else:
         singular, plural = '', b
+
     return f'{root}{singular if n == 1 else plural}'
 
 def strftimestamp(
@@ -543,6 +563,7 @@ def strftimestamp(
     ) -> str:
     """Format a Unix timestamp to the given format string, converting its timezone to ``tz`` if given a value."""
     tz: tzinfo = ZoneInfo(tz) if isinstance(tz, str) else tz
+
     return datetime.fromtimestamp(timestamp, tz=UTC).astimezone(tz).strftime(format_str)
 
 def tabulate(  # noqa: C901
@@ -650,4 +671,5 @@ def wrap_paragraphs(
             initial_indent=(subsequent_indent if n > 0 and indent_mode == 'single' else initial_indent),
             subsequent_indent=subsequent_indent,
         ))
+
     return [ln for lines in wrapped_paras for ln in lines]

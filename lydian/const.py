@@ -86,6 +86,10 @@ EMBED_COLOR_ERROR: int = 0xff0000
 
 # Compiled regex
 COLOR_ESCAPE_REGEX: re.Pattern[str] = re.compile(r'\x1b\[.*?m')
+DOCSTRING_PARAM_REGEX: re.Pattern[str] = re.compile(
+    r'^:param (?P<name>\w+): (?P<desc>.+(?:\n    .+|\n)*)',
+    flags=re.MULTILINE,
+)
 YTDL_DOWNLOAD_PROGRESS_REGEX: re.Pattern[str] = re.compile(r'\[download\].+ETA')
 
 MD_HEADER_REGEX: re.Pattern[str] = re.compile(r'^#+.+$', flags=re.MULTILINE)
@@ -96,6 +100,7 @@ MD_H3_REGEX: re.Pattern[str] = re.compile(r'^###.+$', flags=re.MULTILINE)
 # Other values
 USER_AGENT: str = f'lydian-discord-bot/{__version__}'
 DEFAULT_DISCORD_PROMPT_TIMEOUT: float = 60.0
+DEFAULT_DISCORD_PAGINATED_VIEW_TIMEOUT: float = 60.0 * 5
 QUEUE_MAX_PER_PAGE: int = 20
 
 class ConsoleHighlighter(Highlighter):
@@ -115,11 +120,13 @@ class EmojiStr(StrEnum):
     ERROR   = emojize(':x:', language='alias')
     CONFIRM = emojize(':heavy_check_mark:', language='alias')
     CANCEL  = emojize(':heavy_multiplication_x:', language='alias')
+    GEAR    = emojize(':gear:', language='alias')
 
     # Media
     PLAY    = emojize(':arrow_forward:', language='alias')
     PAUSE   = emojize(':pause_button:', language='alias')
     STOP    = emojize(':stop_button:', language='alias')
+    BACK    = emojize(':arrow_backward:', language='alias')
     SKIP    = emojize(':fast_forward:', language='alias')
     IN      = emojize(':inbox_tray:', language='alias')
     OUT     = emojize(':outbox_tray:', language='alias')

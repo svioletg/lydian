@@ -13,6 +13,7 @@ Lydian documentation
    reference/console
    reference/const
    reference/errors
+   reference/help
    reference/perms
    reference/util
    cogs.debug module <reference/cogs/debug>

@@ -2,7 +2,7 @@
 import asyncio
 from collections import UserList
 from collections.abc import Iterable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
 from math import ceil
 from pathlib import Path
@@ -322,6 +322,28 @@ class MediaQueue(UserList[MediaItem]):
         """Pops a random item in the list and returns it."""
         return self.pop(randint(0, len(self) - 1))
 
+@dataclass
+class VoteSkip:
+    """Dataclass for vote-skipping data."""
+
+    threshold: int
+    """How many users are needed to skip a track based on ``threshold_type``."""
+    threshold_type: Literal['percentage', 'exact']
+    """How to treat ``threshold``."""
+    voted: set[int] = field(default_factory=set)
+    """A set of user IDs who have voted to skip the current track."""
+
+    def remaining(self, channel: discord.VoiceChannel | discord.StageChannel) -> int:
+        """Returns how many more votes are needed to skip the current track.
+
+        The returned value will not go below zero.
+        """
+        threshold: int = self.threshold
+        if self.threshold_type == 'percentage':
+            threshold = ceil((threshold / 100) * len(channel.members))
+
+        return max(0, threshold - len(self.voted))
+
 def _assert_discord_member(user: discord.User | discord.Member) -> discord.Member:
     """Returns a ``discord.User | discord.Member`` value casted to ``discord.Member``.
 
@@ -358,6 +380,12 @@ class VoiceCog(commands.Cog):
 
         Set back to ``None`` when the track is played again.
         """
+        self.voteskip: VoteSkip | None = VoteSkip(
+            config.vote_skipping.percentage
+                if config.vote_skipping.threshold_type == 'percentage'
+                else config.vote_skipping.exact,
+            config.vote_skipping.threshold_type,
+        ) if config.vote_skipping.enabled else None
 
         # States
         self.alone: bool = False
@@ -761,8 +789,15 @@ class VoiceCog(commands.Cog):
 
     @alias_from_config
     @commands.command(aliases=[])
-    async def move(self, ctx: commands.Context, source: int, dest: int) -> None:
-        """Moves an item to a new position in the queue."""
+    async def move(self, ctx: commands.Context,
+            source: int = commands.parameter(displayed_name='from'),
+            dest: int = commands.parameter(displayed_name='to'),
+        ) -> None:
+        """Moves an item to a new position in the queue.
+
+        :param source: The queue index of the item you want to move.
+        :param dest: The new index you want to move the item to.
+        """
         if not (await self._check_queue_index_arg(ctx, source) and await self._check_queue_index_arg(ctx, dest)):
             return
 
@@ -789,6 +824,26 @@ class VoiceCog(commands.Cog):
         if not to_skip:
             await ctx.send(embed=embed_info('Nothing to skip.'))
             return
+
+        voice = _assert_voice_client(ctx.voice_client)
+
+        if self.voteskip:
+            if ctx.author.id in self.voteskip.voted:
+                remaining: int = self.voteskip.remaining(voice.channel)
+                await ctx.send(embed=embed_info(
+                    'You have already voted to skip.',
+                    f'{remaining} more vote(s) needed\nVoted: {', '.join(map(mention, self.voteskip.voted))}',
+                ))
+                return
+            self.voteskip.voted.add(ctx.author.id)
+            remaining: int = self.voteskip.remaining(voice.channel) \
+                - int(any(expect(self.bot.user).id == m.id for m in voice.channel.members))
+            await ctx.send(embed=embed_info(
+                f'{_assert_discord_member(ctx.author).display_name} voted to skip this track.',
+                f'{remaining} more vote(s) needed\nVoted: {', '.join(map(mention, self.voteskip.voted))}',
+            ))
+            if remaining > 0:
+                return
 
         self.stopped_track = None
 
