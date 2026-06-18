@@ -18,46 +18,17 @@ paths. `lydian` does not contain any modules named `tools` or `tests`, to avoid 
 Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
 configured prefix accordingly.
 
-## [Unreleased]
+## [feature/looping]
 
 ### Added
 
-- Added debug console command `debug store`
 - Added bot command `-loop` (method `cogs.voice.VoiceCog.toggle_loop()`)
-- Added constants `const.GH_CHANGELOG_WEB` and `const.GH_CHANGELOG_RAW`
-- Added to `const`:
-  - `MD_HEADER_REGEX`
-  - `MD_H1_REGEX`
-  - `MD_H2_REGEX`
-  - `MD_H3_REGEX`
 - Added enum member `const.EmojiStr.LOOP`
 - Added enum member `const.EmojiStr.LOOP_ONE`
-- Added attribute `cogs.voice.MediaItem.user_id` to replace `.user`
 - Added attribute `cogs.voice.VoiceCog.loop`
 - Added method `cogs.voice.VoiceCog.loop_state_embed()`
-- Added method `console.LydianConsole._debug_evaluate_in_context()`
-- Added function `util.get_text_sections()`
-- Added function `util.mention()`
 - Added proper handling for `discord.ext.commands.errors.BadLiteralArgument` in
   `bot.on_command_error()`
-
-### Changed
-
-- `cogs.voice.MediaItem` objects now store who queued the item as their `int` user ID rather than
-  the actual `discord.Member` object, which allows them to be deep-copied
-- Moved `update.GH_API_ROOT`, `update.GH_REPO_API_ROOT`, and `update.USER_AGENT` to `const`
-  - Value of `USER_AGENT` updated to use the package's name instead of `lydian-update-checker`
-
-### Removed
-
-- Removed attribute `cogs.voice.MediaItem.user`, (replaced by `.user_id`)
-
-### Fixed
-
-- Fixed `cogs.voice.MediaItem` objects always refreshing when advancing queue if their
-  `thumbnail_url` attribute is truthy (incorrectly wrote
-  `(not item.duration) or (item.thumbnail_url)` instead of
-  `(not item.duration) or (not item.thumbnail_url)`)
 
 ## [0.8.0] - 2026-06-05
 
