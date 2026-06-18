@@ -18,6 +18,21 @@ paths. `lydian` does not contain any modules named `tools` or `tests`, to avoid 
 Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
 configured prefix accordingly.
 
+## [Unreleased]
+
+### Added
+
+- Added `title` named group to markdown header regexes in `const`
+  - `const.MD_HEADER_REGEX`
+  - `const.MD_H1_REGEX`
+  - `const.MD_H2_REGEX`
+  - `const.MD_H3_REGEX`
+
+### Fixed
+
+- Fixed markdown header regexes matching more header symbols than intended, they now correctly match
+  *only* their respective header level
+
 ## [0.9.0] - 2026-06-17
 
 ### Overview

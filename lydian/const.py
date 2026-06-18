@@ -92,10 +92,10 @@ DOCSTRING_PARAM_REGEX: re.Pattern[str] = re.compile(
 )
 YTDL_DOWNLOAD_PROGRESS_REGEX: re.Pattern[str] = re.compile(r'\[download\].+ETA')
 
-MD_HEADER_REGEX: re.Pattern[str] = re.compile(r'^#+.+$', flags=re.MULTILINE)
-MD_H1_REGEX: re.Pattern[str] = re.compile(r'^#.+$', flags=re.MULTILINE)
-MD_H2_REGEX: re.Pattern[str] = re.compile(r'^##.+$', flags=re.MULTILINE)
-MD_H3_REGEX: re.Pattern[str] = re.compile(r'^###.+$', flags=re.MULTILINE)
+MD_HEADER_REGEX: re.Pattern[str] = re.compile(r'^#(?P<title>.*)$', flags=re.MULTILINE)
+MD_H1_REGEX: re.Pattern[str] = re.compile(r'^#(?P<title>[^#].*)$', flags=re.MULTILINE)
+MD_H2_REGEX: re.Pattern[str] = re.compile(r'^##(?P<title>[^#].*)$', flags=re.MULTILINE)
+MD_H3_REGEX: re.Pattern[str] = re.compile(r'^###(?P<title>[^#].*)$', flags=re.MULTILINE)
 
 # Other values
 USER_AGENT: str = f'lydian-discord-bot/{__version__}'
