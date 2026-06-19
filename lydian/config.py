@@ -159,61 +159,70 @@ class Config:
     See :py:class:`ConfigFieldMeta` for details on how a field's ``metadata`` is used.
     """
 
-    prefix: str = '-'
     debug: bool = field(default=False,
         doc='Enables various commands and features intended for developers.'
             + ' See the README for a full description of what debug mode does:'
             + ' https://github.com/svioletg/lydian/blob/main/README.md',
-        metadata={'env': 'DEBUG'},
-    )
+        metadata={'env': 'DEBUG'})
+
+    # Bot personalization
+    prefix: str = '-'
+
+    # Bot functionality
     check_for_updates: bool = field(default=True,
         doc='Whether to check for new releases of Lydian at startup.',
         metadata={'env': 'CHECK_UPDATES'})
+
     check_for_stable_only: bool = field(default=True,
         doc='Whether to exclude pre-releases when checking for updates.',
         metadata={'env': 'CHECK_STABLE_ONLY'})
+
     bot_console: bool = field(default=True,
         doc="Enables Lydian's interactive console while running.",
         metadata={'env': 'BOT_CONSOLE'})
+
     command_aliases: dict[str, list[str]] = field(default_factory=_default_command_aliases)
+
+    stream_media: bool = field(default=True,
+        doc='Whether to stream media instead of downloading it to disk and playing the file.')
+
+    # Limits, thresholds
     max_duration: int | None = field(default=None,
         doc=f'Maximum duration (in seconds) of media that can be played by the bot. Set to {TOML_NONE!r} for no limit.',
-        metadata={'validators': [_validate_positive]},
-    )
+        metadata={'validators': [_validate_positive]})
+
     max_duration_allow_unknown: bool = field(default=False,
         doc="Whether to allow media whose duration couldn't be retrieved when max-duration is more than 0.")
+
     max_filesize: int = field(default=20_000_000,
         doc='Maximum filesize in bytes for media that can be downloaded by the bot.'
             + ' Will have no effect when streaming media (stream-media = true).',
-        metadata={'converter': FromStr.to_filesize, 'validators': [_validate_positive]},
-    )
+        metadata={'converter': FromStr.to_filesize, 'validators': [_validate_positive]})
+
     max_playlist_length: int = field(default=20,
         doc='Maximum number of items that can be added from a single playlist link.',
-        metadata={'validators': [_validate_positive]},
-    )
+        metadata={'validators': [_validate_positive]})
+
     max_queue_length: int = field(default=100,
         doc='Maximum number of items that can be added to the media queue.',
-        metadata={'validators': [_validate_positive]},
-    )
+        metadata={'validators': [_validate_positive]})
+
     media_dir_warn_threshold: int | None = field(default=100_000_000,
         doc='Total size in bytes that downloaded media can take up before a warning is emitted at bot'
             + f' startup. Set to {TOML_NONE!r} to disable the warning entirely.',
-        metadata={'converter': FromStr.to_filesize, 'validators': [_validator_min(-1)]},
-    )
-    stream_media: bool = field(default=True,
-        doc='Whether to stream media instead of downloading it to disk and playing the file.',
-    )
+        metadata={'converter': FromStr.to_filesize, 'validators': [_validator_min(-1)]})
+
+    # Timeouts, timers
     inactivity_timeout: int | None = field(default=120,
         doc='How long in seconds the bot can be inactive (not playing anything and the queue is empty) before'
             + f' disconnecting. Set to {TOML_NONE!r} to never disconnect for inactivity.',
-        metadata={'validators': [_validate_positive]},
-    )
+        metadata={'validators': [_validate_positive]})
     lonely_timeout: int | None = field(default=120,
         doc='How long in seconds the bot can be the only user in a voice channel before disconnecting.'
             + f' Set to {TOML_NONE!r} to never disconnect in this case.',
-        metadata={'validators': [_validate_positive]},
-    )
+        metadata={'validators': [_validate_positive]})
 
+    # Tables
     media_filter: MediaFilterConfig = field(default_factory=MediaFilterConfig)
     vote_skipping: VoteSkippingConfig = field(default_factory=VoteSkippingConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
