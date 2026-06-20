@@ -45,7 +45,7 @@ Docs: <https://lydian.readthedocs.io/en/latest/>
   - [Setup without `uv`](#setup-without-uv)
 - [Usage: Running the bot](#usage-running-the-bot)
 - [Usage: Bot console commands](#usage-bot-console-commands)
-  - [`debug read`](#debug-read)
+  - [`debug eval`](#debug-eval)
   - [`debug store`](#debug-store)
   - [`help`](#help)
   - [`stop`](#stop)
@@ -155,7 +155,7 @@ reason, you should be able to hit Ctrl+C to send a keyboard interrupt and forcib
 > [!NOTE]
 > All commands starting with `debug` require [debug mode](#debug-mode) to use.
 
-### `debug read`
+### `debug eval`
 
 > [!WARNING]
 > This command uses the `eval()` function, which is [unsafe to use with untrusted user
@@ -180,9 +180,9 @@ Options:
 Example:
 
 ```log
-> debug read dbg.cog.voice.queue
+> debug eval dbg.cog.voice.queue
 debug_context['cog.voice.queue'] == MediaQueue([])
-> debug read --log dbg.cog.voice.queue
+> debug eval --log dbg.cog.voice.queue
 [2026-04-30 00:51:30] [bot::thread_console/DEBUG]: debug_context['cog.voice.queue'] == MediaQueue([])
 ```
 
@@ -196,12 +196,12 @@ debug_context['cog.voice.queue'] == MediaQueue([])
 > shouldn't be an issue.
 
 Stores either the result of an expression or the expression itself to a key in the `store`
-dictionary, to be accessed later by `debug read`. To do the latter, prefix the expression with `&`.
-Stored expressions will be evaluated on the fly on every run of `debug read store.<key>`, when just
+dictionary, to be accessed later by `debug eval`. To do the latter, prefix the expression with `&`.
+Stored expressions will be evaluated on the fly on every run of `debug eval store.<key>`, when just
 storing the result (no `&`) the expression is evaluated once right then and a deep-copy of the value
 is stored to read later.
 
-The expression given to this command does not support the expansions/shortcuts that `debug read`
+The expression given to this command does not support the expansions/shortcuts that `debug eval`
 supports, e.g. `?cog.voice.now_playing` does not work and would have to be written fully as
 `dbg.cog.voice.now_playing`.
 
@@ -213,11 +213,11 @@ Example:
 
 ```bash
 > debug store dbg.cog.voice.now_playing np
-> debug read $np
+> debug eval $np
 dbg.cog.voice.now_playing == MediaItem(title='Victoria (2019 Remaster)',
 url='https://www.youtube.com/watch?v=vaIzujp0IpI', duration=219)
 > debug store &dbg.cog.voice.now_playing np
-> debug read $np
+> debug eval $np
 dbg.cog.voice.now_playing == MediaItem(title='Victoria (2019 Remaster)',
 url='https://www.youtube.com/watch?v=vaIzujp0IpI', duration=219)
 ```

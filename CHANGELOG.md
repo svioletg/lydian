@@ -20,6 +20,11 @@ configured prefix accordingly.
 
 ## [Unreleased]
 
+### Overview
+
+> **Breaking changes**
+> - The debug console command `read` has been renamed to `eval`
+
 ### Added
 
 - Added `title` named group to markdown header regexes in `const`
@@ -34,6 +39,11 @@ configured prefix accordingly.
 - Added method `cogs.voice.VoiceCog.loop_state_embed()` (#34)
 - Added proper handling for `discord.ext.commands.errors.BadLiteralArgument` in
   `bot.on_command_error()`
+
+### Changed
+
+- Renamed console command `debug read` to `debug eval`
+- Renamed method `console.LydianConsole.debug_read()` to `.debug_eval()`
 
 ### Fixed
 
