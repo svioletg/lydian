@@ -25,3 +25,4 @@ testenv/
 *.log
 build
 testbot
+*.ipynb
