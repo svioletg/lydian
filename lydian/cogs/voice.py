@@ -816,7 +816,15 @@ class VoiceCog(commands.Cog):
         if not await self._check_queue_index_arg(ctx, index):
             return
 
-        self.queue.remove(item := self.queue[index - 1])
+        item = self.queue[index - 1]
+
+        if config.confirm_on_remove and not await confirm(ctx, embed_info(
+            f'Remove item "{item.title}"?',
+            f'{item.url}',
+        )):
+            return
+
+        self.queue.remove(item)
         await ctx.send(embed=embed_ok(f'{EmojiStr.OUT} Removed item from position #{index}: {item.title}', item.url))
 
     @alias_from_config

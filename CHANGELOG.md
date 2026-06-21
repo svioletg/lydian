@@ -23,6 +23,7 @@ configured prefix accordingly.
 ### Added
 
 - Added config key `confirm_on_remove` (bool)
+  - If `true`, using `-remove` will prompt the user to confirm their choice
 
 ## [Unreleased]
 
