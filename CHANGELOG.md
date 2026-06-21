@@ -18,7 +18,7 @@ paths. `lydian` does not contain any modules named `tools` or `tests`, to avoid 
 Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
 configured prefix accordingly.
 
-## [Unreleased]
+## [0.9.0] - 2026-06-17
 
 ### Overview
 
@@ -42,27 +42,26 @@ literal = 3
 - Added module `help`
 - Added constant `const.DOCSTRING_PARAM_REGEX`
 - Added constants `const.GH_CHANGELOG_WEB` and `const.GH_CHANGELOG_RAW`
-- Added to `const`:
+- Added constants to `const`:
   - `MD_HEADER_REGEX`
   - `MD_H1_REGEX`
   - `MD_H2_REGEX`
   - `MD_H3_REGEX`
-- Added enum member `const.EmojiStr.BACK`
-- Added enum member `const.EmojiStr.GEAR`
-- Added class `cogs.util.ArrowButtonsView`
-- Added class `cogs.util.DropdownView`
+- Added enum members `const.EmojiStr.BACK` and `const.EmojiStr.GEAR`
+- Added classes `cogs.util.ArrowButtonsView` and `cogs.util.DropdownView`
 - Added class `cogs.voice.VoteSkip`
 - Added attribute `cogs.voice.MediaItem.user_id` to replace `.user`
 - Added method `console.LydianConsole._debug_evaluate_in_context()`
-- Added function `cogs.util.cog_emoji()`
-- Added function `cogs.util.command_signature()`
-- Added function `cogs.util.paginated_message()`
-- Added function `util.cog_commands()`
-- Added function `util.getclass()`
-- Added function `util.get_text_sections()`
-- Added function `util.mention()`
-- Added pytest fixture `mock_discord_user`
-- Added pytest fixture `mock_bot`
+- Added functions to `cogs.util`:
+  - `cog_emoji()`
+  - `command_signature()`
+  - `paginated_message()`
+- Added functions to `util`:
+  - `cog_commands()`
+  - `getclass()`
+  - `get_text_sections()`
+  - `mention()`
+- Added pytest fixtures `mock_bot` and `mock_discord_user`
 
 ### Changed
 
