@@ -6,15 +6,15 @@ from typing import Annotated, Any, Literal
 
 import pytest
 from discord.ext import commands
+from frozendict import frozendict
 from maybetype import Nothing, Some, maybe
 
 from lydian import util
 from lydian.const import MD_H2_REGEX
 from lydian.errors import AssuranceError
 from lydian.util import BasicLock, Cache, get_text_sections
-from tests import ReadOnlyDict
 
-NESTED_DICT_RO: ReadOnlyDict[str, Any] = ReadOnlyDict({'a': 1, 'b': {'a': 2, 'b': {'a': 3}}, 'c': 4})
+NESTED_DICT_RO: frozendict[str, Any] = frozendict({'a': 1, 'b': {'a': 2, 'b': {'a': 3}}, 'c': 4})
 SAMPLE_MARKDOWN: str = """# Documentation
 
 ## Section 1

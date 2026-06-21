@@ -45,6 +45,12 @@ configured prefix accordingly.
 - Renamed console command `debug read` to `debug eval`
 - Renamed method `console.LydianConsole.debug_read()` to `.debug_eval()`
 
+### Removed
+
+- Removed class `tests.ReadOnlyDict`
+- Removed exception `tests.ReadOnlyModifiedError`
+- Removed function `tests._raise_for_readonly()`
+
 ### Fixed
 
 - Fixed markdown header regexes matching more header symbols than intended, they now correctly match
