@@ -237,7 +237,7 @@ async def async_main() -> int:
 
     if config.check_for_updates:
         screen.print('-' * 20)
-        check_for_updates()
+        check_for_updates(stable=config.check_for_stable_only)
         screen.print('-' * 20)
 
     logger.info('Starting...')

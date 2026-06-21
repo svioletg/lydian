@@ -57,6 +57,8 @@ configured prefix accordingly.
 
 - Fixed markdown header regexes matching more header symbols than intended, they now correctly match
   *only* their respective header level
+- Fixed `check_for_stable_only` config key not getting checked when checking updates at bot startup
+  (#42)
 
 ## [0.9.1] - 2026-06-21
 
