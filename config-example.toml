@@ -15,6 +15,9 @@ bot_console = true # env: LYDIAN_BOT_CONSOLE
 stream_media = true
 # stream_media: Whether to stream media instead of downloading it to disk and
 #    playing the file.
+confirm_on_remove = true
+# confirm_on_remove: Whether usage of the -remove command requires user
+#    confirmation.
 max_duration = 'n/a'
 # max_duration: Maximum duration (in seconds) of media that can be played by the
 #    bot. Set to 'n/a' for no limit.

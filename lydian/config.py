@@ -186,6 +186,9 @@ class Config:
     stream_media: bool = field(default=True,
         doc='Whether to stream media instead of downloading it to disk and playing the file.')
 
+    confirm_on_remove: bool = field(default=True,
+        doc='Whether usage of the -remove command requires user confirmation.')
+
     # Limits, thresholds
     max_duration: int | None = field(default=None,
         doc=f'Maximum duration (in seconds) of media that can be played by the bot. Set to {TOML_NONE!r} for no limit.',

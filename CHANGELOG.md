@@ -18,6 +18,12 @@ paths. `lydian` does not contain any modules named `tools` or `tests`, to avoid 
 Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
 configured prefix accordingly.
 
+## [feature/confirm-on-remove]
+
+### Added
+
+- Added config key `confirm_on_remove` (bool)
+
 ## [Unreleased]
 
 ### Overview
