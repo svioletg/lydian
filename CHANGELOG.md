@@ -58,7 +58,7 @@ configured prefix accordingly.
 - Fixed markdown header regexes matching more header symbols than intended, they now correctly match
   *only* their respective header level
 
-## [0.9.0] - 2026-06-17
+## [0.9.1] - 2026-06-21
 
 ### Overview
 
@@ -125,6 +125,11 @@ literal = 3
   `(not item.duration) or (not item.thumbnail_url)`)
 - Fixed `ZoneInfo` not working correctly on systems without an IANA database by including `tzdata`
   as a dependency
+
+## [0.9.0] - 2026-06-17 [YANKED]
+
+See notes for [v0.9.1](#091---2026-06-21). 0.9.0 was supposed to include these changes but did not
+due to improper merging, and was then re-released as 0.9.1 after the git history was corrected.
 
 ## [0.8.0] - 2026-06-05
 
