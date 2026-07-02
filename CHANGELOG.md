@@ -24,6 +24,9 @@ configured prefix accordingly.
 
 ### Changed
 
+- `cogs.util.DropdownView.__init__()` parameter `options` now accepts `Iterable` instead of
+  just `list`
+
 ### Deprecated
 
 ### Removed

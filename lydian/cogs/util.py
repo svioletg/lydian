@@ -1,6 +1,6 @@
 """Utilities specifically for use in cog modules."""
 import warnings
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from typing import Literal, cast
 
 import discord.ui
@@ -110,7 +110,7 @@ class ArrowButtonsView(discord.ui.View):
 class DropdownView(discord.ui.View):
     """A view with a dropdown menu for selecting one option."""
 
-    def __init__(self, options: list[discord.SelectOption], *, timeout: float | None = None) -> None:
+    def __init__(self, options: Iterable[discord.SelectOption], *, timeout: float | None = None) -> None:
         super().__init__(timeout=timeout)
 
         for opt in options:
