@@ -22,6 +22,9 @@ configured prefix accordingly.
 
 ### Added
 
+- Added function `util.nop()`
+  - "No-op"; takes any arguments and keyword arguments and does nothing
+
 ### Changed
 
 - `cogs.util.DropdownView.__init__()` parameter `options` now accepts `Iterable` instead of
