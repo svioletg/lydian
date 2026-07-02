@@ -2,10 +2,10 @@
 
 ![Required Python version](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fsvioletg%2Flydian%2Frefs%2Fheads%2Fmain%2Fpyproject.toml
 )
-![Build, main branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian/build-test.yml?branch=main&label=build%20%26test%20(main)
+![Build, main branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian/build-test.yml?branch=main&label=build%20%26%20test%20(main)
 )
 
-![Build, dev branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian/build-test.yml?branch=dev&label=build%20%26test%20(dev)
+![Build, dev branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian/build-test.yml?branch=dev&label=build%20%26%20test%20(dev)
 )
 
 > [!WARNING]
