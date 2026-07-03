@@ -22,6 +22,8 @@ configured prefix accordingly.
 
 ### Added
 
+- Added debug bot command `-buttons`
+- Added class `cogs.util.DynamicButtonsView`
 - Added constant `const.EMOJI_DIGITS`
 - Added classmethod `const.EmojiStr.from_int()`
 - Added function `util.nop()`
