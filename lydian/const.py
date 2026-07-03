@@ -26,44 +26,44 @@ GH_API_ROOT: str = 'https://api.github.com'
 GH_REPO_API_ROOT: str = GH_API_ROOT + '/repos/svioletg/lydian'
 
 # Paths
-PACKAGE_DIR      : Path = Path(__file__).resolve().parent
+PACKAGE_DIR: Path = Path(__file__).resolve().parent
 """:meta hide-value:"""
-TESTS_DIR        : Path = PACKAGE_DIR.parent / 'tests'
+TESTS_DIR: Path = PACKAGE_DIR.parent / 'tests'
 """:meta hide-value:"""
-DEFAULT_DATA_DIR : Path = PACKAGE_DIR / 'lydian-data'
+DEFAULT_DATA_DIR: Path = PACKAGE_DIR / 'lydian-data'
 """Points to a ``lydian-data`` directory under the package's installation directory.
 
 :meta hide-value:
 """
-DEFAULT_TMP_DIR  : Path = DEFAULT_DATA_DIR.parent / 'tmp'
+DEFAULT_TMP_DIR: Path = DEFAULT_DATA_DIR.parent / 'tmp'
 """:meta hide-value:"""
-DEFAULT_LOGS_DIR : Path = DEFAULT_DATA_DIR / 'logs'
+DEFAULT_LOGS_DIR: Path = DEFAULT_DATA_DIR / 'logs'
 """:meta hide-value:"""
-DOTENV_PATH      : Path = Path.cwd() / '.env'
+DOTENV_PATH: Path = Path.cwd() / '.env'
 """Points to a ``.env`` file under the current working directory.
 
 :meta hide-value:
 """
-CONFIG_PATH      : Path = Path.cwd() / 'lydian-config.toml'
+CONFIG_PATH: Path = Path.cwd() / 'lydian-config.toml'
 """Points to a ``lydian-config.toml`` file under the current working directory.
 
 :meta hide-value:
 """
-PERMISSIONS_PATH : Path = Path.cwd() / 'permissions.yml'
+PERMISSIONS_PATH: Path = Path.cwd() / 'permissions.yml'
 """Points to a ``permissions.yml`` file under the current working directory.
 
 :meta hide-value:
 """
-DATA_DIR         : Path = (CONFIG_PATH.parent / 'lydian-data') if CONFIG_PATH.exists() else DEFAULT_DATA_DIR
+DATA_DIR: Path = (CONFIG_PATH.parent / 'lydian-data') if CONFIG_PATH.exists() else DEFAULT_DATA_DIR
 """Data directory as relative to the user's configuration file if it exists, or :py:data:`DEFAULT_DATA_DIR`.
 
 :meta hide-value:
 """
-TMP_DIR          : Path = DATA_DIR / 'tmp'
+TMP_DIR: Path = DATA_DIR / 'tmp'
 """:meta hide-value:"""
-LOGS_DIR         : Path = DATA_DIR / 'logs'
+LOGS_DIR: Path = DATA_DIR / 'logs'
 """:meta hide-value:"""
-DL_DIR           : Path = DATA_DIR / 'dl'
+DL_DIR: Path = DATA_DIR / 'dl'
 """:meta hide-value:"""
 """Directory for storing media downloaded by youtube-dl.
 
