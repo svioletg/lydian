@@ -127,6 +127,19 @@ Named groups:
 USER_AGENT: str = f'lydian-discord-bot/{__version__}'
 DEFAULT_DISCORD_PROMPT_TIMEOUT: float = 60.0
 DEFAULT_DISCORD_PAGINATED_VIEW_TIMEOUT: float = 60.0 * 5
+EMOJI_DIGITS: tuple[str, str, str, str, str, str, str, str, str, str] = (
+    emojize(':zero:', language='alias'),
+    emojize(':one:', language='alias'),
+    emojize(':two:', language='alias'),
+    emojize(':three:', language='alias'),
+    emojize(':four:', language='alias'),
+    emojize(':five:', language='alias'),
+    emojize(':six:', language='alias'),
+    emojize(':seven:', language='alias'),
+    emojize(':eight:', language='alias'),
+    emojize(':nine:', language='alias'),
+)
+"""Digits 0-9 as emoji."""
 QUEUE_MAX_PER_PAGE: int = 20
 
 class ConsoleHighlighter(Highlighter):
@@ -159,6 +172,12 @@ class EmojiStr(StrEnum):
     SHUFFLE = emojize(':twisted_rightwards_arrows:', language='alias')
     LOOP     = emojize(':repeat:', language='alias')
     LOOP_ONE = emojize(':repeat_one:', language='alias')
+
+    # Alphanumeric
+    @classmethod
+    def from_int(cls, n: int) -> str:
+        """Converts an integer into digit emojis."""
+        return ''.join(EMOJI_DIGITS[int(ch)] for ch in str(n).lower())
 
 class LogLevel(IntEnum):  # noqa: D101
     TRACE   = 5

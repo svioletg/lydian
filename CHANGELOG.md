@@ -22,6 +22,8 @@ configured prefix accordingly.
 
 ### Added
 
+- Added constant `const.EMOJI_DIGITS`
+- Added classmethod `const.EmojiStr.from_int()`
 - Added function `util.nop()`
   - "No-op"; takes any arguments and keyword arguments and does nothing
 
