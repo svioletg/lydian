@@ -96,9 +96,22 @@ class CachedObject[T]:
 class Cache[K, V]:
     """A simple cache."""
 
-    def __init__(self, default_expiration: timedelta | None = None) -> None:
+    def __init__(self, default_expiration: timedelta | None = None, *, enabled: bool = True) -> None:
+        """
+        :param enabled: If ``False``, nothing is added to or retrieved from the cache.
+
+            More specifically, when not ``enabled``, the following is true:
+
+            - :py:meth:`clear` clears the cache like normal
+            - :py:meth:`get` always returns ``None``
+            - :py:meth:`get_or_set` always calls and returns the result of its ``func`` parameter
+            - :py:meth:`remove` returns immediately without modifying the cache
+            - :py:meth:`set` returns immediately without modifying the cache
+        """  # noqa: D212
         self._default_expiration = default_expiration
         self._data: dict[K, CachedObject[V]] = {}
+
+        self.enabled: bool = enabled
 
     def __repr__(self) -> str:  # noqa: D105
         return f'{self.__class__.__name__}({self._data!r})'
@@ -112,6 +125,9 @@ class Cache[K, V]:
 
         If the key exists but is expired, the key is removed from the cache and ``None`` is returned.
         """
+        if not self.enabled:
+            return None
+
         if key not in self._data:
             return None
         obj = self._data[key]
@@ -134,6 +150,9 @@ class Cache[K, V]:
         :raises ValueError:
             ``expires`` was given a date in the past.
         """
+        if not self.enabled:
+            return func()
+
         expires = expires if expires is not None else self._default_expiration
         if expires and \
             (((datetime.now(UTC) + expires) if isinstance(expires, timedelta) else expires) < datetime.now(UTC)):
@@ -150,11 +169,17 @@ class Cache[K, V]:
 
         Does nothing if the key did not exist.
         """
+        if not self.enabled:
+            return
+
         if key in self._data:
             del self._data[key]
 
     def set(self, key: K, value: V, expires: datetime | timedelta | None = None) -> None:
         """Adds or replaces the value of ``key`` with ``value`` and the given optional expiration date."""
+        if not self.enabled:
+            return
+
         expires = expires if expires is not None else self._default_expiration
         self._data[key] = CachedObject(value, expires=expires)
 

@@ -85,8 +85,14 @@ def test_cached_object_init() -> None:
     assert maybe(util.CachedObject(1, timedelta(days=1)).expires).unwrap().day \
         == (datetime.now(UTC) + timedelta(days=1)).day
 
-def test_cache() -> None:
-    cache: Cache[int, str] = Cache()
+@pytest.mark.parametrize(('enabled'),
+    [
+        (True,),
+        (False,),
+    ],
+)
+def test_cache(enabled: bool) -> None:
+    cache: Cache[int, str] = Cache(enabled=enabled)
     assert cache.get(1) is None
     cache.set(1, 'one')
     assert cache.get(1) == 'one'
@@ -104,6 +110,13 @@ def test_cache() -> None:
     assert cache.get_or_set(1, lambda: 'one', timedelta(days=1)) == 'one'
     with pytest.raises(ValueError, match='must be a future date'):
         cache.get_or_set(1, lambda: 'one', datetime(2025, 1, 1, tzinfo=UTC))
+
+
+    if enabled:
+        assert cache._data != Cache()._data  # noqa: SLF001
+
+    if not enabled:
+        assert cache._data == Cache()._data  # noqa: SLF001
 
 def test_cog_commands(sample_cog: type[commands.Cog]) -> None:
     result = util.cog_commands(sample_cog)

@@ -33,6 +33,8 @@ configured prefix accordingly.
 
 - `cogs.util.DropdownView.__init__()` parameter `options` now accepts `Iterable` instead of
   just `list`
+- `util.Cache` objects can now be effectively disabled with the `enabled` attribute, which prevents
+  setting keys and retrieving keys from its data dictionary
 
 ### Deprecated
 
