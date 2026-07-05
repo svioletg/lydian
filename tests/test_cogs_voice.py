@@ -7,6 +7,7 @@ import pytest
 from lydian.cogs.voice import MediaItem, MediaQueue, VoteSkip
 from lydian.errors import MediaQueueLimitError
 
+MediaItem._url_info_cache.enabled = False  # noqa: SLF001
 
 def test_media_item_copy() -> None:
     item = MediaItem('Title', 'url', duration=1.5, thumbnail_url='thumburl', user_id=1234)
