@@ -419,8 +419,8 @@ class VoiceCog(commands.Cog):
 
         # Internal
         self._manual_stop: bool = False
-        self._play_calls: asyncio.Queue[tuple[commands.Context, str]] = asyncio.Queue()
-        """Tuples of context objects and URLs that are waiting to be processed by :py:meth:`play`."""
+        self._play_calls: asyncio.Queue[tuple[commands.Context, str, Literal['url', 'search']]] = asyncio.Queue()
+        """Tuples of context objects and URLs/queries that are waiting to be processed by :py:meth:`play`."""
 
         # Start tasks
         self.task_tick_timers.start()
@@ -467,7 +467,7 @@ class VoiceCog(commands.Cog):
                 await voice.disconnect()
 
     @tasks.loop(seconds=5)
-    async def task_handle_play_requests(self) -> None:  # noqa: C901
+    async def task_handle_play_requests(self) -> None:  # noqa: C901, PLR0915
         """Continuously checks for any queued calls to ``-play`` and handles them one at a time, in order."""
         if not self.bot.user:
             return
@@ -475,8 +475,9 @@ class VoiceCog(commands.Cog):
         while True:
             if not first_loop:
                 self._play_calls.task_done()
-            ctx, url = await self._play_calls.get()
+            ctx, query, qtype = await self._play_calls.get()
             first_loop = False
+
             if (remaining := self._play_calls.qsize()):
                 logger.debug(f'{remaining} more queued call(s) after this')
 
@@ -484,6 +485,16 @@ class VoiceCog(commands.Cog):
                 await ctx.send(embed=embed_info('Queue is full.',
                     f'Limit is currently set to {config.max_queue_length} entries.'))
                 continue
+
+            match qtype:
+                case 'search':
+                    url = await self._url_from_search_query(ctx, query)
+                    if not url:
+                        continue
+                case 'url':
+                    url = query
+                case _:
+                    raise ValueError(f'Unexpected value for _play_calls item tuple element 2: {query}')
 
             # Filter URL
             if not config.filter_media_url(url):
@@ -555,6 +566,10 @@ class VoiceCog(commands.Cog):
             self.stopped_track = None
             return
         await ctx.send(embed=embed_info('The player is not paused.', 'Use `-play <URL>` to queue something up.'))
+
+    async def _url_from_search_query(self, ctx: commands.Context, query: str) -> str | None:
+        """Returns the URL selected for a given search query, or ``None`` if the prompt timed out or was cancelled."""
+        raise NotImplementedError
 
     async def _try_to_queue(self, ctx: commands.Context, url: str) -> Result[tuple[MediaItem, ...], discord.Embed]:  # noqa: PLR0911
         author = _assert_discord_member(ctx.author)
@@ -779,7 +794,16 @@ class VoiceCog(commands.Cog):
         if self._play_calls.qsize():
             await ctx.send(embed=embed_info('Your play request is pending.'), ephemeral=True, delete_after=10)
 
-        await self._play_calls.put((ctx, url))
+        await self._play_calls.put((ctx, url, 'url'))
+
+    @alias_from_config
+    @commands.command(aliases=[])
+    async def search(self, ctx: commands.Context, *query: str) -> None:
+        """Returns YouTube search results for a query and prompts the user to queue one of them."""
+        if self._play_calls.qsize():
+            await ctx.send(embed=embed_info('Your play request is pending.'), ephemeral=True, delete_after=10)
+
+        await self._play_calls.put((ctx, ' '.join(query), 'search'))
 
     @alias_from_config
     @commands.command(aliases=[])
