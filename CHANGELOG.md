@@ -32,6 +32,7 @@ configured prefix accordingly.
   - Returns a function with takes any arguments and keyword arguments and returns a specified value
   - `util.nop_true` and `util.nop_false` provided for convenience to return `True` and `False`
     respectively
+- Added mock function `tests.conftest.mock_ytdl()`
 
 ### Changed
 
