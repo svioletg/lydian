@@ -11,7 +11,6 @@ from maybetype import Nothing, Some, maybe
 
 from lydian import util
 from lydian.const import MD_H2_REGEX
-from lydian.errors import AssuranceError
 from lydian.util import BasicLock, Cache, get_text_sections
 
 NESTED_DICT_RO: frozendict[str, Any] = frozendict({'a': 1, 'b': {'a': 2, 'b': {'a': 3}}, 'c': 4})
@@ -49,10 +48,10 @@ class Dataclass:  # noqa: D101
     c: bool = True
     d: SubDataclass = field(default_factory=SubDataclass)
 
-def test_assure() -> None:
-    util.assure(True)  # noqa: FBT003
-    with pytest.raises(AssuranceError):
-        util.assure(False)  # noqa: FBT003
+def test_asserts() -> None:
+    util.asserts(True)  # noqa: FBT003
+    with pytest.raises(AssertionError):
+        util.asserts(False)  # noqa: FBT003
 
 def test_basic_lock() -> None:
     lock = BasicLock()

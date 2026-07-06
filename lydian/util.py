@@ -21,8 +21,6 @@ from zoneinfo import ZoneInfo
 from discord.ext import commands, tasks
 from maybetype import Maybe, maybe
 
-from lydian.errors import AssuranceError
-
 
 class BasicLock:
     """A basic "lock" object that can be used as a context manager.
@@ -306,10 +304,10 @@ class Stopwatch:
             else:
                 self._pause_offset += perf_counter_ns() - self._paused_at
 
-def assure(condition: bool, exc_args: str = '') -> None:  # noqa: FBT001
-    """Raises :py:class:`lydian.errors.AssuranceError` if ``condition`` is ``False``, otherwise does nothing."""
+def asserts(condition: bool, *exc_args: object) -> None:  # noqa: FBT001
+    """Raises ``AssertionError`` if ``condition`` is ``False``, otherwise does nothing."""
     if not condition:
-        raise AssuranceError(exc_args)
+        raise AssertionError(*exc_args)
 
 def cog_commands(cog: type[commands.Cog]) -> dict[str, commands.Command]:
     """Returns a dictionary of a cog's command methods."""
