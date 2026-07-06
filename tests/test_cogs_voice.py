@@ -1,11 +1,13 @@
 from copy import deepcopy
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import discord
 import pytest
 
 from lydian.cogs.voice import MediaItem, MediaQueue, VoteSkip
 from lydian.errors import MediaQueueLimitError
+from lydian.util import nop_false, nop_true
+from tests.conftest import YTDL_EXTRACT_INFO_SAMPLES, mock_ytdl
 
 MediaItem._url_info_cache.enabled = False  # noqa: SLF001
 
@@ -14,6 +16,12 @@ def test_media_item_copy() -> None:
     copied = deepcopy(item)
     assert copied is not item
     assert copied == item
+
+def test_media_item_from_url_confirm_callback() -> None:
+    with patch('lydian.cogs.voice.ytdl', mock_ytdl()):
+        query, _result = next(iter(YTDL_EXTRACT_INFO_SAMPLES.items()))
+        assert MediaItem.from_url(query, confirm_callback=nop_true) != ()
+        assert MediaItem.from_url(query, confirm_callback=nop_false) == ()
 
 def test_media_queue_maxlen() -> None:
     queue = MediaQueue()

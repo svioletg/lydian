@@ -35,6 +35,9 @@ configured prefix accordingly.
   - `util.nop_true` and `util.nop_false` provided for convenience to return `True` and `False`
     respectively
 - Added mock function `tests.conftest.mock_ytdl()`
+- Added parameter `confirm_callback` to method `cogs.voice.MediaItem.from_url()`
+  - Takes a function which receives the tuple of constructed `MediaItem` objects and must return
+    `True` for the method to return those objects, returning an empty tuple if `False`
 
 ### Changed
 

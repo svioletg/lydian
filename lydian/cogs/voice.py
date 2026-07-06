@@ -1,7 +1,7 @@
 """Voice-related commands."""
 import asyncio
 from collections import UserList
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from datetime import timedelta
 from math import ceil
@@ -28,7 +28,7 @@ from lydian.const import (
     EmojiStr,
 )
 from lydian.errors import AbortCommand, FileSizeLimitError, MediaQueueLimitError
-from lydian.util import BasicLock, Cache, Stopwatch, expect, format_duration, mention
+from lydian.util import BasicLock, Cache, Stopwatch, expect, format_duration, mention, nop_true
 
 
 class YTDLLogHandler:
@@ -145,17 +145,24 @@ class MediaItem:
         )
 
     @classmethod
-    def from_url(cls, url: str, *, user: int | discord.Member | None = None, cache: bool = True) -> tuple[Self, ...]:
+    def from_url(cls,
+            url: str,
+            *,
+            confirm_callback: Callable[[tuple[MediaItem, ...]], bool] = nop_true,
+            user: int | discord.Member | None = None, cache: bool = True,
+        ) -> tuple[Self, ...]:
         """Returns a tuple of ``MediaItem`` objects created from the info extracted from ``url`` by yt-dlp.
 
-        If multiple entries are extracted from ``url``, the resulting ``MediaItem`` objects will only have the
-        ``title`` and ``url`` fields filled.
+        If multiple entries are extracted from ``url``, the resulting ``MediaItem`` objects will only have the ``title``
+        and ``url`` fields filled.
 
         :param user: A ``discord.Member`` object or a Discord user's ID to set as the ``user_id`` attribute for every
             returned item.
+        :param confirm_callback: A callable which takes the tuple of constructed ``MediaItem`` instances and must return
+            ``True`` for the results to be returned. If it returns ``False``, an empty tuple is returned instead.
         :param cache: If ``True``, cached info will be used instead of requesting the information for ``url`` again if
-            the URL exists in the cache and is not expired, otherwise the result of this extraction will be cached.
-            If ``False``, the cache is not used.
+            the URL exists in the cache and is not expired, otherwise the result of this extraction will be cached. If
+            ``False``, the cache is not used.
         """
         if isinstance(user, discord.Member):
             user = user.id
@@ -163,12 +170,15 @@ class MediaItem:
         info: dict[str, Any] = cls._url_info_cache.get_or_set(url, lambda: ytdl.extract_info(url, download=False)) \
             if cache \
             else ytdl.extract_info(url, download=False)
-        return tuple(
+
+        results: tuple[Self, ...] = tuple(
             cls.from_ytdl_extracted(cached).set_user(user) \
                 if cache and (cached := cls._url_info_cache.get(entry.get('original_url', entry['url']))) \
                 else cls.from_ytdl_extracted(entry).set_user(user) \
             for entry in info.get('entries', [info])
         )
+
+        return results if confirm_callback(results) else ()
 
     def add_embed_field(self, embed: discord.Embed, title_prefix: str = '', *, inline: bool = False) -> discord.Embed:
         """Adds this item as a field to a ``discord.Embed`` object, then returns it back."""
