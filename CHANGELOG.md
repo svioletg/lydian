@@ -23,6 +23,7 @@ configured prefix accordingly.
 ### Added
 
 - Added debug bot command `-buttons`
+- Added tool module `tools.testdataytdl`
 - Added class `cogs.util.DynamicButtonsView`
 - Added constant `const.EMOJI_DIGITS`
 - Added classmethod `const.EmojiStr.from_int()`
