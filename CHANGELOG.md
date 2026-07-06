@@ -99,10 +99,14 @@ configured prefix accordingly.
 
 - Renamed console command `debug read` to `debug eval`
 - Renamed method `console.LydianConsole.debug_read()` to `.debug_eval()`
+- Renamed function `util.assure()` to `asserts()`
+- `util.asserts()` now raises the builtin `AssertionError` instead of the now-removed custom
+  exception `errors.AssuranceError`
 
 ### Removed
 
 - Removed class `tests.ReadOnlyDict`
+- Removed exception `errors.AssuranceError`
 - Removed exception `tests.ReadOnlyModifiedError`
 - Removed function `tests._raise_for_readonly()`
 
