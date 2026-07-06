@@ -528,6 +528,13 @@ def nop(*_: object, **__: object) -> None:
     """Discards all arguments and returns immediately."""
     return
 
+def nop_ret[T](obj: T) -> Callable[..., T]:
+    """Returns a function which discards all arguments and returns ``obj``."""
+    return lambda *_, **__: obj
+
+nop_true = nop_ret(True)  # noqa: FBT003
+nop_false = nop_ret(False)  # noqa: FBT003
+
 def partition[T](predicate: Callable[[T], bool], it: Iterable[T]) -> tuple[list[T], list[T]]:
     """Separates the items of ``it`` into two lists based on whether ``predicate`` returns ``True``.
 

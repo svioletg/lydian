@@ -28,6 +28,10 @@ configured prefix accordingly.
 - Added classmethod `const.EmojiStr.from_int()`
 - Added function `util.nop()`
   - "No-op"; takes any arguments and keyword arguments and does nothing
+- Added function `util.nop_ret()`
+  - Returns a function with takes any arguments and keyword arguments and returns a specified value
+  - `util.nop_true` and `util.nop_false` provided for convenience to return `True` and `False`
+    respectively
 
 ### Changed
 

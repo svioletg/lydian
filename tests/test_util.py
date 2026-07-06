@@ -288,6 +288,11 @@ def test_maybepath() -> None:
     assert util.maybepath('qwertyuiop') is Nothing
     assert isinstance(util.maybepath('pyproject.toml'), Some)
 
+def test_nop_ret() -> None:
+    assert util.nop_ret(1)() == 1
+    assert util.nop_ret(1)('a', 'b') == 1
+    assert util.nop_ret(1)('a', 'b', c='c', d='d') == 1
+
 def test_partition() -> None:
     assert util.partition(lambda n: n % 2 == 0, range(10)) == (
         [0, 2, 4, 6, 8],
