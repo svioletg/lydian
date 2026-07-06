@@ -26,6 +26,7 @@ configured prefix accordingly.
 - Added class `cogs.util.DynamicButtonsView`
 - Added constant `const.EMOJI_DIGITS`
 - Added classmethod `const.EmojiStr.from_int()`
+- Added function `util.gruop_by()`
 - Added function `util.nop()`
   - "No-op"; takes any arguments and keyword arguments and does nothing
 - Added function `util.nop_ret()`

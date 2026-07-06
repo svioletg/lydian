@@ -451,6 +451,32 @@ def get_text_sections(
         span: slice[int, int, None] = slice(a.end(), b.start() if b else len(content))
         yield key, (content[span].strip(), span)
 
+def group_by[K, V](items: Iterable[dict[K, V]], group_key: K, *, missing_ok: bool = False) -> dict[V, list[dict[K, V]]]:
+    """Groups a series of dictionaries by the value of the specified ``group_key``.
+
+    Note that dictionaries are appended to the resulting lists by reference.
+
+    >>> assert group_by([{'a': 1, 'b': 2}, {'a': 3, 'b': 4}], 'a') == {1: [{'a': 1, 'b': 2}], 3: [{'a': 3, 'b': 4}]}
+
+    :param missing_ok: If ``True``, items in ``data`` which do not have the key ``group_key`` are skipped. Otherwise,
+        ``KeyError`` is raised.
+    """
+    grouped: dict[V, list[dict[K, V]]] = {}
+    for data in items:
+        # Use ellipsis just in case None is a valid value in this dictionary
+        # Might be even better to use a sentinel MISSING value
+        if (value := data.get(group_key, ...)) is ...:
+            if missing_ok:
+                continue
+            raise KeyError(group_key)
+
+        if value not in grouped:
+            grouped[value] = []
+
+        grouped[value].append(data)
+
+    return grouped
+
 def is_annotated(typ: object) -> bool:
     """Returns whether ``typ``'s type origin is ``typing.Annotated``.
 

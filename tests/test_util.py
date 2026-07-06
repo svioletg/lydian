@@ -237,6 +237,37 @@ Mauris blandit, nunc sit amet euismod ultrices, magna mauris porta dui, et conse
         key_group='header',
     )] == ['Section 1', 'Section 2']
 
+def test_group_by() -> None:
+    data = [
+        {
+            'trackno': 1,
+            'title': 'The Land Before Timeland',
+            'album': 'Laminated Denim',
+        },
+        {
+            'trackno': 2,
+            'title': 'Hypertension',
+            'album': 'Laminated Denim',
+            'key': 'A minor',
+        },
+    ]
+
+    assert util.group_by(data, 'album') == {
+        'Laminated Denim': data,
+    }
+
+    assert util.group_by(data, 'key', missing_ok=True) == {
+        'A minor': [{
+            'trackno': 2,
+            'title': 'Hypertension',
+            'album': 'Laminated Denim',
+            'key': 'A minor',
+        }],
+    }
+
+    with pytest.raises(KeyError, match='key'):
+        util.group_by(data, 'key')
+
 def test_is_annotated() -> None:
     assert not util.is_annotated(str)
     assert util.is_annotated(Annotated[str, 'Description'])
