@@ -86,6 +86,8 @@ EMBED_COLOR_ERROR: int = 0xff0000
 
 # Compiled regex
 COLOR_ESCAPE_REGEX: re.Pattern[str] = re.compile(r'\x1b\[.*?m')
+HTTP_REGEX: re.Pattern[str] = re.compile(r'^https?://')
+"""Matches if a string begins with ``http://`` or ``https://``."""
 DOCSTRING_PARAM_REGEX: re.Pattern[str] = re.compile(
     r'^:param (?P<name>\w+): (?P<desc>.+(?:\n    .+|\n)*)',
     flags=re.MULTILINE,

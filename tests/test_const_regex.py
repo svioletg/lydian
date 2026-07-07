@@ -31,6 +31,13 @@ def test_markdown_header_regex(pattern: re.Pattern[str], content: str, expected_
     m = cast('re.Match[str]', m)
     assert m.group('title') == expected_title
 
+def test_url_regex() -> None:
+    assert const.HTTP_REGEX.match('https://github.com/')
+    assert not const.HTTP_REGEX.match(' https://github.com/')
+    assert const.HTTP_REGEX.match('http://github.com/')
+    assert not const.HTTP_REGEX.match(' http://github.com/')
+    assert not const.HTTP_REGEX.match('github.com/')
+
 @pytest.mark.parametrize(('text', 'should_match'),
     [
         ('[download]   0.1% of    1.51MiB at  Unknown B/s ETA Unknown', True),

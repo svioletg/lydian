@@ -26,6 +26,7 @@ configured prefix accordingly.
 - Added tool module `tools.testdataytdl`
 - Added class `cogs.util.DynamicButtonsView`
 - Added constant `const.EMOJI_DIGITS`
+- Added constant `const.HTTP_REGEX`
 - Added classmethod `const.EmojiStr.from_int()`
 - Added function `util.gruop_by()`
 - Added function `util.nop()`
