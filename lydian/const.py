@@ -99,6 +99,14 @@ Named groups:
     - "desc"
 """
 YTDL_DOWNLOAD_PROGRESS_REGEX: re.Pattern[str] = re.compile(r'\[download\].+ETA')
+YTDL_SEARCH_PREFIX_REGEX: re.Pattern[str] = re.compile(r'(?P<prefix>.*search)(?P<n>\d*):(?P<query>.*)')
+"""Matches yt-dlp search extractor prefixes like "ytsearch" and "scsearch".
+
+Named groups:
+    - "prefix": The search prefix, excluding the following number
+    - "n": (optional) The number of results to get, if present
+    - "query": The string following the prefix and colon
+"""
 
 MD_HEADER_REGEX: re.Pattern[str] = re.compile(r'^#(?P<title>.*)$', flags=re.MULTILINE)
 """Matches a markdown header with any number of ``#`` characters.

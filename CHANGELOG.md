@@ -27,6 +27,7 @@ configured prefix accordingly.
 - Added class `cogs.util.DynamicButtonsView`
 - Added constant `const.EMOJI_DIGITS`
 - Added constant `const.HTTP_REGEX`
+- Added constant `const.YTDL_SEARCH_PREFIX_REGEX`
 - Added classmethod `const.EmojiStr.from_int()`
 - Added attribute `cogs.voice.MediaItem.uploader`
 - Added function `util.gruop_by()`
