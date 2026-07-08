@@ -18,7 +18,6 @@ KEY_FILTER_BLOCK: re.Pattern[str] = re.compile(fr'^({'|'.join([
     'formats',
     'thumbnails',
     'heatmap',
-    'url',
     'http_headers',
 ])})$')  # noqa: FLY002
 
