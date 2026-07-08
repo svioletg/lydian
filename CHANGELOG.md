@@ -46,6 +46,8 @@ configured prefix accordingly.
 
 ### Changed
 
+- Renamed `config.Config.filter_media_url()` to `.filter_query_url()`
+- Renamed `config.MediaFilterConfig.allowed_urls` to `.allowed_queries`
 - `cogs.util.DropdownView.__init__()` parameter `options` now accepts `Iterable` instead of
   just `list`
 - `util.Cache` objects can now be effectively disabled with the `enabled` attribute, which prevents

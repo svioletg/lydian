@@ -63,10 +63,11 @@ allowed_extractors = ['default']
 #    instead.
 #    Extractor names: https://github.com/yt-dlp/yt-
 #    dlp/blob/master/supportedsites.md
-allowed_urls = []
-# allowed_urls: A list of regular expressions which determine what URLs to
-#    allow. Prefix an expression with a hyphen (-) to blacklist it instead.
-#    When given values, a URL must match at least one allow pattern (not
+allowed_queries = []
+# allowed_queries: A list of regular expressions which determine what queries to
+#    allow when using the -play command. Prefix an expression with a hyphen (-)
+#    to blacklist it instead.
+#    When given values, a query must match at least one allow pattern (not
 #    prefixed with hyphen), AND not match any block patterns (prefixed with
 #    hyphen) to be considered allowed. Patterns are always matched starting from
 #    the beginning of the string.
