@@ -22,13 +22,13 @@ configured prefix accordingly.
 
 ### Added
 
-- Added config key `max_search_results`
+- Added config key `max_search_results` (#39)
 - Added debug bot command `-buttons`
 - Added tool module `tools.testdataytdl`
 - Added class `cogs.util.DynamicButtonsView`
 - Added constant `const.EMOJI_DIGITS`
 - Added constant `const.HTTP_REGEX`
-- Added constant `const.YTDL_SEARCH_PREFIX_REGEX`
+- Added constant `const.YTDL_SEARCH_PREFIX_REGEX` (#39)
 - Added classmethod `const.EmojiStr.from_int()`
 - Added attribute `cogs.voice.MediaItem.uploader`
 - Added method `cogs.voice.VoiceCog._prompt_media_item_choice()` (#39)
