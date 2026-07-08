@@ -210,6 +210,11 @@ class Config:
         doc='Maximum number of items that can be added to the media queue.',
         metadata={'validators': [_validate_positive]})
 
+    max_search_results: int = field(default=5,
+        doc='Maximum number of results to fetch when using a search query to queue items. This is also used as the'
+            + ' default amount of results to search for when an amount is not specified.',
+        metadata={'validators': [_validate_positive]})
+
     media_dir_warn_threshold: int | None = field(default=100_000_000,
         doc='Total size in bytes that downloaded media can take up before a warning is emitted at bot'
             + f' startup. Set to {TOML_NONE!r} to disable the warning entirely.',

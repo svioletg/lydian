@@ -22,6 +22,7 @@ configured prefix accordingly.
 
 ### Added
 
+- Added config key `max_search_results`
 - Added debug bot command `-buttons`
 - Added tool module `tools.testdataytdl`
 - Added class `cogs.util.DynamicButtonsView`
