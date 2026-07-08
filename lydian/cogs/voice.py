@@ -116,6 +116,8 @@ class MediaItem:
     """The web URL this item originated from (not the one being used for streaming)."""
     duration: float | None = None
     """The item's duration in seconds."""
+    uploader: str | None = None
+    """The name of the account which uploaded the source media, if applicable."""
     thumbnail_url: str | None = None
 
     # Non-media-related
@@ -141,6 +143,7 @@ class MediaItem:
             title=info['title'],
             url=info.get('original_url', info['url']),
             duration=info.get('duration'),
+            uploader=info.get('uploader'),
             thumbnail_url=info.get('thumbnail'),
         )
 
