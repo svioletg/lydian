@@ -493,7 +493,7 @@ class VoiceCog(commands.Cog):
                 continue
 
             # Filter query
-            if not config.filter_media_url(query):
+            if not config.filter_media_query(query):
                 await ctx.send(embed=embed_info("This query is not allowed by the bot's configuration."))
                 continue
 
@@ -566,7 +566,7 @@ class VoiceCog(commands.Cog):
             await self.advance_queue(ctx, play_now=self.stopped_track)
             self.stopped_track = None
             return
-        await ctx.send(embed=embed_info('The player is not paused.', 'Use `-play <URL>` to queue something up.'))
+        await ctx.send(embed=embed_info('The player is not paused.', 'Use `-play <query>` to queue something up.'))
 
     async def _prompt_media_item_choice(self, ctx: commands.Context, results: Sequence[MediaItem]) -> int | None:
         """Returns the index of the selected ``MediaItem``, or ``None`` if the prompt was cancelled or timed out."""
