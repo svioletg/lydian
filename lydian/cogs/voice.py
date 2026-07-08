@@ -141,7 +141,7 @@ class MediaItem:
 
         return cls(
             title=info['title'],
-            url=info.get('original_url', info['url']),
+            url=info.get('original_url') or info['url'],
             duration=info.get('duration'),
             uploader=info.get('uploader'),
             thumbnail_url=info.get('thumbnail'),
@@ -176,9 +176,9 @@ class MediaItem:
 
         results: tuple[Self, ...] = tuple(
             cls.from_ytdl_extracted(cached).set_user(user) \
-                if cache and (cached := cls._url_info_cache.get(entry.get('original_url', entry['url']))) \
+                if cache and (cached := cls._url_info_cache.get(entry.get('original_url') or entry['url'])) \
                 else cls.from_ytdl_extracted(entry).set_user(user) \
-            for entry in info.get('entries', [info])
+            for entry in info.get('entries') or (info,)
         )
 
         return results if confirm_callback(results) else ()

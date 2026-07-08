@@ -47,6 +47,8 @@ configured prefix accordingly.
   just `list`
 - `util.Cache` objects can now be effectively disabled with the `enabled` attribute, which prevents
   setting keys and retrieving keys from its data dictionary
+- Multiple methods in `MediaItem` now use `.get(...) or ...` instead of setting a default for
+  `.get()` in yt-dlp extracted info dictionary usage
 
 ### Deprecated
 
