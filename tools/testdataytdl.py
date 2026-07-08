@@ -46,6 +46,17 @@ def extract_and_filter(
 
 cli = typer.Typer(no_args_is_help=True)
 
+@cli.command('refresh')
+def refresh_data() -> None:
+    """Re-extract info for all keys."""
+    screen.print('Extracting...')
+    new_data: dict[str, Any] = {query:extract_and_filter(query) for query in load()}
+
+    screen.print('Updating...')
+    dump(new_data)
+
+    screen.print('Done.')
+
 @cli.command('sort')
 def sort_data() -> None:
     """Sorts test data alphabetically by key."""
