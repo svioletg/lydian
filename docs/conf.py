@@ -1,4 +1,4 @@
-from lydian import __version__  # noqa: D100, INP001
+from lydian import __version__
 
 # Configuration file for the Sphinx documentation builder.
 #

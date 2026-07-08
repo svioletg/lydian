@@ -4,16 +4,7 @@ from discord import Embed
 from discord.ext import commands
 from loguru import logger
 
-from lydian.cogs.util import (
-    DropdownView,
-    DynamicButtonsView,
-    confirm,
-    embed_error,
-    embed_info,
-    embed_ok,
-    embed_warn,
-    paginated_message,
-)
+from lydian.cogs.util import DropdownView, confirm, embed_error, embed_info, embed_ok, embed_warn, paginated_message
 from lydian.config import config
 from lydian.const import EmojiStr, debug_context
 
@@ -124,16 +115,6 @@ class DebugCog(commands.Cog):
         msg = await ctx.send(embed=embed_info('Choose an option below', 'Timeout: 5 seconds'), view=dropdown)
         choice = await dropdown.wait_for_response()
         msg = await msg.edit(view=dropdown)
-        if choice is None:
-            await ctx.send(embed=embed_info('Timed out.'))
-        else:
-            await ctx.send(embed=embed_info(f'You chose: {choice}'))
-
-    @commands.command(checks=[debug_enabled])
-    async def buttons(self, ctx: commands.Context, *labels: str) -> None:
-        """Sends a message with a :py:class:`lydian.cogs.util.DynamicButtonsView` with the given labels."""
-        await ctx.send(embed=embed_info('Pick an option.'), view=(prompt := DynamicButtonsView(labels, timeout=5)))
-        choice = await prompt.wait_for_response()
         if choice is None:
             await ctx.send(embed=embed_info('Timed out.'))
         else:

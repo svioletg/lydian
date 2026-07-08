@@ -126,11 +126,6 @@ async def on_command_error(ctx: commands.Context, exc: Exception) -> None:
 
     if isinstance(exc, commands.errors.MissingRequiredArgument):
         await ctx.send(embed=embed_error('Not enough command arguments given', str(exc)))
-    elif isinstance(exc, commands.errors.BadLiteralArgument):
-        await ctx.send(embed=embed_error(
-            f'Invalid choice for command argument "{exc.param.name}": {exc.argument}',
-            f'Valid options: {', '.join(exc.literals)}',
-        ))
     elif isinstance(exc, commands.errors.BadArgument):
         await ctx.send(embed=embed_error('Invalid command arguments given', str(exc.__cause__ or exc)))
         logger.debug(f'Bad argument given, full traceback to follow ({exc})')
@@ -237,7 +232,7 @@ async def async_main() -> int:
 
     if config.check_for_updates:
         screen.print('-' * 20)
-        check_for_updates(stable=config.check_for_stable_only)
+        check_for_updates()
         screen.print('-' * 20)
 
     logger.info('Starting...')

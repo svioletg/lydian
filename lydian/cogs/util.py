@@ -1,8 +1,7 @@
 """Utilities specifically for use in cog modules."""
 import warnings
-from collections.abc import Callable, Iterable, Sequence
-from types import CoroutineType
-from typing import Any, Literal, cast
+from collections.abc import Callable, Sequence
+from typing import Literal, cast
 
 import discord.ui
 from discord import ButtonStyle, Embed
@@ -19,7 +18,6 @@ from lydian.const import (
     EmojiStr,
 )
 from lydian.errors import AbortCommand
-from lydian.util import nop
 
 type ViewItemCallback[T: discord.ui.Item] = Callable[[discord.Interaction, T], None]
 
@@ -112,7 +110,7 @@ class ArrowButtonsView(discord.ui.View):
 class DropdownView(discord.ui.View):
     """A view with a dropdown menu for selecting one option."""
 
-    def __init__(self, options: Iterable[discord.SelectOption], *, timeout: float | None = None) -> None:
+    def __init__(self, options: list[discord.SelectOption], *, timeout: float | None = None) -> None:
         super().__init__(timeout=timeout)
 
         for opt in options:
@@ -141,50 +139,6 @@ class DropdownView(discord.ui.View):
             self.select.disabled = True
 
         return choice
-
-class DynamicButtonsView(discord.ui.View):
-    """A view with an arbitrary number of buttons specified on init."""
-
-    def __init__(self, options: Iterable[str | dict[str, Any]], *, timeout: float | None = None) -> None:
-        """
-        :param options: An iterable of button labels or dictionaries to be used as ``discord.ui.Button`` kwargs.
-        """  # noqa: D200, D212
-        super().__init__(timeout=timeout)
-
-        self._buttons: list[discord.ui.Button] = []
-
-        for opt in options:
-            if isinstance(opt, str):
-                self._buttons.append(bttn := discord.ui.Button(label=opt))
-            else:
-                self._buttons.append(bttn := discord.ui.Button(**opt))
-            self.add_item(bttn)
-            bttn.callback = self._callback_factory(bttn)  # ty:ignore[invalid-assignment]; works fine
-
-        self.choice: discord.ui.Button | None = None
-
-    def _callback_factory(self,
-            button: discord.ui.Button,
-            callback: Callable[[discord.ui.Button], None] = nop,
-        ) -> Callable[[discord.Interaction], CoroutineType[Any, Any, None]]:
-        async def fn(
-                interaction: discord.Interaction,
-            ) -> None:
-            await interaction.response.defer()
-            callback(button)
-            self.choice = button
-            self.stop()
-
-        return fn
-
-    async def wait_for_response(self) -> discord.ui.Button | None:
-        """Waits for a button to be clicked, then returns it.
-
-        If ``None`` is returned, the view timed out.
-        """
-        await self.wait()
-
-        return self.choice
 
 def alias_from_config[T: commands.Command](cmd: T) -> T:
     """Extends a command's ``aliases`` with the aliases defined in user configuration for that command.

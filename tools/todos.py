@@ -17,21 +17,10 @@ TODO_REGEX: re.Pattern[str] = re.compile(
     r'^ *(?P<header># TODO(?:\((?P<author>.+?)\))?:.*)$(?:\n *#.*$)*',
     flags=re.MULTILINE,
 )
-"""
-Named groups:
-    - "header": The first line of the TODO
-    - "author"
-"""
 ISSUE_REGEX: re.Pattern[str] = re.compile(
     r'\bhttps://github.com/(?P<user>[\w-]+)/(?P<repo>[\w-]+)/issues/(?P<n>\d+)\b',
     flags=re.MULTILINE,
 )
-"""
-Named groups:
-    - "user"
-    - "repo"
-    - "n"
-"""
 DEFAULT_ISSUE_LINK_TMPL: str = GH_ISSUES + '/{}'
 
 @dataclass

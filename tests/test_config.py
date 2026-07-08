@@ -62,16 +62,16 @@ def test_update_from_environment() -> None:
 def test_filter_media_url(url: str, expected: bool) -> None:
     conf = Config()
 
-    conf.media_filter.allowed_queries = [
+    conf.media_filter.allowed_urls = [
         r'https://((www|music|m)\.youtube\.com|youtu\.be)/',
         r'https://soundcloud\.com/',
         r'https://.*\.bandcamp\.com/',
     ]
-    assert conf.filter_media_query(url) == expected
+    assert conf.filter_media_url(url) == expected
 
-    conf.media_filter.allowed_queries = [
+    conf.media_filter.allowed_urls = [
         r'-https://((www|music|m)\.youtube\.com|youtu\.be)/',
         r'-https://soundcloud\.com/',
         r'-https://.*\.bandcamp\.com/',
     ]
-    assert conf.filter_media_query(url) == (not expected)
+    assert conf.filter_media_url(url) == (not expected)

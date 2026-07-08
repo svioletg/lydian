@@ -417,7 +417,7 @@ class LydianConsole(BotConsole):
         self.bot = bot or AsyncMock(Bot)
         self.prompt_prefix = prompt
 
-        self.debug_eval_shortcuts: dict[str, str] = {
+        self.debug_read_shortcuts: dict[str, str] = {
             '?': 'dbg.',
             '$': 'store.',
         }
@@ -473,7 +473,7 @@ class LydianConsole(BotConsole):
             return Err(f'{e.__class__.__name__}: {e}')
 
     @command(enabled=config.debug, group='debug')
-    def debug_eval(self, expr: str, /, *, log: bool = False) -> None:
+    def debug_read(self, expr: str, /, *, log: bool = False) -> None:
         """Prints the result of an expression.
 
         The expression will have access to Python's built-ins, the global "config" and "perms" objects, and a "dbg"
@@ -502,7 +502,7 @@ class LydianConsole(BotConsole):
             return
 
         parsed_expr: str = expr
-        if expansion := self.debug_eval_shortcuts.get(parsed_expr[0]):
+        if expansion := self.debug_read_shortcuts.get(parsed_expr[0]):
             parsed_expr = parsed_expr.replace(parsed_expr[0], expansion, count=1)
 
         if parsed_expr.startswith('store.'):
@@ -527,8 +527,8 @@ class LydianConsole(BotConsole):
         """Stores either the result of an expression or the expression itself to be used later to ``store.<dest_key>``.
 
         By default, the expression is evaluated once immediately and its deep-copied result is stored to the given key,
-        which can be accessed via ``debug eval store.<dest_key>``. If the expression is prefixed with ``&``, the
-        expression itself is stored and not immediately evaluated. Using ``debug eval store.<dest_key>`` in this case
+        which can be accessed via ``debug read store.<dest_key>``. If the expression is prefixed with ``&``, the
+        expression itself is stored and not immediately evaluated. Using ``debug read store.<dest_key>`` in this case
         will evaluate the expression stored at that key every time the command is run.
 
         If the ``dest_key`` already exists in ``store`` (regardless if value or expression), it will be replaced with

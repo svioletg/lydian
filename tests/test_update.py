@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 import responses
-from requests.exceptions import ConnectTimeout, HTTPError, ReadTimeout
+from requests.exceptions import ConnectTimeout, HTTPError
 
 from lydian.const import TESTS_DIR
 from lydian.update import GH_REPO_API_ROOT, ReleaseComment, check_for_updates, get_releases
@@ -67,7 +67,7 @@ def test_get_releases_error() -> None:
         get_releases()
 
 def test_get_releases_timeout() -> None:
-    with pytest.raises((ConnectTimeout, ReadTimeout)):
+    with pytest.raises(ConnectTimeout):
         get_releases(timeout=0.001)
 
 @responses.activate
@@ -85,7 +85,7 @@ def test_check_for_updates_error() -> None:
         check_for_updates()
 
 def test_check_for_updates_timeout() -> None:
-    with pytest.raises((ConnectTimeout, ReadTimeout)):
+    with pytest.raises(ConnectTimeout):
         check_for_updates(output=False, timeout=0.001)
 
 def test_release_comment() -> None:

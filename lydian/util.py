@@ -96,22 +96,9 @@ class CachedObject[T]:
 class Cache[K, V]:
     """A simple cache."""
 
-    def __init__(self, default_expiration: timedelta | None = None, *, enabled: bool = True) -> None:
-        """
-        :param enabled: If ``False``, nothing is added to or retrieved from the cache.
-
-            More specifically, when not ``enabled``, the following is true:
-
-            - :py:meth:`clear` clears the cache like normal
-            - :py:meth:`get` always returns ``None``
-            - :py:meth:`get_or_set` always calls and returns the result of its ``func`` parameter
-            - :py:meth:`remove` returns immediately without modifying the cache
-            - :py:meth:`set` returns immediately without modifying the cache
-        """  # noqa: D212
+    def __init__(self, default_expiration: timedelta | None = None) -> None:
         self._default_expiration = default_expiration
         self._data: dict[K, CachedObject[V]] = {}
-
-        self.enabled: bool = enabled
 
     def __repr__(self) -> str:  # noqa: D105
         return f'{self.__class__.__name__}({self._data!r})'
@@ -125,9 +112,6 @@ class Cache[K, V]:
 
         If the key exists but is expired, the key is removed from the cache and ``None`` is returned.
         """
-        if not self.enabled:
-            return None
-
         if key not in self._data:
             return None
         obj = self._data[key]
@@ -150,9 +134,6 @@ class Cache[K, V]:
         :raises ValueError:
             ``expires`` was given a date in the past.
         """
-        if not self.enabled:
-            return func()
-
         expires = expires if expires is not None else self._default_expiration
         if expires and \
             (((datetime.now(UTC) + expires) if isinstance(expires, timedelta) else expires) < datetime.now(UTC)):
@@ -169,17 +150,11 @@ class Cache[K, V]:
 
         Does nothing if the key did not exist.
         """
-        if not self.enabled:
-            return
-
         if key in self._data:
             del self._data[key]
 
     def set(self, key: K, value: V, expires: datetime | timedelta | None = None) -> None:
         """Adds or replaces the value of ``key`` with ``value`` and the given optional expiration date."""
-        if not self.enabled:
-            return
-
         expires = expires if expires is not None else self._default_expiration
         self._data[key] = CachedObject(value, expires=expires)
 
@@ -451,32 +426,6 @@ def get_text_sections(
         span: slice[int, int, None] = slice(a.end(), b.start() if b else len(content))
         yield key, (content[span].strip(), span)
 
-def group_by[K, V](items: Iterable[dict[K, V]], group_key: K, *, missing_ok: bool = False) -> dict[V, list[dict[K, V]]]:
-    """Groups a series of dictionaries by the value of the specified ``group_key``.
-
-    Note that dictionaries are appended to the resulting lists by reference.
-
-    >>> assert group_by([{'a': 1, 'b': 2}, {'a': 3, 'b': 4}], 'a') == {1: [{'a': 1, 'b': 2}], 3: [{'a': 3, 'b': 4}]}
-
-    :param missing_ok: If ``True``, items in ``data`` which do not have the key ``group_key`` are skipped. Otherwise,
-        ``KeyError`` is raised.
-    """
-    grouped: dict[V, list[dict[K, V]]] = {}
-    for data in items:
-        # Use ellipsis just in case None is a valid value in this dictionary
-        # Might be even better to use a sentinel MISSING value
-        if (value := data.get(group_key, ...)) is ...:
-            if missing_ok:
-                continue
-            raise KeyError(group_key)
-
-        if value not in grouped:
-            grouped[value] = []
-
-        grouped[value].append(data)
-
-    return grouped
-
 def is_annotated(typ: object) -> bool:
     """Returns whether ``typ``'s type origin is ``typing.Annotated``.
 
@@ -549,17 +498,6 @@ def maybepath(fp: str | Path, must_be: Literal['file', 'dir'] | None = None) -> 
 def mention(user_id: int) -> str:
     """Returns a string which can be used to mention a Discord user in a message."""
     return f'<@{user_id}>'
-
-def nop(*_: object, **__: object) -> None:
-    """Discards all arguments and returns immediately."""
-    return
-
-def nop_ret[T](obj: T) -> Callable[..., T]:
-    """Returns a function which discards all arguments and returns ``obj``."""
-    return lambda *_, **__: obj
-
-nop_true = nop_ret(True)  # noqa: FBT003
-nop_false = nop_ret(False)  # noqa: FBT003
 
 def partition[T](predicate: Callable[[T], bool], it: Iterable[T]) -> tuple[list[T], list[T]]:
     """Separates the items of ``it`` into two lists based on whether ``predicate`` returns ``True``.

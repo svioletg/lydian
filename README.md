@@ -2,10 +2,14 @@
 
 ![Required Python version](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fsvioletg%2Flydian%2Frefs%2Fheads%2Fmain%2Fpyproject.toml
 )
-![Build, main branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian/build-test.yml?branch=main&label=build%20%26%20test%20(main)
+![Build, main branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian/build.yml?branch=main&label=build%20(main)
+)
+![Tests, main branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian/lint-test.yml?branch=main&label=tests%20(main)
 )
 
-![Build, dev branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian/build-test.yml?branch=dev&label=build%20%26%20test%20(dev)
+![Build, dev branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian/build.yml?branch=dev&label=build%20(dev)
+)
+![Tests, dev branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian/lint-test.yml?branch=dev&label=tests%20(dev)
 )
 
 > [!WARNING]
@@ -41,7 +45,7 @@ Docs: <https://lydian.readthedocs.io/en/latest/>
   - [Setup without `uv`](#setup-without-uv)
 - [Usage: Running the bot](#usage-running-the-bot)
 - [Usage: Bot console commands](#usage-bot-console-commands)
-  - [`debug eval`](#debug-eval)
+  - [`debug read`](#debug-read)
   - [`debug store`](#debug-store)
   - [`help`](#help)
   - [`stop`](#stop)
@@ -151,7 +155,7 @@ reason, you should be able to hit Ctrl+C to send a keyboard interrupt and forcib
 > [!NOTE]
 > All commands starting with `debug` require [debug mode](#debug-mode) to use.
 
-### `debug eval`
+### `debug read`
 
 > [!WARNING]
 > This command uses the `eval()` function, which is [unsafe to use with untrusted user
@@ -176,9 +180,9 @@ Options:
 Example:
 
 ```log
-> debug eval dbg.cog.voice.queue
+> debug read dbg.cog.voice.queue
 debug_context['cog.voice.queue'] == MediaQueue([])
-> debug eval --log dbg.cog.voice.queue
+> debug read --log dbg.cog.voice.queue
 [2026-04-30 00:51:30] [bot::thread_console/DEBUG]: debug_context['cog.voice.queue'] == MediaQueue([])
 ```
 
@@ -192,12 +196,12 @@ debug_context['cog.voice.queue'] == MediaQueue([])
 > shouldn't be an issue.
 
 Stores either the result of an expression or the expression itself to a key in the `store`
-dictionary, to be accessed later by `debug eval`. To do the latter, prefix the expression with `&`.
-Stored expressions will be evaluated on the fly on every run of `debug eval store.<key>`, when just
+dictionary, to be accessed later by `debug read`. To do the latter, prefix the expression with `&`.
+Stored expressions will be evaluated on the fly on every run of `debug read store.<key>`, when just
 storing the result (no `&`) the expression is evaluated once right then and a deep-copy of the value
 is stored to read later.
 
-The expression given to this command does not support the expansions/shortcuts that `debug eval`
+The expression given to this command does not support the expansions/shortcuts that `debug read`
 supports, e.g. `?cog.voice.now_playing` does not work and would have to be written fully as
 `dbg.cog.voice.now_playing`.
 
@@ -209,11 +213,11 @@ Example:
 
 ```bash
 > debug store dbg.cog.voice.now_playing np
-> debug eval $np
+> debug read $np
 dbg.cog.voice.now_playing == MediaItem(title='Victoria (2019 Remaster)',
 url='https://www.youtube.com/watch?v=vaIzujp0IpI', duration=219)
 > debug store &dbg.cog.voice.now_playing np
-> debug eval $np
+> debug read $np
 dbg.cog.voice.now_playing == MediaItem(title='Victoria (2019 Remaster)',
 url='https://www.youtube.com/watch?v=vaIzujp0IpI', duration=219)
 ```

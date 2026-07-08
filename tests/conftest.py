@@ -1,14 +1,11 @@
-import json
 import os
 import shutil
 from pathlib import Path
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock, Mock
 
 import discord
 import pytest
 from discord.ext import commands
-from yt_dlp import YoutubeDL
 
 from lydian.const import TESTS_DIR, create_directories
 
@@ -33,10 +30,6 @@ class SampleCog(commands.Cog):  # noqa: D101
         else:
             await ctx.send('Hello!')
 
-YTDL_EXTRACT_INFO_SAMPLES: dict[str, dict[str, Any]] = json.loads(
-    (TESTS_DIR / 'data/ytdl-extract-info.json').read_text('utf-8'),
-)
-
 @pytest.fixture
 def tmpdir() -> Path:
     return TESTS_DIR / 'tmp'
@@ -46,17 +39,6 @@ def sample_cog() -> commands.Cog:
     return SampleCog(AsyncMock(commands.Bot))
 
 #region MOCKS
-
-def mock_ytdl() -> MagicMock[YoutubeDL]:
-    ytdl = MagicMock(YoutubeDL)
-
-    def extract_info(query: str, *_: object, **__: object) -> dict[str, Any]:
-        # OK if this raises KeyError because this should only be used with known cases anyway
-        return YTDL_EXTRACT_INFO_SAMPLES[query]
-
-    ytdl.extract_info.side_effect = extract_info
-
-    return ytdl
 
 def mock_discord_role(
         *,
