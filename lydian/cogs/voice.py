@@ -16,15 +16,18 @@ from loguru import logger
 from maybetype import Err, Ok, Result, maybe
 from yt_dlp.utils import DownloadError
 
-from lydian.cogs.util import alias_from_config, confirm, embed_error, embed_info, embed_ok
+from lydian.cogs.util import DynamicButtonsView, alias_from_config, confirm, embed_error, embed_info, embed_ok
 from lydian.config import config
 from lydian.const import (
     COLOR_ESCAPE_REGEX,
     DL_DIR,
     EMBED_COLOR_INFO,
+    EMOJI_DIGITS,
     GH_ISSUES,
+    HTTP_REGEX,
     QUEUE_MAX_PER_PAGE,
     YTDL_DOWNLOAD_PROGRESS_REGEX,
+    YTDL_SEARCH_PREFIX_REGEX,
     EmojiStr,
 )
 from lydian.errors import AbortCommand, FileSizeLimitError, MediaQueueLimitError
@@ -69,7 +72,7 @@ YTDL_FORMAT_OPTIONS: dict[str, Any] = {
     'logtostderr': False,
     'quiet': False,
     'no_warnings': False,
-    'default_search': 'auto',
+    'default_search': f'ytsearch{config.max_search_results}',
     'max_filesize': config.max_filesize,
     'extract_flat': 'in_playlist',
     'allowed_extractors': config.media_filter.allowed_extractors,
@@ -470,7 +473,7 @@ class VoiceCog(commands.Cog):
                 await voice.disconnect()
 
     @tasks.loop(seconds=5)
-    async def task_handle_play_requests(self) -> None:  # noqa: C901, PLR0915
+    async def task_handle_play_requests(self) -> None:  # noqa: C901
         """Continuously checks for any queued calls to ``-play`` and handles them one at a time, in order."""
         if not self.bot.user:
             return
@@ -489,30 +492,25 @@ class VoiceCog(commands.Cog):
                     f'Limit is currently set to {config.max_queue_length} entries.'))
                 continue
 
-            match qtype:
-                case 'search':
-                    url = await self._url_from_search_query(ctx, query)
-                    if not url:
-                        continue
-                case 'url':
-                    url = query
-                case _:
-                    raise ValueError(f'Unexpected value for _play_calls item tuple element 2: {query}')
-
-            # Filter URL
-            if not config.filter_media_url(url):
-                await ctx.send(embed=embed_info("This URL is not allowed by the bot's configuration."))
+            # Filter query
+            if not config.filter_media_url(query):
+                await ctx.send(embed=embed_info("This query is not allowed by the bot's configuration."))
                 continue
 
-            logger.info(f'Extracting info from URL: {url}')
-            progress_msg: discord.Message = await ctx.send(embed=embed_info('Getting media info...', url))
+            logger.info(f'Extracting info for query: {query}')
+            progress_msg: discord.Message = await ctx.send(embed=embed_info('Getting media info...', f'Query: {query}'))
 
-            result = await self._try_to_queue(ctx, url)
-            if not result:
-                await progress_msg.edit(embed=result.unwrap_err())
+            result = await self._try_to_queue(ctx, query, choose=qtype == 'search')
+            if result is None:
+                await progress_msg.delete()
                 continue
 
-            items: tuple[MediaItem, ...] = result.unwrap()
+            match result:
+                case Err(embed):
+                    await progress_msg.edit(embed=embed)
+                    continue
+                case Ok(items):
+                    pass
 
             self.queue.extend(items)
 
@@ -570,23 +568,71 @@ class VoiceCog(commands.Cog):
             return
         await ctx.send(embed=embed_info('The player is not paused.', 'Use `-play <URL>` to queue something up.'))
 
-    async def _url_from_search_query(self, ctx: commands.Context, query: str) -> str | None:
-        """Returns the URL selected for a given search query, or ``None`` if the prompt timed out or was cancelled."""
-        raise NotImplementedError
+    async def _prompt_media_item_choice(self, ctx: commands.Context, results: Sequence[MediaItem]) -> int | None:
+        """Returns the index of the selected ``MediaItem``, or ``None`` if the prompt was cancelled or timed out."""
+        embed = embed_info('Choose a result:')
+        buttons: list[dict[str, Any]] = [
+            {'style': discord.ButtonStyle.red, 'emoji': EmojiStr.CANCEL, 'label': 'Cancel'},
+        ]
+        for n, item in enumerate(results, 1):
+            embed.add_field(
+                name=f'{n}. {item.title}',
+                value=f'Uploaded by {item.uploader or '?'}\n{item.url}',
+                inline=False,
+            )
+            buttons.append({'style': discord.ButtonStyle.blurple, 'emoji': EMOJI_DIGITS[n], 'id': n - 1})
 
-    async def _try_to_queue(self, ctx: commands.Context, url: str) -> Result[tuple[MediaItem, ...], discord.Embed]:  # noqa: PLR0911
+        msg = await ctx.send(embed=embed, view=(view := DynamicButtonsView(buttons, timeout=10)))
+        if (response := await view.wait_for_response()) is not None:
+            if response.label == 'Cancel':
+                await msg.edit(embed=embed_info('Prompt cancelled.'), view=None, delete_after=10)
+                return None
+
+            await msg.delete()
+            return response.id
+
+        await msg.edit(embed=embed_info('Prompt timed out.'), view=None, delete_after=10)
+
+        return None
+
+    async def _try_to_queue(self, ctx: commands.Context, query: str, *, choose: bool = False) \
+        -> Result[tuple[MediaItem, ...], discord.Embed] | None:  # noqa: C901, PLR0911
+        """Try to queue ``MediaItem`` objects from a given query.
+
+        ``Ok`` is returned with the constructed items if they should be queued, or ``Err`` is returned with a
+        ``discord.Embed`` object describing why the items could not (or should not) be queued. ``None`` is returned to
+        indicate that the items should not be queued, and should be skipped silently.
+
+        :param choose: Prompts the user to choose which of the items to queue, usually used for search results.
+        """
         author = _assert_discord_member(ctx.author)
+
+        # Limit max results or set default if an amount wasn't given
+        query = YTDL_SEARCH_PREFIX_REGEX.sub(
+            lambda m:
+                f'{m.group('prefix')}'
+                + f'{min(int(m.group('n')), config.max_search_results) if m.group('n') else config.max_search_results}'
+                + f':{m.group('query')}',
+            query,
+        )
 
         try:
             items: tuple[MediaItem, ...] = await asyncio.get_event_loop().run_in_executor(None,
-                lambda: MediaItem.from_url(url, user=author))
+                lambda: MediaItem.from_url(query, user=author))
         except DownloadError as e:
             msg: str = COLOR_ESCAPE_REGEX.sub('', e.msg or '')
-            logger.error(f'URL info extraction failed: {msg}')
+            logger.error(f'Query info extraction failed: {msg}')
             if 'No suitable extractor found for URL' in msg:
-                return Err(embed_info("No suitable extractor found for this URL with the bot's current configuration."))
+                return Err(
+                    embed_info("No suitable extractor found for this query with the bot's current configuration."),
+                )
             else:
-                return Err(embed_error('Failed to get URL information', f'From yt-dlp: {msg}'))
+                return Err(embed_error('Failed to get query information', f'From yt-dlp: {msg}'))
+
+        if choose:
+            if (choice := await self._prompt_media_item_choice(ctx, items)) is None:
+                return None
+            items = (items[choice],)
 
         # Check against the duration limit, if any
         if (len(items) == 1) and config.max_duration:
@@ -782,31 +828,24 @@ class VoiceCog(commands.Cog):
 
     @alias_from_config
     @commands.command(aliases=[])
-    async def play(self, ctx: commands.Context, url: str | None = None) -> None:
-        """Plays or adds media to the queue using a URL, or resumes the player if paused.
+    async def play(self, ctx: commands.Context, *query_parts: str) -> None:
+        """Plays or adds media to the queue using a URL or search query, or resumes the player if paused.
 
         If the player is paused, the command can be used without any arguments to resume it.
         """
         voice = _assert_voice_client(ctx.voice_client)
 
-        # Treat this as a "resume" command if no URL is given
-        if not url:
+        query: str = ' '.join(query_parts)
+
+        # Treat this as a "resume" command if no query is given
+        if not query:
             await self._resume_or_start(ctx, voice)
             return
 
         if self._play_calls.qsize():
             await ctx.send(embed=embed_info('Your play request is pending.'), ephemeral=True, delete_after=10)
 
-        await self._play_calls.put((ctx, url, 'url'))
-
-    @alias_from_config
-    @commands.command(aliases=[])
-    async def search(self, ctx: commands.Context, *query: str) -> None:
-        """Returns YouTube search results for a query and prompts the user to queue one of them."""
-        if self._play_calls.qsize():
-            await ctx.send(embed=embed_info('Your play request is pending.'), ephemeral=True, delete_after=10)
-
-        await self._play_calls.put((ctx, ' '.join(query), 'search'))
+        await self._play_calls.put((ctx, query, 'url' if HTTP_REGEX.match(query) else 'search'))
 
     @alias_from_config
     @commands.command(aliases=[])

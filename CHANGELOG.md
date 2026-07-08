@@ -31,6 +31,7 @@ configured prefix accordingly.
 - Added constant `const.YTDL_SEARCH_PREFIX_REGEX`
 - Added classmethod `const.EmojiStr.from_int()`
 - Added attribute `cogs.voice.MediaItem.uploader`
+- Added method `cogs.voice.VoiceCog._prompt_media_item_choice()` (#39)
 - Added function `util.gruop_by()`
 - Added function `util.nop()`
   - "No-op"; takes any arguments and keyword arguments and does nothing
@@ -51,6 +52,14 @@ configured prefix accordingly.
   setting keys and retrieving keys from its data dictionary
 - Multiple methods in `MediaItem` now use `.get(...) or ...` instead of setting a default for
   `.get()` in yt-dlp extracted info dictionary usage
+- `cogs.voice.VoiceCog.play()` now takes a variable argument `query_parts` instead of `url` (#39)
+  - This allows queries with spaces to be used as one whole string
+- `cogs.voice.VoiceCog._play_calls` now requires a third item for its tuples, either `'url'` or
+  `'search'` (#39)
+- `cogs.voice.VoiceCog._try_to_queue()` now takes an optional `choose` parameter (#39)
+  - Prompts the user to choose one track to queue out of the extracted items
+- Various messages that mention a URL in queueing now mention "query" since searching is supported
+  (#39)
 
 ### Deprecated
 
