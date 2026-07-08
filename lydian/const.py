@@ -86,21 +86,70 @@ EMBED_COLOR_ERROR: int = 0xff0000
 
 # Compiled regex
 COLOR_ESCAPE_REGEX: re.Pattern[str] = re.compile(r'\x1b\[.*?m')
+HTTP_REGEX: re.Pattern[str] = re.compile(r'^https?://')
+"""Matches if a string begins with ``http://`` or ``https://``."""
 DOCSTRING_PARAM_REGEX: re.Pattern[str] = re.compile(
     r'^:param (?P<name>\w+): (?P<desc>.+(?:\n    .+|\n)*)',
     flags=re.MULTILINE,
 )
-YTDL_DOWNLOAD_PROGRESS_REGEX: re.Pattern[str] = re.compile(r'\[download\].+ETA')
+"""Matches ``:param ...:``-style parameter annotations in docstrings.
 
-MD_HEADER_REGEX: re.Pattern[str] = re.compile(r'^#+.+$', flags=re.MULTILINE)
-MD_H1_REGEX: re.Pattern[str] = re.compile(r'^#.+$', flags=re.MULTILINE)
-MD_H2_REGEX: re.Pattern[str] = re.compile(r'^##.+$', flags=re.MULTILINE)
-MD_H3_REGEX: re.Pattern[str] = re.compile(r'^###.+$', flags=re.MULTILINE)
+Named groups:
+    - "name"
+    - "desc"
+"""
+YTDL_DOWNLOAD_PROGRESS_REGEX: re.Pattern[str] = re.compile(r'\[download\].+ETA')
+YTDL_SEARCH_PREFIX_REGEX: re.Pattern[str] = re.compile(r'(?P<prefix>.*search)(?P<n>\d*):(?P<query>.*)')
+"""Matches yt-dlp search extractor prefixes like "ytsearch" and "scsearch".
+
+Named groups:
+    - "prefix": The search prefix, excluding the following number
+    - "n": (optional) The number of results to get, if present
+    - "query": The string following the prefix and colon
+"""
+
+MD_HEADER_REGEX: re.Pattern[str] = re.compile(r'^#(?P<title>.*)$', flags=re.MULTILINE)
+"""Matches a markdown header with any number of ``#`` characters.
+
+Named groups:
+    - "title": The text following the header characters, including surrounding whitespace
+"""
+MD_H1_REGEX: re.Pattern[str] = re.compile(r'^#(?P<title>[^#].*)$', flags=re.MULTILINE)
+"""Matches level 1 markdown header.
+
+Named groups:
+    - "title": The text following the header characters, including surrounding whitespace
+"""
+MD_H2_REGEX: re.Pattern[str] = re.compile(r'^##(?P<title>[^#].*)$', flags=re.MULTILINE)
+"""Matches a level 2 markdown header.
+
+Named groups:
+    - "title": The text following the header characters, including surrounding whitespace
+"""
+MD_H3_REGEX: re.Pattern[str] = re.compile(r'^###(?P<title>[^#].*)$', flags=re.MULTILINE)
+"""Matches a level 3 markdown header.
+
+Named groups:
+    - "title": The text following the header characters, including surrounding whitespace
+"""
 
 # Other values
 USER_AGENT: str = f'lydian-discord-bot/{__version__}'
 DEFAULT_DISCORD_PROMPT_TIMEOUT: float = 60.0
 DEFAULT_DISCORD_PAGINATED_VIEW_TIMEOUT: float = 60.0 * 5
+EMOJI_DIGITS: tuple[str, str, str, str, str, str, str, str, str, str] = (
+    emojize(':zero:', language='alias'),
+    emojize(':one:', language='alias'),
+    emojize(':two:', language='alias'),
+    emojize(':three:', language='alias'),
+    emojize(':four:', language='alias'),
+    emojize(':five:', language='alias'),
+    emojize(':six:', language='alias'),
+    emojize(':seven:', language='alias'),
+    emojize(':eight:', language='alias'),
+    emojize(':nine:', language='alias'),
+)
+"""Digits 0-9 as emoji."""
 QUEUE_MAX_PER_PAGE: int = 20
 
 class ConsoleHighlighter(Highlighter):
@@ -131,6 +180,14 @@ class EmojiStr(StrEnum):
     IN      = emojize(':inbox_tray:', language='alias')
     OUT     = emojize(':outbox_tray:', language='alias')
     SHUFFLE = emojize(':twisted_rightwards_arrows:', language='alias')
+    LOOP     = emojize(':repeat:', language='alias')
+    LOOP_ONE = emojize(':repeat_one:', language='alias')
+
+    # Alphanumeric
+    @classmethod
+    def from_int(cls, n: int) -> str:
+        """Converts an integer into digit emojis."""
+        return ''.join(EMOJI_DIGITS[int(ch)] for ch in str(n).lower())
 
 class LogLevel(IntEnum):  # noqa: D101
     TRACE   = 5

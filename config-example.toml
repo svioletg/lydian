@@ -1,10 +1,10 @@
 # discord-vc-bot configuration
 
-prefix = "-"
 debug = false # env: LYDIAN_DEBUG
 # debug: Enables various commands and features intended for developers. See the
 #    README for a full description of what debug mode does:
 #    https://github.com/svioletg/lydian/blob/main/README.md
+prefix = "-"
 check_for_updates = true # env: LYDIAN_CHECK_UPDATES
 # check_for_updates: Whether to check for new releases of Lydian at startup.
 check_for_stable_only = true # env: LYDIAN_CHECK_STABLE_ONLY
@@ -12,6 +12,12 @@ check_for_stable_only = true # env: LYDIAN_CHECK_STABLE_ONLY
 #    updates.
 bot_console = true # env: LYDIAN_BOT_CONSOLE
 # bot_console: Enables Lydian's interactive console while running.
+stream_media = true
+# stream_media: Whether to stream media instead of downloading it to disk and
+#    playing the file.
+confirm_on_remove = true
+# confirm_on_remove: Whether usage of the -remove command requires user
+#    confirmation.
 max_duration = 'n/a'
 # max_duration: Maximum duration (in seconds) of media that can be played by the
 #    bot. Set to 'n/a' for no limit.
@@ -27,13 +33,14 @@ max_playlist_length = 20
 max_queue_length = 100
 # max_queue_length: Maximum number of items that can be added to the media
 #    queue.
+max_search_results = 5
+# max_search_results: Maximum number of results to fetch when using a search
+#    query to queue items. This is also used as the default amount of results to
+#    search for when an amount is not specified.
 media_dir_warn_threshold = 100000000
 # media_dir_warn_threshold: Total size in bytes that downloaded media can take
 #    up before a warning is emitted at bot startup. Set to 'n/a' to disable the
 #    warning entirely.
-stream_media = true
-# stream_media: Whether to stream media instead of downloading it to disk and
-#    playing the file.
 inactivity_timeout = 120
 # inactivity_timeout: How long in seconds the bot can be inactive (not playing
 #    anything and the queue is empty) before disconnecting. Set to 'n/a' to
@@ -56,9 +63,14 @@ allowed_extractors = ['default']
 #    instead.
 #    Extractor names: https://github.com/yt-dlp/yt-
 #    dlp/blob/master/supportedsites.md
-allowed_urls = ['https://.*']
-# allowed_urls: A list of regular expressions which determine what URLs to
-#    allow. Prefix an expression with a hyphen (-) to blacklist it instead.
+allowed_queries = []
+# allowed_queries: A list of regular expressions which determine what queries to
+#    allow when using the -play command. Prefix an expression with a hyphen (-)
+#    to blacklist it instead.
+#    When given values, a query must match at least one allow pattern (not
+#    prefixed with hyphen), AND not match any block patterns (prefixed with
+#    hyphen) to be considered allowed. Patterns are always matched starting from
+#    the beginning of the string.
 
 [vote_skipping]
 enabled = false

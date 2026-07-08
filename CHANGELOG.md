@@ -18,6 +18,101 @@ paths. `lydian` does not contain any modules named `tools` or `tests`, to avoid 
 Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
 configured prefix accordingly.
 
+## [feature/issue-39-youtube-search]
+
+### Added
+
+- Added config key `max_search_results` (#39)
+- Added debug bot command `-buttons`
+- Added tool module `tools.testdataytdl`
+- Added class `cogs.util.DynamicButtonsView`
+- Added constant `const.EMOJI_DIGITS`
+- Added constant `const.HTTP_REGEX`
+- Added constant `const.YTDL_SEARCH_PREFIX_REGEX` (#39)
+- Added classmethod `const.EmojiStr.from_int()`
+- Added attribute `cogs.voice.MediaItem.uploader`
+- Added method `cogs.voice.VoiceCog._prompt_media_item_choice()` (#39)
+- Added function `util.gruop_by()`
+- Added function `util.nop()`
+  - "No-op"; takes any arguments and keyword arguments and does nothing
+- Added function `util.nop_ret()`
+  - Returns a function with takes any arguments and keyword arguments and returns a specified value
+  - `util.nop_true` and `util.nop_false` provided for convenience to return `True` and `False`
+    respectively
+- Added mock function `tests.conftest.mock_ytdl()`
+- Added parameter `confirm_callback` to method `cogs.voice.MediaItem.from_url()`
+  - Takes a function which receives the tuple of constructed `MediaItem` objects and must return
+    `True` for the method to return those objects, returning an empty tuple if `False`
+
+### Changed
+
+- Renamed `config.Config.filter_media_url()` to `.filter_query_url()`
+- Renamed `config.MediaFilterConfig.allowed_urls` to `.allowed_queries`
+- `cogs.util.DropdownView.__init__()` parameter `options` now accepts `Iterable` instead of
+  just `list`
+- `util.Cache` objects can now be effectively disabled with the `enabled` attribute, which prevents
+  setting keys and retrieving keys from its data dictionary
+- Multiple methods in `MediaItem` now use `.get(...) or ...` instead of setting a default for
+  `.get()` in yt-dlp extracted info dictionary usage
+- `cogs.voice.VoiceCog.play()` now takes a variable argument `query_parts` instead of `url` (#39)
+  - This allows queries with spaces to be used as one whole string
+- `cogs.voice.VoiceCog._play_calls` now requires a third item for its tuples, either `'url'` or
+  `'search'` (#39)
+- `cogs.voice.VoiceCog._try_to_queue()` now takes an optional `choose` parameter (#39)
+  - Prompts the user to choose one track to queue out of the extracted items
+- Various messages that mention a URL in queueing now mention "query" since searching is supported
+  (#39)
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [Unreleased]
+
+### Overview
+
+> **Breaking changes**
+> - The debug console command `read` has been renamed to `eval`
+
+### Added
+
+- Added config key `confirm_on_remove` (bool)
+  - If `true`, using `-remove` will prompt the user to confirm their choice
+- Added `title` named group to markdown header regexes in `const`
+  - `const.MD_HEADER_REGEX`
+  - `const.MD_H1_REGEX`
+  - `const.MD_H2_REGEX`
+  - `const.MD_H3_REGEX`
+- Added bot command `-loop` (method `cogs.voice.VoiceCog.toggle_loop()`) (#34)
+- Added enum member `const.EmojiStr.LOOP` (#34)
+- Added enum member `const.EmojiStr.LOOP_ONE` (#34)
+- Added attribute `cogs.voice.VoiceCog.loop` (#34)
+- Added method `cogs.voice.VoiceCog.loop_state_embed()` (#34)
+- Added proper handling for `discord.ext.commands.errors.BadLiteralArgument` in
+  `bot.on_command_error()`
+
+### Changed
+
+- Renamed console command `debug read` to `debug eval`
+- Renamed method `console.LydianConsole.debug_read()` to `.debug_eval()`
+
+### Removed
+
+- Removed class `tests.ReadOnlyDict`
+- Removed exception `tests.ReadOnlyModifiedError`
+- Removed function `tests._raise_for_readonly()`
+
+### Fixed
+
+- Fixed markdown header regexes matching more header symbols than intended, they now correctly match
+  *only* their respective header level
+- Fixed `check_for_stable_only` config key not getting checked when checking updates at bot startup
+  (#42)
+
 ## [0.9.1] - 2026-06-21
 
 ### Overview

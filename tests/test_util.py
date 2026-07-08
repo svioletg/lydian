@@ -6,15 +6,15 @@ from typing import Annotated, Any, Literal
 
 import pytest
 from discord.ext import commands
+from frozendict import frozendict
 from maybetype import Nothing, Some, maybe
 
 from lydian import util
 from lydian.const import MD_H2_REGEX
 from lydian.errors import AssuranceError
 from lydian.util import BasicLock, Cache, get_text_sections
-from tests import ReadOnlyDict
 
-NESTED_DICT_RO: ReadOnlyDict[str, Any] = ReadOnlyDict({'a': 1, 'b': {'a': 2, 'b': {'a': 3}}, 'c': 4})
+NESTED_DICT_RO: frozendict[str, Any] = frozendict({'a': 1, 'b': {'a': 2, 'b': {'a': 3}}, 'c': 4})
 SAMPLE_MARKDOWN: str = """# Documentation
 
 ## Section 1
@@ -85,8 +85,14 @@ def test_cached_object_init() -> None:
     assert maybe(util.CachedObject(1, timedelta(days=1)).expires).unwrap().day \
         == (datetime.now(UTC) + timedelta(days=1)).day
 
-def test_cache() -> None:
-    cache: Cache[int, str] = Cache()
+@pytest.mark.parametrize(('enabled'),
+    [
+        (True,),
+        (False,),
+    ],
+)
+def test_cache(enabled: bool) -> None:
+    cache: Cache[int, str] = Cache(enabled=enabled)
     assert cache.get(1) is None
     cache.set(1, 'one')
     assert cache.get(1) == 'one'
@@ -104,6 +110,13 @@ def test_cache() -> None:
     assert cache.get_or_set(1, lambda: 'one', timedelta(days=1)) == 'one'
     with pytest.raises(ValueError, match='must be a future date'):
         cache.get_or_set(1, lambda: 'one', datetime(2025, 1, 1, tzinfo=UTC))
+
+
+    if enabled:
+        assert cache._data != Cache()._data  # noqa: SLF001
+
+    if not enabled:
+        assert cache._data == Cache()._data  # noqa: SLF001
 
 def test_cog_commands(sample_cog: type[commands.Cog]) -> None:
     result = util.cog_commands(sample_cog)
@@ -224,6 +237,37 @@ Mauris blandit, nunc sit amet euismod ultrices, magna mauris porta dui, et conse
         key_group='header',
     )] == ['Section 1', 'Section 2']
 
+def test_group_by() -> None:
+    data = [
+        {
+            'trackno': 1,
+            'title': 'The Land Before Timeland',
+            'album': 'Laminated Denim',
+        },
+        {
+            'trackno': 2,
+            'title': 'Hypertension',
+            'album': 'Laminated Denim',
+            'key': 'A minor',
+        },
+    ]
+
+    assert util.group_by(data, 'album') == {
+        'Laminated Denim': data,
+    }
+
+    assert util.group_by(data, 'key', missing_ok=True) == {
+        'A minor': [{
+            'trackno': 2,
+            'title': 'Hypertension',
+            'album': 'Laminated Denim',
+            'key': 'A minor',
+        }],
+    }
+
+    with pytest.raises(KeyError, match='key'):
+        util.group_by(data, 'key')
+
 def test_is_annotated() -> None:
     assert not util.is_annotated(str)
     assert util.is_annotated(Annotated[str, 'Description'])
@@ -274,6 +318,11 @@ def test_linepos_to_pos() -> None:
 def test_maybepath() -> None:
     assert util.maybepath('qwertyuiop') is Nothing
     assert isinstance(util.maybepath('pyproject.toml'), Some)
+
+def test_nop_ret() -> None:
+    assert util.nop_ret(1)() == 1
+    assert util.nop_ret(1)('a', 'b') == 1
+    assert util.nop_ret(1)('a', 'b', c='c', d='d') == 1
 
 def test_partition() -> None:
     assert util.partition(lambda n: n % 2 == 0, range(10)) == (
