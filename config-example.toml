@@ -66,6 +66,10 @@ allowed_extractors = ['default']
 allowed_urls = ['https://.*']
 # allowed_urls: A list of regular expressions which determine what URLs to
 #    allow. Prefix an expression with a hyphen (-) to blacklist it instead.
+#    When given values, a URL must match at least one allow pattern (not
+#    prefixed with hyphen), AND not match any block patterns (prefixed with
+#    hyphen) to be considered allowed. Patterns are always matched starting from
+#    the beginning of the string.
 
 [vote_skipping]
 enabled = false

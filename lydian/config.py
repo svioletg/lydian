@@ -116,7 +116,10 @@ class MediaFilterConfig:
             + '\nExtractor names: https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md')
     allowed_urls: list[str] = field(default_factory=lambda: ['https://.*'],
         doc='A list of regular expressions which determine what URLs to allow.'
-            + ' Prefix an expression with a hyphen (-) to blacklist it instead.')
+            + ' Prefix an expression with a hyphen (-) to blacklist it instead.'
+            + ' \nWhen given values, a URL must match at least one allow pattern (not prefixed with hyphen), AND not'
+            + ' match any block patterns (prefixed with hyphen) to be considered allowed. Patterns are always matched'
+            + ' starting from the beginning of the string.')
 
 @dataclass(kw_only=True)
 class VoteSkippingConfig:
