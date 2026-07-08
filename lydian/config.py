@@ -114,7 +114,7 @@ class MediaFilterConfig:
             + ' "default" will include almost every extractor yt-dlp has available.'
             + ' Prefix an expression with a hyphen (-) to blacklist it instead.'
             + '\nExtractor names: https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md')
-    allowed_urls: list[str] = field(default_factory=lambda: ['https://.*'],
+    allowed_urls: list[str] = field(default_factory=list,
         doc='A list of regular expressions which determine what URLs to allow.'
             + ' Prefix an expression with a hyphen (-) to blacklist it instead.'
             + ' \nWhen given values, a URL must match at least one allow pattern (not prefixed with hyphen), AND not'

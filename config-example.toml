@@ -63,7 +63,7 @@ allowed_extractors = ['default']
 #    instead.
 #    Extractor names: https://github.com/yt-dlp/yt-
 #    dlp/blob/master/supportedsites.md
-allowed_urls = ['https://.*']
+allowed_urls = []
 # allowed_urls: A list of regular expressions which determine what URLs to
 #    allow. Prefix an expression with a hyphen (-) to blacklist it instead.
 #    When given values, a URL must match at least one allow pattern (not
