@@ -33,6 +33,10 @@ max_playlist_length = 20
 max_queue_length = 100
 # max_queue_length: Maximum number of items that can be added to the media
 #    queue.
+max_search_results = 5
+# max_search_results: Maximum number of results to fetch when using a search
+#    query to queue items. This is also used as the default amount of results to
+#    search for when an amount is not specified.
 media_dir_warn_threshold = 100000000
 # media_dir_warn_threshold: Total size in bytes that downloaded media can take
 #    up before a warning is emitted at bot startup. Set to 'n/a' to disable the
@@ -59,9 +63,14 @@ allowed_extractors = ['default']
 #    instead.
 #    Extractor names: https://github.com/yt-dlp/yt-
 #    dlp/blob/master/supportedsites.md
-allowed_urls = ['https://.*']
-# allowed_urls: A list of regular expressions which determine what URLs to
-#    allow. Prefix an expression with a hyphen (-) to blacklist it instead.
+allowed_queries = []
+# allowed_queries: A list of regular expressions which determine what queries to
+#    allow when using the -play command. Prefix an expression with a hyphen (-)
+#    to blacklist it instead.
+#    When given values, a query must match at least one allow pattern (not
+#    prefixed with hyphen), AND not match any block patterns (prefixed with
+#    hyphen) to be considered allowed. Patterns are always matched starting from
+#    the beginning of the string.
 
 [vote_skipping]
 enabled = false

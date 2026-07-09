@@ -107,16 +107,19 @@ class ConfigField[T](Field[T]):
 
 @dataclass(kw_only=True)
 class MediaFilterConfig:
-    """Configuration for whitelisting or blacklisting input URLs and extractors."""
+    """Configuration for whitelisting or blacklisting input queries and extractors."""
 
     allowed_extractors: list[str] = field(default_factory=lambda: ['default'],
         doc='A list of regular expressions which determine what yt-dlp extractors to allow.'
             + ' "default" will include almost every extractor yt-dlp has available.'
             + ' Prefix an expression with a hyphen (-) to blacklist it instead.'
             + '\nExtractor names: https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md')
-    allowed_urls: list[str] = field(default_factory=lambda: ['https://.*'],
-        doc='A list of regular expressions which determine what URLs to allow.'
-            + ' Prefix an expression with a hyphen (-) to blacklist it instead.')
+    allowed_queries: list[str] = field(default_factory=list,
+        doc='A list of regular expressions which determine what queries to allow when using the -play command.'
+            + ' Prefix an expression with a hyphen (-) to blacklist it instead.'
+            + ' \nWhen given values, a query must match at least one allow pattern (not prefixed with hyphen), AND not'
+            + ' match any block patterns (prefixed with hyphen) to be considered allowed. Patterns are always matched'
+            + ' starting from the beginning of the string.')
 
 @dataclass(kw_only=True)
 class VoteSkippingConfig:
@@ -210,6 +213,11 @@ class Config:
         doc='Maximum number of items that can be added to the media queue.',
         metadata={'validators': [_validate_positive]})
 
+    max_search_results: int = field(default=5,
+        doc='Maximum number of results to fetch when using a search query to queue items. This is also used as the'
+            + ' default amount of results to search for when an amount is not specified.',
+        metadata={'validators': [_validate_positive]})
+
     media_dir_warn_threshold: int | None = field(default=100_000_000,
         doc='Total size in bytes that downloaded media can take up before a warning is emitted at bot'
             + f' startup. Set to {TOML_NONE!r} to disable the warning entirely.',
@@ -245,11 +253,11 @@ class Config:
         inst.update_from_toml(toml_str)
         return inst
 
-    def filter_media_url(self, url: str) -> bool:
-        """Returns whether a given URL should be allowed to be played based on this config object's filters."""
-        filter_yes, filter_no = partition(lambda s: s[0] != '-', self.media_filter.allowed_urls)
-        return (True if not filter_yes else any(re.match(pattern, url) for pattern in filter_yes)) \
-            and not any(re.match(pattern[1:], url) for pattern in filter_no)
+    def filter_media_query(self, query: str) -> bool:
+        """Returns whether a given query should be allowed based on this config object's filters."""
+        filter_yes, filter_no = partition(lambda s: s[0] != '-', self.media_filter.allowed_queries)
+        return (True if not filter_yes else any(re.match(pattern, query) for pattern in filter_yes)) \
+            and not any(re.match(pattern[1:], query) for pattern in filter_no)
 
     def set(self, keypath: str | list[str], val: object) -> None:
         """Sets an attribute by a dotted keypath or iterable of keys to the given value.
@@ -292,7 +300,7 @@ class Config:
             if fld.type is MediaFilterConfig:
                 data = tm.item(asdict(getattr(self, fld.name)))
                 data['allowed_extractors'] = [tm.string(s, literal=True) for s in data['allowed_extractors'].unwrap()]
-                data['allowed_urls'] = [tm.string(s, literal=True) for s in data['allowed_urls'].unwrap()]
+                data['allowed_queries'] = [tm.string(s, literal=True) for s in data['allowed_queries'].unwrap()]
             else:
                 data = getattr(self, fld.name)
 
