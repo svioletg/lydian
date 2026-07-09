@@ -10,7 +10,7 @@ from benedict import benedict
 
 from lydian.cogs.voice import ytdl
 from lydian.const import TESTS_DIR, screen
-from lydian.util import assure, plural
+from lydian.util import asserts, plural
 
 DATA_PATH: Path = TESTS_DIR / 'data/ytdl-extract-info.json'
 KEY_FILTER_ALLOW: re.Pattern[str] = re.compile(r'.*')
@@ -21,7 +21,7 @@ KEY_FILTER_BLOCK: re.Pattern[str] = re.compile(fr'^({'|'.join([
     'http_headers',
 ])})$')  # noqa: FLY002
 
-assure(DATA_PATH.is_file(), str(DATA_PATH))
+asserts(DATA_PATH.is_file(), str(DATA_PATH))
 
 def load(fp: str | Path = DATA_PATH) -> dict[str, Any]:
     """Loads the data from JSON."""
