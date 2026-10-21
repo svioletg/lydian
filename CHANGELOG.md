@@ -18,6 +18,28 @@ paths. `lydian` does not contain any modules named `tools` or `tests`, to avoid 
 Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
 configured prefix accordingly.
 
+## [0.10.1] - 2026-10-21
+
+> [!IMPORTANT]
+> This is a security update to address the
+> [recent compromising of eight eMudhra intermediate CA certificates](https://emudhra.we-have-a-problem.com/).
+>
+> It is recommended that you update `pip` using a direct checksum-ed URL, like so...
+>
+> `python -m pip install "pip @ https://files.pythonhosted.org/packages/3f/06/3e4420302363fbb71be3c7f35ce042f54bfca330e3e66b3a2e3c4cca579f/pip-26.2.2-py3-none-any.whl#sha256=fd7f4dfa8190e014013b9f08f3e973f4e4c26ffd179a204895533a7254813a70"`
+>
+> ...and *then* update Lydian via usual means.
+>
+> If you use `uv`, update it by running `UV_SYSTEM_CERTS=true uv self update`, assuming that your
+> system's certificates are up to date.
+>
+> Read more here: <https://discuss.python.org/t/information-for-python-users-regarding-emudhra-emsign-ca-certificate-security-incident/109576>
+
+### Security
+
+- `certifi` has been added as a dependency requiring version `>=2026.10.19`
+- Depedency `yt-dlp` now requires version `>=2026.10.21`
+
 ## [0.10.0] - 2026-07-28
 
 ### Overview
