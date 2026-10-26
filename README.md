@@ -1,8 +1,11 @@
 # Lydian (Discord Bot) <!-- omit in toc -->
 
-![Required Python version](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fsvioletg%2Flydian%2Frefs%2Fheads%2Fmain%2Fpyproject.toml
+**Make sure you are viewing Lydian's [stable branch](https://github.com/svioletg/lydian/tree/stable)
+before following installation instructions.**
+
+![Required Python version](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fsvioletg%2Flydian%2Frefs%2Fheads%2Fstable%2Fpyproject.toml
 )
-![Build, main branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian/build-test.yml?branch=main&label=build%20%26%20test%20(main)
+![Build, stable branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian/build-test.yml?branch=stable&label=build%20%26%20test%20(stable)
 )
 
 ![Build, dev branch](https://img.shields.io/github/actions/workflow/status/svioletg/lydian/build-test.yml?branch=dev&label=build%20%26%20test%20(dev)
@@ -83,11 +86,11 @@ You will need to install [git](https://git-scm.com/install/) to install Lydian a
 3. Create a directory to run Lydian in, then navigate to it in your terminal.
 4. Run `uv venv` to create a virtual environment, which will keep Lydian contained to your current
    directory.
-5. Run `uv pip install git+https://github.com/svioletg/lydian.git` to install Lydian
+5. Run `uv pip install git+https://github.com/svioletg/lydian.git@stable` to install Lydian
    in this directory.
    - This will install the most recent available version of Lydian. If you want to install a
      specific version, add an `@` to the end of the URL followed by a
-     [tag name](https://github.com/svioletg/lydian/tags).
+     [tag name](https://github.com/svioletg/lydian/tags) or branch name.
 6. Once installed, run `uv run lydian --version` and ensure it outputs "Lydian v[your version]"
 
 You can now start the bot by running `uv run lydian` in this directory, at which points it should
@@ -96,7 +99,7 @@ handle the rest of the setup via a few prompts. You can also use `uv run lydian-
 need to preface every Lydian command with `uv run` and ensure you are in this directory.
 
 Lydian can be updated in the future by running the same installation command above with the `-U`
-option: `uv pip install -U git+https://github.com/svioletg/lydian.git`
+option: `uv pip install -U git+https://github.com/svioletg/lydian.git@stable`
 
 </details>
 
@@ -107,7 +110,7 @@ option: `uv pip install -U git+https://github.com/svioletg/lydian.git`
 The bot is structured as a Python package, so you can install it using `pip`:
 
 ```bash
-pip install git+https://github.com/svioletg/lydian.git
+pip install git+https://github.com/svioletg/lydian.git@stable
 ```
 
 This will install Lydian and its commands (`lydian` and `lydian-manage`) to your virtual environment
@@ -115,7 +118,7 @@ if one is active, otherwise it'll be available in your global Python environment
 updated in the future by running this same command with `-U` added after `install`.
 
 ```bash
-pip install -U git+https://github.com/svioletg/lydian.git
+pip install -U git+https://github.com/svioletg/lydian.git@stable
 ```
 
 </details>
