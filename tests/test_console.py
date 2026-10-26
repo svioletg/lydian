@@ -84,13 +84,13 @@ def test_command_validate() -> None:
     assert ConsoleCommand.validate(valid_b) is valid_b
 
     with pytest.raises(TypeError):
-        assert not ConsoleCommand.validate(invalid_a)
+        ConsoleCommand.validate(invalid_a)
 
     with pytest.raises(TypeError):
-        assert not ConsoleCommand.validate(invalid_b)
+        ConsoleCommand.validate(invalid_b)
 
     with pytest.raises(TypeError):
-        assert not ConsoleCommand.validate(invalid_c)
+        ConsoleCommand.validate(invalid_c)
 
 def test_command_signature(console: Console) -> None:
     assert console.noargs.cli_signature == 'noargs'

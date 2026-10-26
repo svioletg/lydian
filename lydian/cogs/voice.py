@@ -7,7 +7,7 @@ from datetime import timedelta
 from math import ceil
 from pathlib import Path
 from random import randint
-from typing import Any, ClassVar, Literal, Self, cast, override
+from typing import Any, ClassVar, Literal, Self, SupportsIndex, cast, override
 
 import discord
 import yt_dlp
@@ -319,7 +319,7 @@ class MediaQueue(UserList[MediaItem]):
             pass
 
     @override
-    def insert(self, i: int, item: MediaItem) -> None:
+    def insert(self, i: SupportsIndex, item: MediaItem) -> None:
         if self.maxlen and (len(self) >= self.maxlen):
             raise MediaQueueLimitError('Cannot insert into full MediaQueue')
         super().insert(i, item)

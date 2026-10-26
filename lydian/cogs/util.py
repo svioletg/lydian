@@ -2,7 +2,7 @@
 import warnings
 from collections.abc import Callable, Iterable, Sequence
 from types import CoroutineType
-from typing import Any, Literal, cast
+from typing import Any, Literal
 
 import discord.ui
 from discord import ButtonStyle, Embed
@@ -60,7 +60,7 @@ class ConfirmView(discord.ui.View):
         self.response = False
 
     async def _on_response(self, interaction: discord.Interaction) -> None:
-        await cast('discord.InteractionResponse', interaction.response).defer()
+        await interaction.response.defer()
         self.stop()
 
     def response_or_abort(self) -> bool:
