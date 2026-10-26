@@ -95,16 +95,6 @@ class ConfigFieldMeta[T](TypedDict):
     """An iterable of functions which take the field's type (after being parsed with ``converter``) and return ``Ok``
     with the passed value if valid, or ``Err`` with a message string."""
 
-class ConfigField[T](Field[T]):
-    """Class used to specify the ``metadata`` attribute type for :py:class:`Config` fields.
-
-    Note that ``Config`` fields are still ``Field`` instances, and are not actually instances of this class, but those
-    fields are expected to use :py:class:`ConfigFieldMeta` for their ``metadata`` values, so this is used for stronger
-    typing.
-    """
-
-    metadata: ConfigFieldMeta[T]
-
 @dataclass(kw_only=True)
 class MediaFilterConfig:
     """Configuration for whitelisting or blacklisting input queries and extractors."""
@@ -239,9 +229,9 @@ class Config:
     logging: LoggingConfig = field(default_factory=LoggingConfig)
 
     @cached_property
-    def fields(self) -> dict[str, ConfigField]:
+    def fields(self) -> dict[str, Field]:
         """A dictionary of dotted field keypaths to their field objects."""
-        return cast('dict[str, ConfigField]', get_dataclass_fields(self))
+        return get_dataclass_fields(self)
 
     @classmethod
     def from_toml(cls, toml_str: str) -> Self:
@@ -329,13 +319,15 @@ class Config:
         # An empty dictionary should still be allowed if passed, so no "env or os.environ"
         env = maybe(env).unwrap_or(os.environ)
 
-        supported_fields: dict[str, ConfigField] = {k:v for k, v in self.fields.items() if 'env' in v.metadata}
+        supported_fields: dict[str, Field] = {k:v for k, v in self.fields.items() if 'env' in v.metadata}
         for name, fld in supported_fields.items():
-            if not (env_val := env.get(f'LYDIAN_{fld.metadata['env']}')):
+            meta = ConfigFieldMeta(fld.metadata)  # ty: ignore[invalid-argument-type]
+            if not (env_val := env.get(f'LYDIAN_{meta['env']}')):
                 continue
 
             converter: Callable[[str], Any] | None
-            if converter := fld.metadata.get('converter_env', fld.metadata.get('converter')):
+            # ty: ignore[truthiness-test-of-callable] ; can be None
+            if converter := meta.get('converter_env', meta.get('converter')):
                 if not callable(converter):
                     raise TypeError(f'Config field "{name}" parser must be callable: {converter!r}')
             elif fld.type is bool:
@@ -351,7 +343,7 @@ class Config:
             self.set(name, val)
 
     @staticmethod
-    def _check_type_with_field[T](value: object, fld: ConfigField[T]) -> T | None:  # noqa: C901
+    def _check_type_with_field[T](value: object, fld: Field[T]) -> T | None:  # noqa: C901
         """Parses a value according to the given field and ensures it is the correct type.
 
         :raises TypeError:
