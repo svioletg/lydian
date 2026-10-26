@@ -7,6 +7,7 @@ from typing import ClassVar, Self
 
 import discord
 import strictyaml as yaml
+from loguru import logger
 
 from lydian.const import PERMISSIONS_PATH
 
@@ -19,12 +20,20 @@ class CommandPermissions:
     roles: list[str | int] = field(default_factory=list)
 
     def can_invoke(self, user: discord.Member) -> bool:
-        """Returns whether a user can invoke this command based on their roles or username."""
+        """Returns whether a user can invoke this command based on their roles."""
         guild_role_id_map: dict[str, int] = {r.name:r.id for r in user.guild.roles}
-        user_in_rules: bool = any(
-            user.get_role(role if isinstance(role, int) else guild_role_id_map[role])
-            for role in self.roles
-        )
+
+        user_in_rules: bool = False
+
+        for role in self.roles:
+            if (role_id := role if isinstance(role, int) else guild_role_id_map.get(role)) is None:
+                logger.warning(
+                    f'Role by name "{role}" does not exist in guild "{user.guild.name}" (ID {user.guild.id})',
+                )
+                continue
+            if (user_in_rules := user.get_role(role_id) is not None):
+                break
+
         return user_in_rules if self.whitelist else not user_in_rules
 
 def _default_command_permissions_dict() -> dict[str, CommandPermissions]:
