@@ -764,6 +764,9 @@ class VoiceCog(commands.Cog):
         """
         logger.debug('Player has stopped')
 
+        if self.voteskip:
+            self.voteskip.voted.clear()
+
         was_playing: MediaItem | None = self.now_playing
         play_now: MediaItem | None = self.now_playing if self.loop == 'track' else None
         self.now_playing = None
