@@ -741,7 +741,7 @@ class VoiceCog(commands.Cog):
                 self.now_playing = item
                 self.now_playing_timer.reset()
 
-                await self.nowplaying.invoke(ctx)
+                await self.send_now_playing(ctx, item)
 
                 break
 
@@ -784,6 +784,35 @@ class VoiceCog(commands.Cog):
         else:
             self._manual_stop = False
 
+    async def send_now_playing(self,
+            ctx: commands.Context,
+            item: MediaItem | None = None,
+            *,
+            keep: bool = False,
+        ) -> discord.Message | None:
+        """Sends a "Now Playing" message embed using ``item`` for the media info.
+
+        If ``item`` is none, ``self.now_playing`` is used if not ``None``, otherwise no message is sent and ``None``
+        is returned.
+
+        :param keep: If ``True``, the ``now_playing_message_timeout`` config key is ignored and the sent message is
+            never auto-deleted.
+        """
+        if item or (item := self.now_playing):
+            # ty: ignore[no-matching-overload]
+            # delete_after isn't typed as optional in any overloads, but in the base definition it IS optional, and this
+            # method does in fact make an "is not None" check on delete_after, so there's no reason passing None for it
+            # here should cause an issue
+            return await ctx.send(
+                embed=item.embed(
+                    f'{f'{EmojiStr.SHUFFLE} ' if self.shuffle else ''}{EmojiStr.PLAY} Playing: ',
+                    timestamp=self.now_playing_timer.elapsed(),
+                ),
+                delete_after=None if keep else config.now_playing_message_timeout,
+            )
+
+        return None
+
     def stop_player(self, voice: discord.VoiceClient) -> None:
         """Stops the player if it is playing media.
 
@@ -821,11 +850,8 @@ class VoiceCog(commands.Cog):
     @commands.command(aliases=[])
     async def nowplaying(self, ctx: commands.Context) -> None:
         """Shows the currently playing track."""
-        if self.now_playing:
-            await ctx.send(embed=self.now_playing.embed(
-                f'{f'{EmojiStr.SHUFFLE} ' if self.shuffle else ''}{EmojiStr.PLAY} Playing: ',
-                timestamp=self.now_playing_timer.elapsed(),
-            ))
+        if (item := self.now_playing):
+            await self.send_now_playing(ctx, item)
         else:
             await ctx.send(embed=embed_info('Nothing is playing.'))
 
