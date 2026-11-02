@@ -222,6 +222,11 @@ class Config:
         doc='How long in seconds the bot can be the only user in a voice channel before disconnecting.'
             + f' Set to {TOML_NONE!r} to never disconnect in this case.',
         metadata={'validators': [_validate_positive]})
+    now_playing_message_timeout: int | None = field(default=60,
+        doc='How long in seconds to wait before deleting the "now playing" message sent by the bot when starting the'
+            + f' next track. Set to {TOML_NONE!r} to never automatically delete them.',
+        metadata={'validators': [_validate_positive]},
+    )
 
     # Tables
     media_filter: MediaFilterConfig = field(default_factory=MediaFilterConfig)

@@ -49,6 +49,10 @@ lonely_timeout = 120
 # lonely_timeout: How long in seconds the bot can be the only user in a voice
 #    channel before disconnecting. Set to 'n/a' to never disconnect in this
 #    case.
+now_playing_message_timeout = 60
+# now_playing_message_timeout: How long in seconds to wait before deleting the
+#    "now playing" message sent by the bot when starting the next track. Set to
+#    'n/a' to never automatically delete them.
 
 [command_aliases]
 help = ["h"]
