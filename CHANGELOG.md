@@ -20,6 +20,22 @@ configured prefix accordingly.
 
 <!-- towncrier release notes start -->
 
+## [0.10.2] - 2026-11-24
+
+### Added
+
+- Added async method `voice.VoiceCog.send_now_playing()`
+- Added config key "now_playing_message_timeout", which configures how long to wait until deleting the "now playing"
+  messages sent when advancing the queue
+
+### Removed
+
+- Removed class `config.ConfigField`
+
+### Fixed
+
+- Fixed skip votes never getting cleared after the current track changes (#51)
+
 ## [0.10.1] - 2026-10-21
 
 > [!IMPORTANT]
