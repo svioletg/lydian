@@ -188,7 +188,7 @@ def test_get_dataclass_fields() -> None:
     assert dc_fields['b'].default == dc.b
     assert dc_fields['c'].default == dc.c
     assert dc_fields['d.x'].default == dc.d.x
-    assert dc_fields['d.y'].default_factory() == dc.d.y  # ty:ignore[call-non-callable]
+    assert dc_fields['d.y'].default_factory() == dc.d.y  # ty:ignore[not-callable]
 
 def test_get_leaves() -> None:
     tree = {

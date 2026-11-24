@@ -384,7 +384,7 @@ def get_background_tasks(bot: commands.Bot) -> dict[str, dict[str, tasks.Loop]]:
 
 def getclass[T](obj: type[T] | T) -> type[T]:
     """Returns ``obj.__class__`` if ``obj`` is not a type, otherwise returns ``obj``."""
-    return obj if isinstance(obj, type) else obj.__class__  # ty: ignore[invalid-return-type] ; tests fine
+    return obj if isinstance(obj, type) else obj.__class__  # ty: ignore[invalid-explicit-return] ; tests fine
 
 def get_dataclass_fields(dc: object, parents: list[str] | None = None) -> dict[str, Field]:
     """Returns a dictionary of field names (dotted if the field is a dataclass) to field objects for a dataclass.
