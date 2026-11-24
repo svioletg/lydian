@@ -18,6 +18,8 @@ paths. `lydian` does not contain any modules named `tools` or `tests`, to avoid 
 Bot commands are referred to here using the default prefix of hyphen (`-`), replace with your
 configured prefix accordingly.
 
+<!-- towncrier release notes start -->
+
 ## [0.10.1] - 2026-10-21
 
 > [!IMPORTANT]
